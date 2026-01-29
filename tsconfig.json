@@ -1,8 +1,6 @@
 {
   "files": [],
   "compilerOptions": {
-    "composite": true,
-    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
       "@renderer/*": [
