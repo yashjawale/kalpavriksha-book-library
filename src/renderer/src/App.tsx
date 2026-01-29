@@ -1,5 +1,6 @@
 import Versions from './components/Versions'
 import electronLogo from './assets/electron.svg'
+import { Button } from './components/ui/button'
 
 function App(): React.JSX.Element {
   const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
@@ -8,6 +9,9 @@ function App(): React.JSX.Element {
     <>
       <img alt="logo" className="logo" src={electronLogo} />
       <p className="text-red-500">This is new</p>
+      <Button onClick={ipcHandle} variant="destructive" size="lg">
+        Send IPC Message
+      </Button>
       <div className="creator">Powered by electron-vite</div>
       <div className="text">
         Build an Electron app with <span className="react">React</span>
