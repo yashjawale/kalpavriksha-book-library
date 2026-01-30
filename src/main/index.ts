@@ -2,6 +2,21 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { booksController } from './controllers/books'
+
+// Helper to automatically register IPC handlers for a controller
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic controller registration requires accepting any function signature
+function registerController<T extends Record<string, (...args: any[]) => any>>(
+  name: string,
+  controller: T
+) {
+  for (const [key, handler] of Object.entries(controller)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- IPC handler args must match runtime controller method signatures
+    ipcMain.handle(`${name}:${key}`, async (_, ...args: any[]) => {
+      return await handler(...args)
+    })
+  }
+}
 
 function createWindow(): void {
   // Create the browser window.
@@ -51,6 +66,9 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  // Auto-register book controllers
+  registerController('books', booksController)
 
   createWindow()
 

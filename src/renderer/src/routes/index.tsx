@@ -1,52 +1,44 @@
 import { createFileRoute } from '@tanstack/react-router'
-
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 
 export const Route = createFileRoute('/')({
   component: Index
 })
 
 function Index() {
-  // Access the client
-  const queryClient = useQueryClient()
-
-  // Queries
-  const query = useQuery({
-    queryKey: ['todos'],
+  // Fetch books using the exposed API
+  const {
+    data: books,
+    isLoading,
+    error
+  } = useQuery({
+    queryKey: ['books'],
     queryFn: async () => {
-      return ['todo1', 'todo2']
-    }
-  })
-
-  // Mutations
-  const mutation = useMutation({
-    mutationFn: async (newTodo: string) => {
-      console.log('ran')
-      return [...(query.data || []), newTodo]
-    },
-    onSuccess: () => {
-      // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ['todos'] })
+      return await window.api.books.getAll()
     }
   })
 
   return (
-    <div className="p-2">
-      <h3>Welcome Home!</h3>
-      <div>
-        Todos:{' '}
-        {query.data?.map((todo, index) => (
-          <div key={index}>{todo}</div>
-        ))}
-      </div>
-      <button
-        onClick={() => {
-          console.log('click')
-          mutation.mutate('new todo')
-        }}
-      >
-        Add Todo
-      </button>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Book Library</h1>
+
+      {isLoading && <div>Loading books...</div>}
+
+      {error && <div className="text-red-500">Error loading books: {error.message}</div>}
+
+      {books && books.length === 0 && <div>No books found</div>}
+
+      {books && books.length > 0 && (
+        <div className="space-y-2">
+          {books.map((book) => (
+            <div key={book.isbn} className="border p-4 rounded">
+              <h3 className="font-semibold">{book.title}</h3>
+              <p className="text-sm text-gray-600">ISBN: {book.isbn}</p>
+              <p className="text-sm">Stock: {book.totalStock}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

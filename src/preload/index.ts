@@ -1,8 +1,16 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
-// Custom APIs for renderer
-const api = {}
+// Custom APIs for renderer - manually define methods for context bridge compatibility
+const api = {
+  books: {
+    getAll: () => ipcRenderer.invoke('books:getAll'),
+    getById: (isbn: string) => ipcRenderer.invoke('books:getById', isbn),
+    create: (data: { isbn: string; title: string }) => ipcRenderer.invoke('books:create', data),
+    updateStock: (isbn: string, stockCount: number) =>
+      ipcRenderer.invoke('books:updateStock', isbn, stockCount)
+  }
+}
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise
