@@ -5,3 +5,5 @@ out
 .eslintcache
 *.log*
 .tanstack
+/generated/prisma
+.env
