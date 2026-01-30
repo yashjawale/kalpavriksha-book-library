@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
+import { Button } from '@renderer/components/ui/button'
 
 export const Route = createFileRoute('/')({
   component: Index
@@ -39,6 +40,7 @@ function Index() {
           ))}
         </div>
       )}
+      <Button>Hello</Button>
     </div>
   )
 }
