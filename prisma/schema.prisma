@@ -9,3 +9,43 @@ generator client {
 datasource db {
   provider = "sqlite"
 }
+
+model Book {
+  isbn        String   @id
+  title       String
+  totalStock  Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  loans       Loan[]
+
+  @@map("books")
+}
+
+model User {
+  // Use email as the primary key
+  email String @id 
+  name  String?
+  
+  // Relations
+  loans Loan[]
+
+  @@map("users")
+}
+
+model Loan {
+  id         Int       @id @default(autoincrement())
+  bookIsbn   String
+  userEmail  String
+  borrowedAt DateTime  @default(now())
+  returnedAt DateTime?
+
+  // Relations - linked via email string directly
+  book       Book      @relation(fields: [bookIsbn], references: [isbn])
+  borrower   User      @relation(fields: [userEmail], references: [email])
+
+  @@index([bookIsbn])
+  @@index([userEmail])
+  @@map("loans")
+}
