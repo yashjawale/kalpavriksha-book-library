@@ -11,11 +11,12 @@ import {
 } from '@renderer/components/ui/sidebar'
 import { Link } from '@tanstack/react-router'
 import Logo from '../assets/images/logo.svg'
+import { HomeIcon, UploadIcon } from 'lucide-react'
 
 export function AppSidebar() {
   const links = [
-    { to: '/', label: 'Home' },
-    { to: '/bulkadd', label: 'Bulk Add' }
+    { to: '/', label: 'Home', icon: HomeIcon },
+    { to: '/bulkadd', label: 'Bulk Add', icon: UploadIcon }
   ]
 
   return (
@@ -34,8 +35,11 @@ export function AppSidebar() {
             {links.map((link) => (
               <SidebarMenuItem key={link.to}>
                 <SidebarMenuButton asChild>
-                  <Link to={link.to}>
-                    {/* <link.icon /> */}
+                  <Link
+                    to={link.to}
+                    activeProps={{ className: 'bg-sidebar-accent text-sidebar-accent-foreground' }}
+                  >
+                    <link.icon />
                     <span>{link.label}</span>
                   </Link>
                 </SidebarMenuButton>

@@ -7,7 +7,7 @@ const RootLayout = () => (
   <>
     <SidebarProvider>
       <AppSidebar />
-      <main>
+      <main className="p-2 w-full">
         <SidebarTrigger />
         <Outlet />
       </main>
