@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { booksController } from './controllers/books'
+import { getBookTitleGoogleBooks, getBookTitleOpenLibrary } from './lib/bookApi'
 
 // Helper to automatically register IPC handlers for a controller
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic controller registration requires accepting any function signature
@@ -69,6 +70,15 @@ app.whenReady().then(() => {
 
   // Auto-register book controllers
   registerController('books', booksController)
+
+  // Register book API handlers
+  ipcMain.handle('bookApi:getGoogleBooks', async (_, isbn: string) => {
+    return await getBookTitleGoogleBooks(isbn)
+  })
+
+  ipcMain.handle('bookApi:getOpenLibrary', async (_, isbn: string) => {
+    return await getBookTitleOpenLibrary(isbn)
+  })
 
   createWindow()
 

@@ -1,12 +1,4 @@
-import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
-
-export function cn(...inputs: ClassValue[]): string {
-  return twMerge(clsx(inputs))
-}
-
 export async function getBookTitleGoogleBooks(isbn: string): Promise<string | null> {
-  console.log('google', isbn)
   try {
     const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`)
     const data = await response.json()
@@ -21,7 +13,6 @@ export async function getBookTitleGoogleBooks(isbn: string): Promise<string | nu
 }
 
 export async function getBookTitleOpenLibrary(isbn: string): Promise<string | null> {
-  console.log('open', isbn)
   try {
     const response = await fetch(
       `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
