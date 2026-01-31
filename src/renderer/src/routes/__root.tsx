@@ -9,8 +9,8 @@ const RootLayout = () => (
   <>
     <SidebarProvider>
       <AppSidebar />
-      <main className="p-2 w-full">
-        <SidebarTrigger />
+      <main className="p-4 w-full">
+        <SidebarTrigger className="mb-2" />
         <Outlet />
       </main>
     </SidebarProvider>

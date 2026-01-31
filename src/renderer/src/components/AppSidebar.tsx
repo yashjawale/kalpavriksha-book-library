@@ -23,8 +23,8 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader>
         <Link to="/">
-          <div className="flex items-center gap-3">
-            <img src={Logo} alt="Logo" width={54} />
+          <div className="flex items-center">
+            <img src={Logo} alt="Logo" width={54} className="p-2" />
             <h1 className="text-2xl font-bold">Library</h1>
           </div>
         </Link>
