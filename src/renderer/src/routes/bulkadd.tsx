@@ -73,7 +73,8 @@ function BulkAdd() {
           </div>
         </CardContent>
         <hr />
-        <CardFooter className="flex flex-col items-start gap-3">
+        {/* Ignore labels functionality for now */}
+        {/* <CardFooter className="flex flex-col items-start gap-3">
           <h3 className="font-medium">Auto Labels</h3>
           <div className="flex gap-8">
             <div className="flex items-center space-x-2">
@@ -89,7 +90,7 @@ function BulkAdd() {
               <Label htmlFor="airplane-mode">Airplane Mode</Label>
             </div>
           </div>
-        </CardFooter>
+        </CardFooter> */}
       </Card>
 
       <Card className="mt-4">
