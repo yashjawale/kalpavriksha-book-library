@@ -4,8 +4,8 @@ export const booksController = {
   getAll: async (
     page: number = 1,
     perPage: number = 25,
-    orderBy: string,
-    order: 'asc' | 'desc'
+    orderBy: string = 'updatedAt',
+    order: 'asc' | 'desc' = 'desc'
   ) => {
     const skip = (page - 1) * perPage
     const orderByClause = orderBy ? { [orderBy]: order } : {}
