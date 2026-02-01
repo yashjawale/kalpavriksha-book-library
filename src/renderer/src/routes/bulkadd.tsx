@@ -24,8 +24,7 @@ import {
   TableHeader,
   TableRow
 } from '@renderer/components/ui/table'
-import { ButtonGroup } from '@renderer/components/ui/button-group'
-import { Minus, Plus, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useBarcodeScanner } from '@renderer/hooks/use-barcode-scanner'
 import { useDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
@@ -302,7 +301,7 @@ function BulkAdd() {
                   <TableHead>Title</TableHead>
                   <TableHead className="w-40">ISBN</TableHead>
                   <TableHead className="w-40">Date Added</TableHead>
-                  <TableHead className="w-50">Count</TableHead>
+                  <TableHead className="w-22">Count</TableHead>
                   <TableHead className="w-25">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -317,28 +316,16 @@ function BulkAdd() {
                       {new Date(book.createdAt).toLocaleDateString('en-IN')}
                     </TableCell>
                     <TableCell>
-                      <ButtonGroup>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            handleStockChange(book.isbn, Math.max(0, book.totalStock - 1))
-                          }
-                          disabled={book.totalStock <= 0}
-                        >
-                          <Minus className="size-4" />
-                        </Button>
-                        <div className="bg-muted flex items-center justify-center px-4 text-sm font-medium min-w-15 border-y">
-                          {book.totalStock}
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleStockChange(book.isbn, book.totalStock + 1)}
-                        >
-                          <Plus className="size-4" />
-                        </Button>
-                      </ButtonGroup>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={book.totalStock}
+                        onChange={(e) => {
+                          const newValue = parseInt(e.target.value) || 0
+                          handleStockChange(book.isbn, Math.max(0, newValue))
+                        }}
+                        className=""
+                      />
                     </TableCell>
                     <TableCell>
                       <Button
