@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as BulkaddRouteImport } from './routes/bulkadd'
+import { Route as BarcodesRouteImport } from './routes/barcodes'
 import { Route as IndexRouteImport } from './routes/index'
 
 const BulkaddRoute = BulkaddRouteImport.update({
   id: '/bulkadd',
   path: '/bulkadd',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BarcodesRoute = BarcodesRouteImport.update({
+  id: '/barcodes',
+  path: '/barcodes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -25,27 +31,31 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/barcodes': typeof BarcodesRoute
   '/bulkadd': typeof BulkaddRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/barcodes': typeof BarcodesRoute
   '/bulkadd': typeof BulkaddRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/barcodes': typeof BarcodesRoute
   '/bulkadd': typeof BulkaddRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/bulkadd'
+  fullPaths: '/' | '/barcodes' | '/bulkadd'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bulkadd'
-  id: '__root__' | '/' | '/bulkadd'
+  to: '/' | '/barcodes' | '/bulkadd'
+  id: '__root__' | '/' | '/barcodes' | '/bulkadd'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BarcodesRoute: typeof BarcodesRoute
   BulkaddRoute: typeof BulkaddRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/bulkadd'
       fullPath: '/bulkadd'
       preLoaderRoute: typeof BulkaddRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/barcodes': {
+      id: '/barcodes'
+      path: '/barcodes'
+      fullPath: '/barcodes'
+      preLoaderRoute: typeof BarcodesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BarcodesRoute: BarcodesRoute,
   BulkaddRoute: BulkaddRoute,
 }
 export const routeTree = rootRouteImport

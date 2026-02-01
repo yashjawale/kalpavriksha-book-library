@@ -29,6 +29,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useBarcodeScanner } from '@renderer/hooks/use-barcode-scanner'
 import { useDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 import type { Book, CreateBookData, UpdateStockData } from '@renderer/types/book'
+import { Switch } from '@renderer/components/ui/switch'
 
 export const Route = createFileRoute('/bulkadd')({
   component: BulkAdd
@@ -39,27 +40,21 @@ function BulkAdd() {
   const [processingText, setProcessingText] = useState('Processing...')
   const [showManualDialog, setShowManualDialog] = useState(false)
   const [currentIsbn, setCurrentIsbn] = useState('')
+  const [isManualMode, setIsManualMode] = useState(false)
+  const [manualTitle, setManualTitle] = useState('')
+  const [manualCount, setManualCount] = useState(1)
   const queryClient = useQueryClient()
 
   // Fetch recent books using React Query
-  const { data: recentBooks = [] } = useQuery({
+  const { data: recentBooks = [] } = useQuery<Book[]>({
     queryKey: ['books', 'recent'],
-    queryFn: async () => {
-      const books = await window.electron.ipcRenderer.invoke(
-        'books:getAll',
-        1,
-        25,
-        'createdAt',
-        'desc'
-      )
-      return books as Book[]
-    }
+    queryFn: async () => await window.api.books.getAll(1, 25, 'createdAt', 'desc')
   })
 
   // Mutation for creating a book
   const createBookMutation = useMutation({
     mutationFn: async (data: CreateBookData) => {
-      return await window.electron.ipcRenderer.invoke('books:create', data)
+      return await window.api.books.create(data)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
@@ -69,7 +64,7 @@ function BulkAdd() {
   // Mutation for updating stock
   const updateStockMutation = useMutation({
     mutationFn: async ({ isbn, stockCount }: UpdateStockData) => {
-      return await window.electron.ipcRenderer.invoke('books:updateStock', isbn, stockCount)
+      return await window.api.books.updateStock(isbn, stockCount)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
@@ -79,7 +74,7 @@ function BulkAdd() {
   // Mutation for deleting a book
   const deleteBookMutation = useMutation({
     mutationFn: async (isbn: string) => {
-      return await window.electron.ipcRenderer.invoke('books:delete', isbn)
+      return await window.api.books.delete(isbn)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
@@ -137,8 +132,49 @@ function BulkAdd() {
   // Barcode scanner hook
   useBarcodeScanner({
     onScan: handleBarcodeScanned,
-    enabled: !isProcessing && !showManualDialog
+    enabled: !isProcessing && !showManualDialog && !isManualMode
   })
+
+  // Generate unique local ISBN for books without barcodes
+  const generateLocalIsbn = () => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const milliseconds = String(now.getMilliseconds()).padStart(3, '0')
+    return `KVB-${year}${month}${day}${milliseconds}`
+  }
+
+  const handleManualAdd = async () => {
+    if (!manualTitle.trim()) return
+
+    setIsProcessing(true)
+    setProcessingText(`Adding "${manualTitle}" to library...`)
+
+    try {
+      const localIsbn = generateLocalIsbn()
+      await createBookMutation.mutateAsync({
+        isbn: localIsbn,
+        title: manualTitle,
+        totalStock: manualCount
+      })
+      setProcessingText(`Successfully added "${manualTitle}"`)
+      setManualTitle('')
+      setManualCount(1)
+      // Reset after short delay
+      setTimeout(() => {
+        setIsProcessing(false)
+        setProcessingText('Processing...')
+      }, 2000)
+    } catch (error) {
+      console.error('Error adding book manually:', error)
+      setProcessingText('Error adding book. Please try again.')
+      setIsProcessing(false)
+      setTimeout(() => {
+        setProcessingText('Processing...')
+      }, 2000)
+    }
+  }
 
   const handleManualEntry = async (title: string, count: number) => {
     setShowManualDialog(false)
@@ -252,37 +288,63 @@ function BulkAdd() {
       </Dialog>
 
       <Card className="bg-primary/8">
-        <CardContent>
-          <div className="flex items-center gap-4">
-            {isProcessing ? (
-              <Spinner className="size-16 text-primary" />
-            ) : (
-              <img src={Bulk} alt="Bulk Add Books" width={80} />
-            )}
-            <h1 className="text-lg font-medium max-w-md">
-              {isProcessing ? processingText : 'Scan a barcode to begin adding books'}
-            </h1>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {isProcessing ? (
+                <Spinner className="size-16 text-primary" />
+              ) : (
+                <img src={Bulk} alt="Bulk Add Books" width={80} />
+              )}
+              <h1 className="text-lg font-medium max-w-md">
+                {isProcessing
+                  ? processingText
+                  : isManualMode
+                    ? 'Enter book details manually'
+                    : 'Scan a barcode to begin adding books'}
+              </h1>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="manual-mode">Manual Entry</Label>
+              <Switch
+                id="manual-mode"
+                checked={isManualMode}
+                onCheckedChange={setIsManualMode}
+                disabled={isProcessing}
+              />
+            </div>
           </div>
+
+          {isManualMode && !isProcessing && (
+            <div className="flex gap-2 pt-2">
+              <div className="flex-1">
+                <Input
+                  placeholder="Book Title"
+                  value={manualTitle}
+                  onChange={(e) => setManualTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleManualAdd()
+                    }
+                  }}
+                />
+              </div>
+              <div className="w-24">
+                <Input
+                  type="number"
+                  placeholder="Count"
+                  min={1}
+                  value={manualCount}
+                  onChange={(e) => setManualCount(parseInt(e.target.value) || 1)}
+                />
+              </div>
+              <Button onClick={handleManualAdd} disabled={!manualTitle.trim()}>
+                Add Book
+              </Button>
+            </div>
+          )}
         </CardContent>
-        <hr />
-        {/* Ignore labels functionality for now */}
-        {/* <CardFooter className="flex flex-col items-start gap-3">
-          <h3 className="font-medium">Auto Labels</h3>
-          <div className="flex gap-8">
-            <div className="flex items-center space-x-2">
-              <Switch id="airplane-mode" />
-              <Label htmlFor="airplane-mode">Airplane Mode</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch id="airplane-mode" />
-              <Label htmlFor="airplane-mode">Airplane Mode</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch id="airplane-mode" />
-              <Label htmlFor="airplane-mode">Airplane Mode</Label>
-            </div>
-          </div>
-        </CardFooter> */}
       </Card>
 
       <Card className="mt-4">

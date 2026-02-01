@@ -2,8 +2,8 @@ export interface Book {
   isbn: string
   title: string
   totalStock: number
-  createdAt: string
-  updatedAt: string
+  createdAt: Date
+  updatedAt: Date
 }
 
 export interface CreateBookData {
