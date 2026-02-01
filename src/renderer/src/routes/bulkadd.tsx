@@ -16,6 +16,25 @@ import { Field, FieldGroup } from '@renderer/components/ui/field'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@renderer/components/ui/table'
+import { ButtonGroup } from '@renderer/components/ui/button-group'
+import { Minus, Plus, Trash2 } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+
+interface Book {
+  isbn: string
+  title: string
+  totalStock: number
+  createdAt: string
+  updatedAt: string
+}
 
 export const Route = createFileRoute('/bulkadd')({
   component: BulkAdd
@@ -27,51 +46,101 @@ function BulkAdd() {
   const [showManualDialog, setShowManualDialog] = useState(false)
   const [currentIsbn, setCurrentIsbn] = useState('')
   const barcodeInputRef = useRef('')
+  const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({})
+  const queryClient = useQueryClient()
 
-  const handleBarcodeScanned = useCallback(async (isbn: string) => {
-    setIsProcessing(true)
-    setProcessingText(`Searching for book with ISBN: ${isbn}...`)
-    setCurrentIsbn(isbn)
+  // Fetch recent books using React Query
+  const { data: recentBooks = [] } = useQuery({
+    queryKey: ['books', 'recent'],
+    queryFn: async () => {
+      const books = await window.electron.ipcRenderer.invoke(
+        'books:getAll',
+        1,
+        25,
+        'createdAt',
+        'desc'
+      )
+      return books as Book[]
+    }
+  })
 
-    try {
-      // Try Google Books first
-      setProcessingText('Searching Google Books...')
-      let bookTitle = await window.electron.ipcRenderer.invoke('bookApi:getGoogleBooks', isbn)
+  // Mutation for creating a book
+  const createBookMutation = useMutation({
+    mutationFn: async (data: { isbn: string; title: string; totalStock: number }) => {
+      return await window.electron.ipcRenderer.invoke('books:create', data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
+    }
+  })
 
-      // If not found, try OpenLibrary
-      if (!bookTitle) {
-        setProcessingText('Searching OpenLibrary...')
-        bookTitle = await window.electron.ipcRenderer.invoke('bookApi:getOpenLibrary', isbn)
-      }
+  // Mutation for updating stock
+  const updateStockMutation = useMutation({
+    mutationFn: async ({ isbn, stockCount }: { isbn: string; stockCount: number }) => {
+      return await window.electron.ipcRenderer.invoke('books:updateStock', isbn, stockCount)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
+    }
+  })
 
-      if (bookTitle) {
-        // Book found, add it to database
-        setProcessingText(`Adding "${bookTitle}" to library...`)
-        await window.electron.ipcRenderer.invoke('books:create', {
-          isbn,
-          title: bookTitle,
-          totalStock: 1
-        })
-        setProcessingText(`Successfully added "${bookTitle}"`)
-        // Reset after short delay
-        setTimeout(() => {
+  // Mutation for deleting a book
+  const deleteBookMutation = useMutation({
+    mutationFn: async (isbn: string) => {
+      return await window.electron.ipcRenderer.invoke('books:delete', isbn)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
+    }
+  })
+
+  const handleBarcodeScanned = useCallback(
+    async (isbn: string) => {
+      setIsProcessing(true)
+      setProcessingText(`Searching for book with ISBN: ${isbn}...`)
+      setCurrentIsbn(isbn)
+
+      try {
+        // Try Google Books first
+        setProcessingText('Searching Google Books...')
+        let bookTitle = await window.electron.ipcRenderer.invoke('bookApi:getGoogleBooks', isbn)
+
+        // If not found, try OpenLibrary
+        if (!bookTitle) {
+          setProcessingText('Searching OpenLibrary...')
+          bookTitle = await window.electron.ipcRenderer.invoke('bookApi:getOpenLibrary', isbn)
+        }
+
+        if (bookTitle) {
+          // Book found, add it to database
+          setProcessingText(`Adding "${bookTitle}" to library...`)
+          await createBookMutation.mutateAsync({
+            isbn,
+            title: bookTitle,
+            totalStock: 1
+          })
+          setProcessingText(`Successfully added "${bookTitle}"`)
+          // Reset after short delay
+          setTimeout(() => {
+            setIsProcessing(false)
+            setProcessingText('Processing...')
+          }, 2000)
+        } else {
+          // Book not found, show manual entry dialog
           setIsProcessing(false)
+          setShowManualDialog(true)
+        }
+      } catch (error) {
+        console.error('Error processing barcode:', error)
+        setProcessingText('Error processing barcode. Please try again.')
+        setIsProcessing(false)
+        setTimeout(() => {
           setProcessingText('Processing...')
         }, 2000)
-      } else {
-        // Book not found, show manual entry dialog
-        setIsProcessing(false)
-        setShowManualDialog(true)
       }
-    } catch (error) {
-      console.error('Error processing barcode:', error)
-      setProcessingText('Error processing barcode. Please try again.')
-      setIsProcessing(false)
-      setTimeout(() => {
-        setProcessingText('Processing...')
-      }, 2000)
-    }
-  }, [])
+    },
+    [createBookMutation]
+  )
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -104,7 +173,7 @@ function BulkAdd() {
     setProcessingText(`Adding "${title}" to library...`)
 
     try {
-      await window.electron.ipcRenderer.invoke('books:create', {
+      await createBookMutation.mutateAsync({
         isbn: currentIsbn,
         title,
         totalStock: count
@@ -125,6 +194,45 @@ function BulkAdd() {
       }, 2000)
     }
   }
+
+  const handleStockChange = useCallback(
+    (isbn: string, newStock: number) => {
+      // Clear any existing timer for this book
+      if (debounceTimers.current[isbn]) {
+        clearTimeout(debounceTimers.current[isbn])
+      }
+
+      // Optimistic update
+      queryClient.setQueryData(['books', 'recent'], (old: Book[] | undefined) => {
+        if (!old) return old
+        return old.map((book) => (book.isbn === isbn ? { ...book, totalStock: newStock } : book))
+      })
+
+      // Debounce the actual API call
+      debounceTimers.current[isbn] = setTimeout(async () => {
+        try {
+          await updateStockMutation.mutateAsync({ isbn, stockCount: newStock })
+        } catch (error) {
+          console.error('Error updating stock:', error)
+          // React Query will automatically revert on error
+          queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
+        }
+      }, 500)
+    },
+    [queryClient, updateStockMutation]
+  )
+
+  const handleDelete = useCallback(
+    async (isbn: string) => {
+      try {
+        await deleteBookMutation.mutateAsync(isbn)
+      } catch (error) {
+        console.error('Error deleting book:', error)
+      }
+    },
+    [deleteBookMutation]
+  )
+
   return (
     <>
       {/* Dialog for entering name manually */}
@@ -132,6 +240,7 @@ function BulkAdd() {
         <form
           onSubmit={(e) => {
             e.preventDefault()
+            console.log('submitted')
             const formData = new FormData(e.currentTarget)
             const title = formData.get('title') as string
             const count = parseInt(formData.get('count') as string) || 1
@@ -205,9 +314,66 @@ function BulkAdd() {
 
       <Card className="mt-4">
         <CardHeader>
-          <CardTitle>Recently Activity</CardTitle>
+          <CardTitle>Recently Added</CardTitle>
         </CardHeader>
-        <CardContent></CardContent>
+        <CardContent>
+          {recentBooks.length === 0 ? (
+            <p className="text-muted-foreground text-sm text-center py-8">
+              No books added yet. Start scanning to add books.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead className="w-50">Count</TableHead>
+                  <TableHead className="w-25">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentBooks.map((book) => (
+                  <TableRow key={book.isbn}>
+                    <TableCell className="font-medium">{book.title}</TableCell>
+                    <TableCell>
+                      <ButtonGroup>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            handleStockChange(book.isbn, Math.max(0, book.totalStock - 1))
+                          }
+                          disabled={book.totalStock <= 0}
+                        >
+                          <Minus className="size-4" />
+                        </Button>
+                        <div className="bg-muted flex items-center justify-center px-4 text-sm font-medium min-w-15 border-y">
+                          {book.totalStock}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleStockChange(book.isbn, book.totalStock + 1)}
+                        >
+                          <Plus className="size-4" />
+                        </Button>
+                      </ButtonGroup>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(book.isbn)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
       </Card>
     </>
   )

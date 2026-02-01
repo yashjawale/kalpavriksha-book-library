@@ -59,6 +59,12 @@ export const booksController = {
         }
       }
     })
+  },
+
+  delete: async (isbn: string) => {
+    return await prisma.book.delete({
+      where: { isbn }
+    })
   }
 }
 
