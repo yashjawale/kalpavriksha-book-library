@@ -13,7 +13,7 @@ import {
   DialogTitle
 } from '@renderer/components/ui/dialog'
 import { Field, FieldGroup } from '@renderer/components/ui/field'
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import {
@@ -27,6 +27,8 @@ import {
 import { ButtonGroup } from '@renderer/components/ui/button-group'
 import { Minus, Plus, Trash2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useBarcodeScanner } from '@renderer/hooks/use-barcode-scanner'
+import { useDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 
 interface Book {
   isbn: string
@@ -45,8 +47,6 @@ function BulkAdd() {
   const [processingText, setProcessingText] = useState('Processing...')
   const [showManualDialog, setShowManualDialog] = useState(false)
   const [currentIsbn, setCurrentIsbn] = useState('')
-  const barcodeInputRef = useRef('')
-  const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({})
   const queryClient = useQueryClient()
 
   // Fetch recent books using React Query
@@ -142,30 +142,11 @@ function BulkAdd() {
     [createBookMutation]
   )
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if a dialog or input is focused
-      if ((e.target as HTMLElement).tagName === 'INPUT') return
-
-      // Check for Enter key to complete barcode scan
-      if (e.key === 'Enter') {
-        const isbn = barcodeInputRef.current.trim()
-        if (isbn) {
-          handleBarcodeScanned(isbn)
-          barcodeInputRef.current = ''
-        }
-        return
-      }
-
-      // Accumulate barcode characters
-      if (e.key.length === 1) {
-        barcodeInputRef.current += e.key
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleBarcodeScanned])
+  // Barcode scanner hook
+  useBarcodeScanner({
+    onScan: handleBarcodeScanned,
+    enabled: !isProcessing && !showManualDialog
+  })
 
   const handleManualEntry = async (title: string, count: number) => {
     setShowManualDialog(false)
@@ -195,13 +176,19 @@ function BulkAdd() {
     }
   }
 
+  // Debounced callback for stock updates
+  const debouncedStockUpdate = useDebouncedCallback(async (isbn: string, stockCount: number) => {
+    try {
+      await updateStockMutation.mutateAsync({ isbn, stockCount })
+    } catch (error) {
+      console.error('Error updating stock:', error)
+      // React Query will automatically revert on error
+      queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
+    }
+  }, 500)
+
   const handleStockChange = useCallback(
     (isbn: string, newStock: number) => {
-      // Clear any existing timer for this book
-      if (debounceTimers.current[isbn]) {
-        clearTimeout(debounceTimers.current[isbn])
-      }
-
       // Optimistic update
       queryClient.setQueryData(['books', 'recent'], (old: Book[] | undefined) => {
         if (!old) return old
@@ -209,17 +196,9 @@ function BulkAdd() {
       })
 
       // Debounce the actual API call
-      debounceTimers.current[isbn] = setTimeout(async () => {
-        try {
-          await updateStockMutation.mutateAsync({ isbn, stockCount: newStock })
-        } catch (error) {
-          console.error('Error updating stock:', error)
-          // React Query will automatically revert on error
-          queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
-        }
-      }, 500)
+      debouncedStockUpdate(isbn, isbn, newStock)
     },
-    [queryClient, updateStockMutation]
+    [queryClient, debouncedStockUpdate]
   )
 
   const handleDelete = useCallback(
