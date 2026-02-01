@@ -231,8 +231,11 @@ function BulkAdd() {
             <DialogHeader>
               <DialogTitle>Enter Book Title</DialogTitle>
               <DialogDescription>
-                The book&apos;s title wasn&apos;t found through online sources. Please enter it
-                manually.
+                <p>
+                  The book&apos;s title wasn&apos;t found through online sources. Please enter it
+                  manually.
+                </p>
+                <p className="font-mono opacity-75 mt-2">{currentIsbn}</p>
               </DialogDescription>
             </DialogHeader>
             <FieldGroup>
@@ -305,6 +308,8 @@ function BulkAdd() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
+                  <TableHead className="w-40">ISBN</TableHead>
+                  <TableHead className="w-40">Date Added</TableHead>
                   <TableHead className="w-50">Count</TableHead>
                   <TableHead className="w-25">Actions</TableHead>
                 </TableRow>
@@ -313,6 +318,12 @@ function BulkAdd() {
                 {recentBooks.map((book) => (
                   <TableRow key={book.isbn}>
                     <TableCell className="font-medium">{book.title}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm font-mono opacity-90">
+                      {book.isbn}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {new Date(book.createdAt).toLocaleDateString('en-IN')}
+                    </TableCell>
                     <TableCell>
                       <ButtonGroup>
                         <Button
