@@ -29,14 +29,7 @@ import { Minus, Plus, Trash2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useBarcodeScanner } from '@renderer/hooks/use-barcode-scanner'
 import { useDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
-
-interface Book {
-  isbn: string
-  title: string
-  totalStock: number
-  createdAt: string
-  updatedAt: string
-}
+import type { Book, CreateBookData, UpdateStockData } from '@renderer/types/book'
 
 export const Route = createFileRoute('/bulkadd')({
   component: BulkAdd
@@ -66,7 +59,7 @@ function BulkAdd() {
 
   // Mutation for creating a book
   const createBookMutation = useMutation({
-    mutationFn: async (data: { isbn: string; title: string; totalStock: number }) => {
+    mutationFn: async (data: CreateBookData) => {
       return await window.electron.ipcRenderer.invoke('books:create', data)
     },
     onSuccess: () => {
@@ -76,7 +69,7 @@ function BulkAdd() {
 
   // Mutation for updating stock
   const updateStockMutation = useMutation({
-    mutationFn: async ({ isbn, stockCount }: { isbn: string; stockCount: number }) => {
+    mutationFn: async ({ isbn, stockCount }: UpdateStockData) => {
       return await window.electron.ipcRenderer.invoke('books:updateStock', isbn, stockCount)
     },
     onSuccess: () => {
@@ -216,18 +209,17 @@ function BulkAdd() {
     <>
       {/* Dialog for entering name manually */}
       <Dialog open={showManualDialog} onOpenChange={setShowManualDialog}>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            console.log('submitted')
-            const formData = new FormData(e.currentTarget)
-            const title = formData.get('title') as string
-            const count = parseInt(formData.get('count') as string) || 1
-            handleManualEntry(title, count)
-            e.currentTarget.reset()
-          }}
-        >
-          <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              const formData = new FormData(e.currentTarget)
+              const title = formData.get('title') as string
+              const count = parseInt(formData.get('count') as string) || 1
+              handleManualEntry(title, count)
+              e.currentTarget.reset()
+            }}
+          >
             <DialogHeader>
               <DialogTitle>Enter Book Title</DialogTitle>
               <DialogDescription>
@@ -238,7 +230,7 @@ function BulkAdd() {
                 <p className="font-mono opacity-75 mt-2">{currentIsbn}</p>
               </DialogDescription>
             </DialogHeader>
-            <FieldGroup>
+            <FieldGroup className="py-4">
               <Field>
                 <Label htmlFor="title">Title</Label>
                 <Input id="title" name="title" required />
@@ -256,8 +248,8 @@ function BulkAdd() {
               </DialogClose>
               <Button type="submit">Add book</Button>
             </DialogFooter>
-          </DialogContent>
-        </form>
+          </form>
+        </DialogContent>
       </Dialog>
 
       <Card className="bg-primary/8">
