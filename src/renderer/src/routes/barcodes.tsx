@@ -14,7 +14,7 @@ import {
 } from '@renderer/components/ui/table'
 import { Spinner } from '@renderer/components/ui/spinner'
 import { Input } from '@renderer/components/ui/input'
-import { Trash2, Download } from 'lucide-react'
+import { Trash2, Download, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 import type { Book, UpdateStockData } from '@renderer/types/book'
 import { pdf } from '@react-pdf/renderer'
@@ -28,6 +28,8 @@ export const Route = createFileRoute('/barcodes')({
 export default function BarcodesPage() {
   const [selectedBooks, setSelectedBooks] = useState<Set<string>>(new Set())
   const [isGenerating, setIsGenerating] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 25
   const queryClient = useQueryClient()
 
   const { data: allBooks = [], isLoading } = useQuery<Book[]>({
@@ -37,6 +39,10 @@ export default function BarcodesPage() {
 
   // Filter to only show books with KVB- prefix
   const books = allBooks.filter((book) => book.isbn.startsWith('KVB-'))
+
+  // Paginate books
+  const totalPages = Math.ceil(books.length / itemsPerPage)
+  const paginatedBooks = books.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   // Mutation for updating stock
   const updateStockMutation = useMutation({
@@ -109,10 +115,16 @@ export default function BarcodesPage() {
   }
 
   const toggleAll = (): void => {
-    if (selectedBooks.size === books.length && books.length > 0) {
-      setSelectedBooks(new Set())
+    if (selectedBooks.size === paginatedBooks.length && paginatedBooks.length > 0) {
+      // Deselect all on current page
+      const newSelected = new Set(selectedBooks)
+      paginatedBooks.forEach((book) => newSelected.delete(book.isbn))
+      setSelectedBooks(newSelected)
     } else {
-      setSelectedBooks(new Set(books.map((b) => b.isbn)))
+      // Select all on current page
+      const newSelected = new Set(selectedBooks)
+      paginatedBooks.forEach((book) => newSelected.add(book.isbn))
+      setSelectedBooks(newSelected)
     }
   }
 
@@ -219,7 +231,10 @@ export default function BarcodesPage() {
               <TableRow>
                 <TableHead className="w-12">
                   <Checkbox
-                    checked={selectedBooks.size === books.length && books.length > 0}
+                    checked={
+                      paginatedBooks.length > 0 &&
+                      paginatedBooks.every((book) => selectedBooks.has(book.isbn))
+                    }
                     onCheckedChange={toggleAll}
                   />
                 </TableHead>
@@ -230,14 +245,14 @@ export default function BarcodesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {books.length === 0 ? (
+              {paginatedBooks.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground">
                     No custom books found. Add books manually to see them here.
                   </TableCell>
                 </TableRow>
               ) : (
-                books.map((book) => (
+                paginatedBooks.map((book) => (
                   <TableRow key={book.isbn}>
                     <TableCell>
                       <Checkbox
@@ -275,6 +290,39 @@ export default function BarcodesPage() {
               )}
             </TableBody>
           </Table>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-muted-foreground">
+                Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
+                {Math.min(currentPage * itemsPerPage, books.length)} of {books.length} books
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="size-4" />
+                  Previous
+                </Button>
+                <div className="text-sm">
+                  Page {currentPage} of {totalPages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="size-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
