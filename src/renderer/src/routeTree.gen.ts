@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ManagedataRouteImport } from './routes/managedata'
 import { Route as BulkaddRouteImport } from './routes/bulkadd'
 import { Route as BooksRouteImport } from './routes/books'
 import { Route as BarcodesRouteImport } from './routes/barcodes'
 import { Route as IndexRouteImport } from './routes/index'
 
+const ManagedataRoute = ManagedataRouteImport.update({
+  id: '/managedata',
+  path: '/managedata',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BulkaddRoute = BulkaddRouteImport.update({
   id: '/bulkadd',
   path: '/bulkadd',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/barcodes': typeof BarcodesRoute
   '/books': typeof BooksRoute
   '/bulkadd': typeof BulkaddRoute
+  '/managedata': typeof ManagedataRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/barcodes': typeof BarcodesRoute
   '/books': typeof BooksRoute
   '/bulkadd': typeof BulkaddRoute
+  '/managedata': typeof ManagedataRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/barcodes': typeof BarcodesRoute
   '/books': typeof BooksRoute
   '/bulkadd': typeof BulkaddRoute
+  '/managedata': typeof ManagedataRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/barcodes' | '/books' | '/bulkadd'
+  fullPaths: '/' | '/barcodes' | '/books' | '/bulkadd' | '/managedata'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/barcodes' | '/books' | '/bulkadd'
-  id: '__root__' | '/' | '/barcodes' | '/books' | '/bulkadd'
+  to: '/' | '/barcodes' | '/books' | '/bulkadd' | '/managedata'
+  id: '__root__' | '/' | '/barcodes' | '/books' | '/bulkadd' | '/managedata'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,10 +76,18 @@ export interface RootRouteChildren {
   BarcodesRoute: typeof BarcodesRoute
   BooksRoute: typeof BooksRoute
   BulkaddRoute: typeof BulkaddRoute
+  ManagedataRoute: typeof ManagedataRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/managedata': {
+      id: '/managedata'
+      path: '/managedata'
+      fullPath: '/managedata'
+      preLoaderRoute: typeof ManagedataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bulkadd': {
       id: '/bulkadd'
       path: '/bulkadd'
@@ -107,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   BarcodesRoute: BarcodesRoute,
   BooksRoute: BooksRoute,
   BulkaddRoute: BulkaddRoute,
+  ManagedataRoute: ManagedataRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

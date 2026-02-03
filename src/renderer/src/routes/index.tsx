@@ -20,7 +20,7 @@ function Index() {
   })
 
   return (
-    <div className="p-4">
+    <>
       <h1 className="text-2xl font-bold mb-4">Book Library</h1>
 
       {isLoading && <div>Loading books...</div>}
@@ -41,6 +41,6 @@ function Index() {
         </div>
       )}
       <Button>Hello</Button>
-    </div>
+    </>
   )
 }

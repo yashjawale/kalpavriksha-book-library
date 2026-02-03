@@ -11,14 +11,15 @@ import {
 } from '@renderer/components/ui/sidebar'
 import { Link } from '@tanstack/react-router'
 import Logo from '../assets/images/logo.svg'
-import { HomeIcon, UploadIcon, PrinterIcon, BookOpen } from 'lucide-react'
+import { HomeIcon, UploadIcon, PrinterIcon, BookOpen, Database } from 'lucide-react'
 
 export function AppSidebar() {
   const links = [
     { to: '/', label: 'Home', icon: HomeIcon },
     { to: '/bulkadd', label: 'Bulk Add', icon: UploadIcon },
     { to: '/books', label: 'Manage Books', icon: BookOpen },
-    { to: '/barcodes', label: 'Print Barcodes', icon: PrinterIcon }
+    { to: '/barcodes', label: 'Print Barcodes', icon: PrinterIcon },
+    { to: '/managedata', label: 'Manage Data', icon: Database }
   ]
 
   return (
