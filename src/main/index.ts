@@ -1,9 +1,11 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { booksController } from './controllers/books'
 import { getBookTitleGoogleBooks, getBookTitleOpenLibrary } from './lib/bookApi'
+import { dbFilePath } from './lib/prisma'
+import * as fs from 'fs'
 
 // Helper to automatically register IPC handlers for a controller
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic controller registration requires accepting any function signature
@@ -78,6 +80,55 @@ app.whenReady().then(() => {
 
   ipcMain.handle('bookApi:getOpenLibrary', async (_, isbn: string) => {
     return await getBookTitleOpenLibrary(isbn)
+  })
+
+  // Database backup/restore handlers
+  ipcMain.handle('database:export', async () => {
+    try {
+      const { filePath } = await dialog.showSaveDialog({
+        title: 'Export Database Backup',
+        defaultPath: `library-backup-${new Date().toISOString().split('T')[0]}.db`,
+        filters: [{ name: 'Database', extensions: ['db'] }]
+      })
+
+      if (!filePath) {
+        return { success: false, error: 'No file selected' }
+      }
+
+      // Check if database exists
+      if (!fs.existsSync(dbFilePath)) {
+        return { success: false, error: `Database not found at: ${dbFilePath}` }
+      }
+
+      fs.copyFileSync(dbFilePath, filePath)
+
+      return { success: true }
+    } catch (error) {
+      console.error('Error exporting database:', error)
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('database:import', async (_, data: Uint8Array) => {
+    try {
+      const backupPath = `${dbFilePath}.backup`
+
+      // Create backup of current database
+      if (fs.existsSync(dbFilePath)) {
+        fs.copyFileSync(dbFilePath, backupPath)
+      }
+
+      // Convert Uint8Array to Buffer for Node.js file operations
+      const buffer = Buffer.from(data)
+
+      // Write new database
+      fs.writeFileSync(dbFilePath, buffer)
+
+      return { success: true }
+    } catch (error) {
+      console.error('Error importing database:', error)
+      return { success: false, error: (error as Error).message }
+    }
   })
 
   createWindow()
