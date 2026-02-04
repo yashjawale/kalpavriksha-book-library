@@ -78,7 +78,7 @@ export default function BarcodesPage() {
         return old.map((book) => (book.isbn === isbn ? { ...book, totalStock: newStock } : book))
       })
 
-      // Debounce the actual API call
+      // Debounce the actual API call - key is isbn, then the actual params
       debouncedStockUpdate(isbn, isbn, newStock)
     },
     [queryClient, debouncedStockUpdate]

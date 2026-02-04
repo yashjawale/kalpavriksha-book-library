@@ -3,6 +3,8 @@ import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/render
 interface Book {
   isbn: string
   title: string
+  author?: string | null
+  publisher?: string | null
   totalStock: number
   createdAt: Date
 }
@@ -85,16 +87,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9f9f9'
   },
   colNo: {
-    width: '8%'
+    width: '6%'
   },
   colTitle: {
-    width: '52%'
+    width: '30%'
+  },
+  colAuthor: {
+    width: '20%'
+  },
+  colPublisher: {
+    width: '20%'
   },
   colISBN: {
-    width: '25%'
+    width: '16%'
   },
   colStock: {
-    width: '15%',
+    width: '8%',
     textAlign: 'right'
   },
   footer: {
@@ -142,6 +150,8 @@ export function BookCatalogPDF({ books, logoDataUrl }: BookCatalogPDFProps) {
           <View style={styles.tableHeader}>
             <Text style={styles.colNo}>#</Text>
             <Text style={styles.colTitle}>Title</Text>
+            <Text style={styles.colAuthor}>Author</Text>
+            <Text style={styles.colPublisher}>Publisher</Text>
             <Text style={styles.colISBN}>ISBN</Text>
             <Text style={styles.colStock}>Stock</Text>
           </View>
@@ -153,6 +163,8 @@ export function BookCatalogPDF({ books, logoDataUrl }: BookCatalogPDFProps) {
             >
               <Text style={styles.colNo}>{index + 1}</Text>
               <Text style={styles.colTitle}>{book.title}</Text>
+              <Text style={styles.colAuthor}>{book.author || '-'}</Text>
+              <Text style={styles.colPublisher}>{book.publisher || '-'}</Text>
               <Text style={styles.colISBN}>{book.isbn}</Text>
               <Text style={styles.colStock}>{book.totalStock}</Text>
             </View>

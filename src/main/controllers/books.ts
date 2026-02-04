@@ -22,11 +22,19 @@ export const booksController = {
     })
   },
 
-  create: async (data: { isbn: string; title: string; totalStock?: number }) => {
+  create: async (data: {
+    isbn: string
+    title: string
+    author?: string
+    publisher?: string
+    totalStock?: number
+  }) => {
     return await prisma.book.create({
       data: {
         isbn: data.isbn,
         title: data.title,
+        author: data.author,
+        publisher: data.publisher,
         totalStock: data.totalStock ?? 1
       }
     })

@@ -3,7 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { booksController } from './controllers/books'
-import { getBookTitleGoogleBooks, getBookTitleOpenLibrary } from './lib/bookApi'
+import { getBookInfoGoogleBooks, getBookInfoOpenLibrary } from './lib/bookApi'
 import { dbFilePath } from './lib/prisma'
 import * as fs from 'fs'
 
@@ -74,12 +74,12 @@ app.whenReady().then(() => {
   registerController('books', booksController)
 
   // Register book API handlers
-  ipcMain.handle('bookApi:getGoogleBooks', async (_, isbn: string) => {
-    return await getBookTitleGoogleBooks(isbn)
+  ipcMain.handle('bookApi:getGoogleBooksInfo', async (_, isbn: string) => {
+    return await getBookInfoGoogleBooks(isbn)
   })
 
-  ipcMain.handle('bookApi:getOpenLibrary', async (_, isbn: string) => {
-    return await getBookTitleOpenLibrary(isbn)
+  ipcMain.handle('bookApi:getOpenLibraryInfo', async (_, isbn: string) => {
+    return await getBookInfoOpenLibrary(isbn)
   })
 
   // Database backup/restore handlers

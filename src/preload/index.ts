@@ -4,11 +4,21 @@ import { electronAPI } from '@electron-toolkit/preload'
 // Custom APIs for renderer - manually define methods for context bridge compatibility
 const api = {
   books: {
-    getAll: () => ipcRenderer.invoke('books:getAll'),
+    getAll: (page?: number, perPage?: number, orderBy?: string, order?: 'asc' | 'desc') =>
+      ipcRenderer.invoke('books:getAll', page, perPage, orderBy, order),
     getById: (isbn: string) => ipcRenderer.invoke('books:getById', isbn),
-    create: (data: { isbn: string; title: string }) => ipcRenderer.invoke('books:create', data),
+    create: (data: {
+      isbn: string
+      title: string
+      author?: string
+      publisher?: string
+      totalStock?: number
+    }) => ipcRenderer.invoke('books:create', data),
     updateStock: (isbn: string, stockCount: number) =>
-      ipcRenderer.invoke('books:updateStock', isbn, stockCount)
+      ipcRenderer.invoke('books:updateStock', isbn, stockCount),
+    incrementStockByOne: (isbn: string) => ipcRenderer.invoke('books:incrementStockByOne', isbn),
+    decrementStockByOne: (isbn: string) => ipcRenderer.invoke('books:decrementStockByOne', isbn),
+    delete: (isbn: string) => ipcRenderer.invoke('books:delete', isbn)
   }
 }
 

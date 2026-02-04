@@ -50,13 +50,20 @@ export default function BooksPage() {
     const filtered = allBooks.filter(
       (book) =>
         book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        book.isbn.toLowerCase().includes(searchQuery.toLowerCase())
+        book.isbn.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        book.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        book.publisher?.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
     // Sort
     filtered.sort((a, b) => {
       let aValue = a[sortField]
       let bValue = b[sortField]
+
+      // Handle null/undefined values
+      if (aValue == null && bValue == null) return 0
+      if (aValue == null) return sortOrder === 'asc' ? -1 : 1
+      if (bValue == null) return sortOrder === 'asc' ? 1 : -1
 
       // Handle Date objects
       if (aValue instanceof Date && bValue instanceof Date) {
@@ -158,6 +165,8 @@ export default function BooksPage() {
                     <ArrowUpDown className="ml-2 size-4" />
                   </Button>
                 </TableHead>
+                <TableHead className="w-40">Author</TableHead>
+                <TableHead className="w-40">Publisher</TableHead>
                 <TableHead className="w-40">
                   <Button
                     variant="ghost"
@@ -197,7 +206,7 @@ export default function BooksPage() {
             <TableBody>
               {paginatedBooks.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
                     {searchQuery
                       ? 'No books found matching your search.'
                       : 'No books found. Add some books first.'}
@@ -207,6 +216,12 @@ export default function BooksPage() {
                 paginatedBooks.map((book) => (
                   <TableRow key={book.isbn}>
                     <TableCell className="font-medium">{book.title}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {book.author || '-'}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {book.publisher || '-'}
+                    </TableCell>
                     <TableCell className="font-mono text-sm">{book.isbn}</TableCell>
                     <TableCell>{book.totalStock}</TableCell>
                     <TableCell className="text-muted-foreground text-sm">

@@ -13,7 +13,7 @@ import {
   DialogTitle
 } from '@renderer/components/ui/dialog'
 import { Field, FieldGroup } from '@renderer/components/ui/field'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useReducer } from 'react'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import {
@@ -30,20 +30,89 @@ import { useBarcodeScanner } from '@renderer/hooks/use-barcode-scanner'
 import { useDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 import type { Book, CreateBookData, UpdateStockData } from '@renderer/types/book'
 import { Switch } from '@renderer/components/ui/switch'
+import { useForm } from 'react-hook-form'
 
 export const Route = createFileRoute('/bulkadd')({
   component: BulkAdd
 })
 
+type BookFormData = {
+  title: string
+  author: string
+  publisher: string
+  count: number
+}
+
+type ProcessingState = {
+  isProcessing: boolean
+  processingText: string
+  showManualDialog: boolean
+  currentIsbn: string
+}
+
+type ProcessingAction =
+  | { type: 'START_PROCESSING'; isbn: string; text: string }
+  | { type: 'UPDATE_TEXT'; text: string }
+  | { type: 'SHOW_MANUAL_DIALOG' }
+  | { type: 'HIDE_MANUAL_DIALOG' }
+  | { type: 'RESET' }
+
+const processingReducer = (state: ProcessingState, action: ProcessingAction): ProcessingState => {
+  switch (action.type) {
+    case 'START_PROCESSING':
+      return {
+        ...state,
+        isProcessing: true,
+        processingText: action.text,
+        currentIsbn: action.isbn
+      }
+    case 'UPDATE_TEXT':
+      return { ...state, processingText: action.text }
+    case 'SHOW_MANUAL_DIALOG':
+      return { ...state, isProcessing: false, showManualDialog: true }
+    case 'HIDE_MANUAL_DIALOG':
+      return { ...state, showManualDialog: false }
+    case 'RESET':
+      return {
+        isProcessing: false,
+        processingText: 'Processing...',
+        showManualDialog: false,
+        currentIsbn: ''
+      }
+    default:
+      return state
+  }
+}
+
 function BulkAdd() {
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [processingText, setProcessingText] = useState('Processing...')
-  const [showManualDialog, setShowManualDialog] = useState(false)
-  const [currentIsbn, setCurrentIsbn] = useState('')
+  const [processingState, dispatchProcessing] = useReducer(processingReducer, {
+    isProcessing: false,
+    processingText: 'Processing...',
+    showManualDialog: false,
+    currentIsbn: ''
+  })
   const [isManualMode, setIsManualMode] = useState(false)
-  const [manualTitle, setManualTitle] = useState('')
-  const [manualCount, setManualCount] = useState(1)
   const queryClient = useQueryClient()
+
+  // React Hook Form for manual entry dialog
+  const dialogForm = useForm<BookFormData>({
+    defaultValues: {
+      title: '',
+      author: '',
+      publisher: '',
+      count: 1
+    }
+  })
+
+  // React Hook Form for manual mode inline form
+  const manualModeForm = useForm<BookFormData>({
+    defaultValues: {
+      title: '',
+      author: '',
+      publisher: '',
+      count: 1
+    }
+  })
 
   // Fetch recent books using React Query
   const { data: recentBooks = [] } = useQuery<Book[]>({
@@ -83,46 +152,56 @@ function BulkAdd() {
 
   const handleBarcodeScanned = useCallback(
     async (isbn: string) => {
-      setIsProcessing(true)
-      setProcessingText(`Searching for book with ISBN: ${isbn}...`)
-      setCurrentIsbn(isbn)
+      dispatchProcessing({
+        type: 'START_PROCESSING',
+        isbn,
+        text: `Searching for book with ISBN: ${isbn}...`
+      })
 
       try {
         // Try Google Books first
-        setProcessingText('Searching Google Books...')
-        let bookTitle = await window.electron.ipcRenderer.invoke('bookApi:getGoogleBooks', isbn)
+        dispatchProcessing({ type: 'UPDATE_TEXT', text: 'Searching Google Books...' })
+        let bookInfo = await window.electron.ipcRenderer.invoke('bookApi:getGoogleBooksInfo', isbn)
 
         // If not found, try OpenLibrary
-        if (!bookTitle) {
-          setProcessingText('Searching OpenLibrary...')
-          bookTitle = await window.electron.ipcRenderer.invoke('bookApi:getOpenLibrary', isbn)
+        if (!bookInfo) {
+          dispatchProcessing({ type: 'UPDATE_TEXT', text: 'Searching OpenLibrary...' })
+          bookInfo = await window.electron.ipcRenderer.invoke('bookApi:getOpenLibraryInfo', isbn)
         }
 
-        if (bookTitle) {
+        if (bookInfo && bookInfo.title) {
           // Book found, add it to database
-          setProcessingText(`Adding "${bookTitle}" to library...`)
+          dispatchProcessing({
+            type: 'UPDATE_TEXT',
+            text: `Adding "${bookInfo.title}" to library...`
+          })
           await createBookMutation.mutateAsync({
             isbn,
-            title: bookTitle,
+            title: bookInfo.title,
+            author: bookInfo.author,
+            publisher: bookInfo.publisher,
             totalStock: 1
           })
-          setProcessingText(`Successfully added "${bookTitle}"`)
+          dispatchProcessing({
+            type: 'UPDATE_TEXT',
+            text: `Successfully added "${bookInfo.title}"`
+          })
           // Reset after short delay
           setTimeout(() => {
-            setIsProcessing(false)
-            setProcessingText('Processing...')
+            dispatchProcessing({ type: 'RESET' })
           }, 2000)
         } else {
           // Book not found, show manual entry dialog
-          setIsProcessing(false)
-          setShowManualDialog(true)
+          dispatchProcessing({ type: 'SHOW_MANUAL_DIALOG' })
         }
       } catch (error) {
         console.error('Error processing barcode:', error)
-        setProcessingText('Error processing barcode. Please try again.')
-        setIsProcessing(false)
+        dispatchProcessing({
+          type: 'UPDATE_TEXT',
+          text: 'Error processing barcode. Please try again.'
+        })
         setTimeout(() => {
-          setProcessingText('Processing...')
+          dispatchProcessing({ type: 'RESET' })
         }, 2000)
       }
     },
@@ -132,7 +211,7 @@ function BulkAdd() {
   // Barcode scanner hook
   useBarcodeScanner({
     onScan: handleBarcodeScanned,
-    enabled: !isProcessing && !showManualDialog && !isManualMode
+    enabled: !processingState.isProcessing && !processingState.showManualDialog && !isManualMode
   })
 
   // Generate unique local ISBN for books without barcodes
@@ -145,64 +224,76 @@ function BulkAdd() {
     return `KVB-${year}${month}${day}${milliseconds}`
   }
 
-  const handleManualAdd = async () => {
-    if (!manualTitle.trim()) return
-
-    setIsProcessing(true)
-    setProcessingText(`Adding "${manualTitle}" to library...`)
+  const handleManualAdd = manualModeForm.handleSubmit(async (data) => {
+    dispatchProcessing({
+      type: 'START_PROCESSING',
+      isbn: '',
+      text: `Adding "${data.title}" to library...`
+    })
 
     try {
       const localIsbn = generateLocalIsbn()
       await createBookMutation.mutateAsync({
         isbn: localIsbn,
-        title: manualTitle,
-        totalStock: manualCount
+        title: data.title,
+        author: data.author || undefined,
+        publisher: data.publisher || undefined,
+        totalStock: data.count
       })
-      setProcessingText(`Successfully added "${manualTitle}"`)
-      setManualTitle('')
-      setManualCount(1)
+      dispatchProcessing({
+        type: 'UPDATE_TEXT',
+        text: `Successfully added "${data.title}"`
+      })
+      manualModeForm.reset()
       // Reset after short delay
       setTimeout(() => {
-        setIsProcessing(false)
-        setProcessingText('Processing...')
+        dispatchProcessing({ type: 'RESET' })
       }, 2000)
     } catch (error) {
       console.error('Error adding book manually:', error)
-      setProcessingText('Error adding book. Please try again.')
-      setIsProcessing(false)
+      dispatchProcessing({
+        type: 'UPDATE_TEXT',
+        text: 'Error adding book. Please try again.'
+      })
       setTimeout(() => {
-        setProcessingText('Processing...')
+        dispatchProcessing({ type: 'RESET' })
       }, 2000)
     }
-  }
+  })
 
-  const handleManualEntry = async (title: string, count: number) => {
-    setShowManualDialog(false)
-    setIsProcessing(true)
-    setProcessingText(`Adding "${title}" to library...`)
+  const handleManualEntry = dialogForm.handleSubmit(async (data) => {
+    dispatchProcessing({ type: 'HIDE_MANUAL_DIALOG' })
+    dispatchProcessing({
+      type: 'START_PROCESSING',
+      isbn: processingState.currentIsbn,
+      text: `Adding "${data.title}" to library...`
+    })
 
     try {
       await createBookMutation.mutateAsync({
-        isbn: currentIsbn,
-        title,
-        totalStock: count
+        isbn: processingState.currentIsbn,
+        title: data.title,
+        author: data.author || undefined,
+        publisher: data.publisher || undefined,
+        totalStock: data.count
       })
-      setProcessingText(`Successfully added "${title}"`)
+      dispatchProcessing({ type: 'UPDATE_TEXT', text: `Successfully added "${data.title}"` })
+      dialogForm.reset()
       // Reset after short delay
       setTimeout(() => {
-        setIsProcessing(false)
-        setProcessingText('Processing...')
-        setCurrentIsbn('')
+        dispatchProcessing({ type: 'RESET' })
       }, 2000)
     } catch (error) {
       console.error('Error adding book manually:', error)
-      setProcessingText('Error adding book. Please try again.')
-      setIsProcessing(false)
+      dispatchProcessing({
+        type: 'UPDATE_TEXT',
+        text: 'Error adding book. Please try again.'
+      })
       setTimeout(() => {
-        setProcessingText('Processing...')
+        dispatchProcessing({ type: 'RESET' })
       }, 2000)
     }
-  }
+  })
 
   // Debounced callback for stock updates
   const debouncedStockUpdate = useDebouncedCallback(async (isbn: string, stockCount: number) => {
@@ -223,7 +314,7 @@ function BulkAdd() {
         return old.map((book) => (book.isbn === isbn ? { ...book, totalStock: newStock } : book))
       })
 
-      // Debounce the actual API call
+      // Debounce the actual API call - key is isbn, then the actual params
       debouncedStockUpdate(isbn, isbn, newStock)
     },
     [queryClient, debouncedStockUpdate]
@@ -243,36 +334,51 @@ function BulkAdd() {
   return (
     <>
       {/* Dialog for entering name manually */}
-      <Dialog open={showManualDialog} onOpenChange={setShowManualDialog}>
+      <Dialog
+        open={processingState.showManualDialog}
+        onOpenChange={(open) => {
+          dispatchProcessing({ type: open ? 'SHOW_MANUAL_DIALOG' : 'HIDE_MANUAL_DIALOG' })
+          if (!open) dialogForm.reset()
+        }}
+      >
         <DialogContent className="sm:max-w-sm">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              const formData = new FormData(e.currentTarget)
-              const title = formData.get('title') as string
-              const count = parseInt(formData.get('count') as string) || 1
-              handleManualEntry(title, count)
-              e.currentTarget.reset()
-            }}
-          >
+          <form onSubmit={handleManualEntry}>
             <DialogHeader>
-              <DialogTitle>Enter Book Title</DialogTitle>
+              <DialogTitle>Enter Book Details</DialogTitle>
               <DialogDescription>
                 <p>
-                  The book&apos;s title wasn&apos;t found through online sources. Please enter it
-                  manually.
+                  The book&apos;s information wasn&apos;t found through online sources. Please enter
+                  it manually.
                 </p>
-                <p className="font-mono opacity-75 mt-2">{currentIsbn}</p>
+                <p className="font-mono opacity-75 mt-2">{processingState.currentIsbn}</p>
               </DialogDescription>
             </DialogHeader>
             <FieldGroup className="py-4">
               <Field>
-                <Label htmlFor="title">Title</Label>
-                <Input id="title" name="title" required />
+                <Label htmlFor="dialog-title">Title</Label>
+                <Input id="dialog-title" {...dialogForm.register('title', { required: true })} />
+                {dialogForm.formState.errors.title && (
+                  <p className="text-sm text-destructive">Title is required</p>
+                )}
               </Field>
               <Field>
-                <Label htmlFor="count">Count</Label>
-                <Input id="count" name="count" type="number" defaultValue={1} min={1} />
+                <Label htmlFor="dialog-author">Author</Label>
+                <Input id="dialog-author" {...dialogForm.register('author')} />
+              </Field>
+              <Field>
+                <Label htmlFor="dialog-publisher">Publisher</Label>
+                <Input id="dialog-publisher" {...dialogForm.register('publisher')} />
+              </Field>
+              <Field>
+                <Label htmlFor="dialog-count">Count</Label>
+                <Input
+                  id="dialog-count"
+                  type="number"
+                  {...dialogForm.register('count', {
+                    valueAsNumber: true,
+                    min: 1
+                  })}
+                />
               </Field>
             </FieldGroup>
             <DialogFooter>
@@ -291,14 +397,14 @@ function BulkAdd() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {isProcessing ? (
+              {processingState.isProcessing ? (
                 <Spinner className="size-16 text-primary" />
               ) : (
                 <img src={Bulk} alt="Bulk Add Books" width={80} />
               )}
               <h1 className="text-lg font-medium max-w-md">
-                {isProcessing
-                  ? processingText
+                {processingState.isProcessing
+                  ? processingState.processingText
                   : isManualMode
                     ? 'Enter book details manually'
                     : 'Scan a barcode to begin adding books'}
@@ -310,39 +416,44 @@ function BulkAdd() {
                 id="manual-mode"
                 checked={isManualMode}
                 onCheckedChange={setIsManualMode}
-                disabled={isProcessing}
+                disabled={processingState.isProcessing}
               />
             </div>
           </div>
 
-          {isManualMode && !isProcessing && (
-            <div className="flex gap-2 pt-2">
-              <div className="flex-1">
+          {isManualMode && !processingState.isProcessing && (
+            <form onSubmit={handleManualAdd} className="flex gap-2 pt-2">
+              <div className="flex-1 space-y-2">
                 <Input
-                  placeholder="Book Title"
-                  value={manualTitle}
-                  onChange={(e) => setManualTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      handleManualAdd()
-                    }
-                  }}
+                  placeholder="Book Title *"
+                  {...manualModeForm.register('title', { required: true })}
                 />
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Author"
+                    {...manualModeForm.register('author')}
+                    className="flex-1"
+                  />
+                  <Input
+                    placeholder="Publisher"
+                    {...manualModeForm.register('publisher')}
+                    className="flex-1"
+                  />
+                </div>
               </div>
               <div className="w-24">
                 <Input
                   type="number"
                   placeholder="Count"
                   min={1}
-                  value={manualCount}
-                  onChange={(e) => setManualCount(parseInt(e.target.value) || 1)}
+                  {...manualModeForm.register('count', {
+                    valueAsNumber: true,
+                    min: 1
+                  })}
                 />
               </div>
-              <Button onClick={handleManualAdd} disabled={!manualTitle.trim()}>
-                Add Book
-              </Button>
-            </div>
+              <Button type="submit">Add Book</Button>
+            </form>
           )}
         </CardContent>
       </Card>
@@ -361,6 +472,8 @@ function BulkAdd() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
+                  <TableHead className="w-32">Author</TableHead>
+                  <TableHead className="w-32">Publisher</TableHead>
                   <TableHead className="w-40">ISBN</TableHead>
                   <TableHead className="w-40">Date Added</TableHead>
                   <TableHead className="w-22">Count</TableHead>
@@ -371,6 +484,12 @@ function BulkAdd() {
                 {recentBooks.map((book) => (
                   <TableRow key={book.isbn}>
                     <TableCell className="font-medium">{book.title}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {book.author || '-'}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {book.publisher || '-'}
+                    </TableCell>
                     <TableCell className="text-muted-foreground text-sm font-mono opacity-90">
                       {book.isbn}
                     </TableCell>
