@@ -119,7 +119,7 @@ function BulkAdd() {
   // Fetch recent books using React Query
   const { data: recentBooks = [] } = useQuery<Book[]>({
     queryKey: ['books', 'recent'],
-    queryFn: async () => await window.api.books.getAll(1, 25, 'createdAt', 'desc')
+    queryFn: async () => await window.api.books.getAll(1, 25, 'updatedAt', 'desc')
   })
 
   // Mutation for creating a book
@@ -400,16 +400,6 @@ function BulkAdd() {
 
       <Card className="bg-primary/8">
         <CardContent className="space-y-4">
-          {/* Tag preselection - always visible */}
-          <div className="border-b pb-4">
-            <Label className="text-sm font-medium mb-2 block">Preselect Tags for Books</Label>
-            <TagSelector
-              selectedTagIds={preselectedTagIds}
-              onTagsChange={setPreselectedTagIds}
-              showAsPreselection={true}
-            />
-          </div>
-
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {processingState.isProcessing ? (
@@ -434,6 +424,17 @@ function BulkAdd() {
                 disabled={processingState.isProcessing}
               />
             </div>
+            {/* Tag preselection - always visible */}
+          </div>
+          <div>
+            <Label className="text-sm font-medium my-2 pt-3 block border-b pb-2">
+              Preselect Tags
+            </Label>
+            <TagSelector
+              selectedTagIds={preselectedTagIds}
+              onTagsChange={setPreselectedTagIds}
+              showAsPreselection={true}
+            />
           </div>
 
           {isManualMode && !processingState.isProcessing && (
@@ -441,18 +442,19 @@ function BulkAdd() {
               <div className="flex-1 space-y-2">
                 <Input
                   placeholder="Book Title *"
+                  className="bg-background"
                   {...manualModeForm.register('title', { required: true })}
                 />
                 <div className="flex gap-2">
                   <Input
                     placeholder="Author"
+                    className="bg-background flex-1"
                     {...manualModeForm.register('author')}
-                    className="flex-1"
                   />
                   <Input
                     placeholder="Publisher"
+                    className="bg-background flex-1"
                     {...manualModeForm.register('publisher')}
-                    className="flex-1"
                   />
                 </div>
               </div>
@@ -460,6 +462,7 @@ function BulkAdd() {
                 <Input
                   type="number"
                   placeholder="Count"
+                  className="bg-background"
                   min={1}
                   {...manualModeForm.register('count', {
                     valueAsNumber: true,
@@ -505,9 +508,7 @@ function BulkAdd() {
                     <TableCell className="text-muted-foreground text-sm">
                       {book.publisher || '-'}
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-sm font-mono opacity-90">
-                      {book.isbn}
-                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{book.isbn}</TableCell>
                     <TableCell className="text-muted-foreground text-sm">
                       {new Date(book.createdAt).toLocaleDateString('en-IN')}
                     </TableCell>
