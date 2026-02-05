@@ -15,6 +15,7 @@ import {
 import { Spinner } from '@renderer/components/ui/spinner'
 import { Trash2, Search, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react'
 import type { Book } from '@renderer/types/book'
+import { TagBadge } from '@renderer/components/TagBadge'
 
 export const Route = createFileRoute('/books')({
   component: BooksPage
@@ -47,13 +48,21 @@ export default function BooksPage() {
 
   // Filter and sort books
   const filteredAndSortedBooks = useMemo(() => {
-    const filtered = allBooks.filter(
-      (book) =>
-        book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        book.isbn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        book.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        book.publisher?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const filtered = allBooks.filter((book) => {
+      const searchLower = searchQuery.toLowerCase()
+      const matchesText =
+        book.title.toLowerCase().includes(searchLower) ||
+        book.isbn.toLowerCase().includes(searchLower) ||
+        book.author?.toLowerCase().includes(searchLower) ||
+        book.publisher?.toLowerCase().includes(searchLower)
+
+      // Also search in tags
+      const matchesTags = book.bookTags?.some((bt) =>
+        bt.tag.name.toLowerCase().includes(searchLower)
+      )
+
+      return matchesText || matchesTags
+    })
 
     // Sort
     filtered.sort((a, b) => {
@@ -167,6 +176,7 @@ export default function BooksPage() {
                 </TableHead>
                 <TableHead className="w-40">Author</TableHead>
                 <TableHead className="w-40">Publisher</TableHead>
+                <TableHead className="w-48">Tags</TableHead>
                 <TableHead className="w-40">
                   <Button
                     variant="ghost"
@@ -221,6 +231,15 @@ export default function BooksPage() {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {book.publisher || '-'}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1 flex-wrap">
+                        {book.bookTags && book.bookTags.length > 0 ? (
+                          book.bookTags.map((bt) => <TagBadge key={bt.tag.id} tag={bt.tag} />)
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="font-mono text-sm">{book.isbn}</TableCell>
                     <TableCell>{book.totalStock}</TableCell>

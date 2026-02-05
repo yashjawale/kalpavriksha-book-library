@@ -31,6 +31,7 @@ import { useDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 import type { Book, CreateBookData, UpdateStockData } from '@renderer/types/book'
 import { Switch } from '@renderer/components/ui/switch'
 import { useForm } from 'react-hook-form'
+import { TagSelector } from '@renderer/components/TagSelector'
 
 export const Route = createFileRoute('/bulkadd')({
   component: BulkAdd
@@ -92,6 +93,7 @@ function BulkAdd() {
     currentIsbn: ''
   })
   const [isManualMode, setIsManualMode] = useState(false)
+  const [preselectedTagIds, setPreselectedTagIds] = useState<number[]>([])
   const queryClient = useQueryClient()
 
   // React Hook Form for manual entry dialog
@@ -180,6 +182,7 @@ function BulkAdd() {
             title: bookInfo.title,
             author: bookInfo.author,
             publisher: bookInfo.publisher,
+            tagIds: preselectedTagIds,
             totalStock: 1
           })
           dispatchProcessing({
@@ -205,7 +208,7 @@ function BulkAdd() {
         }, 2000)
       }
     },
-    [createBookMutation]
+    [createBookMutation, preselectedTagIds]
   )
 
   // Barcode scanner hook
@@ -238,6 +241,7 @@ function BulkAdd() {
         title: data.title,
         author: data.author || undefined,
         publisher: data.publisher || undefined,
+        tagIds: preselectedTagIds,
         totalStock: data.count
       })
       dispatchProcessing({
@@ -275,6 +279,7 @@ function BulkAdd() {
         title: data.title,
         author: data.author || undefined,
         publisher: data.publisher || undefined,
+        tagIds: preselectedTagIds,
         totalStock: data.count
       })
       dispatchProcessing({ type: 'UPDATE_TEXT', text: `Successfully added "${data.title}"` })
@@ -395,6 +400,16 @@ function BulkAdd() {
 
       <Card className="bg-primary/8">
         <CardContent className="space-y-4">
+          {/* Tag preselection - always visible */}
+          <div className="border-b pb-4">
+            <Label className="text-sm font-medium mb-2 block">Preselect Tags for Books</Label>
+            <TagSelector
+              selectedTagIds={preselectedTagIds}
+              onTagsChange={setPreselectedTagIds}
+              showAsPreselection={true}
+            />
+          </div>
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {processingState.isProcessing ? (

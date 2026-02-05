@@ -12,13 +12,27 @@ export const booksController = {
     return await prisma.book.findMany({
       skip,
       take: perPage,
-      orderBy: orderByClause
+      orderBy: orderByClause,
+      include: {
+        bookTags: {
+          include: {
+            tag: true
+          }
+        }
+      }
     })
   },
 
   getById: async (isbn: string) => {
     return await prisma.book.findUnique({
-      where: { isbn }
+      where: { isbn },
+      include: {
+        bookTags: {
+          include: {
+            tag: true
+          }
+        }
+      }
     })
   },
 
@@ -28,6 +42,7 @@ export const booksController = {
     author?: string
     publisher?: string
     totalStock?: number
+    tagIds?: number[]
   }) => {
     return await prisma.book.create({
       data: {
@@ -35,7 +50,21 @@ export const booksController = {
         title: data.title,
         author: data.author,
         publisher: data.publisher,
-        totalStock: data.totalStock ?? 1
+        totalStock: data.totalStock ?? 1,
+        bookTags: data.tagIds
+          ? {
+              create: data.tagIds.map((tagId) => ({
+                tagId
+              }))
+            }
+          : undefined
+      },
+      include: {
+        bookTags: {
+          include: {
+            tag: true
+          }
+        }
       }
     })
   },

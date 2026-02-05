@@ -21,8 +21,35 @@ model Book {
 
   // Relations
   loans       Loan[]
+  bookTags    BookTag[]
 
   @@map("books")
+}
+
+model Tag {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+
+  // Relations
+  bookTags  BookTag[]
+
+  @@map("tags")
+}
+
+model BookTag {
+  bookIsbn  String
+  tagId     Int
+  createdAt DateTime @default(now())
+
+  // Relations
+  book      Book     @relation(fields: [bookIsbn], references: [isbn], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([bookIsbn, tagId])
+  @@index([bookIsbn])
+  @@index([tagId])
+  @@map("book_tags")
 }
 
 model User {

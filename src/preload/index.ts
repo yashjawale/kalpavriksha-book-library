@@ -13,12 +13,24 @@ const api = {
       author?: string
       publisher?: string
       totalStock?: number
+      tagIds?: number[]
     }) => ipcRenderer.invoke('books:create', data),
     updateStock: (isbn: string, stockCount: number) =>
       ipcRenderer.invoke('books:updateStock', isbn, stockCount),
     incrementStockByOne: (isbn: string) => ipcRenderer.invoke('books:incrementStockByOne', isbn),
     decrementStockByOne: (isbn: string) => ipcRenderer.invoke('books:decrementStockByOne', isbn),
     delete: (isbn: string) => ipcRenderer.invoke('books:delete', isbn)
+  },
+  tags: {
+    getAll: () => ipcRenderer.invoke('tags:getAll'),
+    getById: (id: number) => ipcRenderer.invoke('tags:getById', id),
+    create: (name: string) => ipcRenderer.invoke('tags:create', name),
+    createMany: (names: string[]) => ipcRenderer.invoke('tags:createMany', names),
+    delete: (id: number) => ipcRenderer.invoke('tags:delete', id),
+    addTagsToBook: (isbn: string, tagIds: number[]) =>
+      ipcRenderer.invoke('tags:addTagsToBook', isbn, tagIds),
+    removeTagFromBook: (isbn: string, tagId: number) =>
+      ipcRenderer.invoke('tags:removeTagFromBook', isbn, tagId)
   }
 }
 

@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { booksController } from './controllers/books'
+import { tagsController } from './controllers/tags'
 import { getBookInfoGoogleBooks, getBookInfoOpenLibrary } from './lib/bookApi'
 import { dbFilePath } from './lib/prisma'
 import * as fs from 'fs'
@@ -70,8 +71,9 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
-  // Auto-register book controllers
+  // Auto-register controllers
   registerController('books', booksController)
+  registerController('tags', tagsController)
 
   // Register book API handlers
   ipcMain.handle('bookApi:getGoogleBooksInfo', async (_, isbn: string) => {

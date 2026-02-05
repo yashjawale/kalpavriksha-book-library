@@ -1,3 +1,9 @@
+export interface Tag {
+  id: number
+  name: string
+  createdAt: Date
+}
+
 export interface Book {
   isbn: string
   title: string
@@ -6,6 +12,7 @@ export interface Book {
   totalStock: number
   createdAt: Date
   updatedAt: Date
+  bookTags?: { tag: Tag }[]
 }
 
 export interface CreateBookData {
@@ -14,6 +21,7 @@ export interface CreateBookData {
   author?: string
   publisher?: string
   totalStock: number
+  tagIds?: number[]
 }
 
 export interface UpdateStockData {
