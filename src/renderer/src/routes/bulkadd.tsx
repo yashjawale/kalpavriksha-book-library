@@ -37,6 +37,8 @@ export const Route = createFileRoute('/bulkadd')({
   component: BulkAdd
 })
 
+const ANIMATION_DELAY = 1000
+
 type BookFormData = {
   title: string
   author: string
@@ -192,7 +194,7 @@ function BulkAdd() {
           // Reset after short delay
           setTimeout(() => {
             dispatchProcessing({ type: 'RESET' })
-          }, 2000)
+          }, ANIMATION_DELAY)
         } else {
           // Book not found, show manual entry dialog
           dispatchProcessing({ type: 'SHOW_MANUAL_DIALOG' })
@@ -205,7 +207,7 @@ function BulkAdd() {
         })
         setTimeout(() => {
           dispatchProcessing({ type: 'RESET' })
-        }, 2000)
+        }, ANIMATION_DELAY)
       }
     },
     [createBookMutation, preselectedTagIds]
@@ -252,7 +254,7 @@ function BulkAdd() {
       // Reset after short delay
       setTimeout(() => {
         dispatchProcessing({ type: 'RESET' })
-      }, 2000)
+      }, ANIMATION_DELAY)
     } catch (error) {
       console.error('Error adding book manually:', error)
       dispatchProcessing({
@@ -261,7 +263,7 @@ function BulkAdd() {
       })
       setTimeout(() => {
         dispatchProcessing({ type: 'RESET' })
-      }, 2000)
+      }, ANIMATION_DELAY)
     }
   })
 
@@ -287,7 +289,7 @@ function BulkAdd() {
       // Reset after short delay
       setTimeout(() => {
         dispatchProcessing({ type: 'RESET' })
-      }, 2000)
+      }, ANIMATION_DELAY)
     } catch (error) {
       console.error('Error adding book manually:', error)
       dispatchProcessing({
@@ -296,7 +298,7 @@ function BulkAdd() {
       })
       setTimeout(() => {
         dispatchProcessing({ type: 'RESET' })
-      }, 2000)
+      }, ANIMATION_DELAY)
     }
   })
 
