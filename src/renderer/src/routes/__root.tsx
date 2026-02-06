@@ -7,14 +7,16 @@ import '@fontsource-variable/inter'
 
 const RootLayout = () => (
   <>
-    <SidebarProvider>
-      <AppSidebar />
-      <main className="p-4 w-full">
-        <SidebarTrigger className="mb-2" />
-        <Outlet />
-      </main>
-    </SidebarProvider>
-    <TanStackRouterDevtools />
+    <div className="dark text-foreground">
+      <SidebarProvider>
+        <AppSidebar />
+        <main className="p-4 w-full">
+          <SidebarTrigger className="mb-2" />
+          <Outlet />
+        </main>
+      </SidebarProvider>
+      <TanStackRouterDevtools />
+    </div>
   </>
 )
 

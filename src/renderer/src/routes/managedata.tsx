@@ -165,7 +165,6 @@ export default function ManageData() {
   return (
     <>
       <h1 className="text-2xl font-bold pb-6 pt-4">Manage Data</h1>
-
       <Card className="mb-4">
         <CardHeader>
           <CardTitle>Data & Reports</CardTitle>
