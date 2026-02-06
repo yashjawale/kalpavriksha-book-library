@@ -21,16 +21,24 @@ interface TagSelectorProps {
   selectedTagIds: number[]
   onTagsChange: (tagIds: number[]) => void
   showAsPreselection?: boolean
+  dialogOpen?: boolean
+  onDialogOpenChange?: (open: boolean) => void
 }
 
 export function TagSelector({
   selectedTagIds,
   onTagsChange,
-  showAsPreselection = false
+  showAsPreselection = false,
+  dialogOpen,
+  onDialogOpenChange
 }: TagSelectorProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [internalIsOpen, setInternalIsOpen] = useState(false)
   const [newTagName, setNewTagName] = useState('')
   const [isCreating, setIsCreating] = useState(false)
+
+  // Use controlled open state if provided, otherwise use internal state
+  const isOpen = dialogOpen !== undefined ? dialogOpen : internalIsOpen
+  const setIsOpen = onDialogOpenChange !== undefined ? onDialogOpenChange : setInternalIsOpen
 
   const { data: allTags = [], refetch } = useQuery<Tag[]>({
     queryKey: ['tags'],

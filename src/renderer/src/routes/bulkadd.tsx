@@ -97,6 +97,7 @@ function BulkAdd() {
   })
   const [isManualMode, setIsManualMode] = useState(false)
   const [preselectedTagIds, setPreselectedTagIds] = useState<number[]>([])
+  const [isTagDialogOpen, setIsTagDialogOpen] = useState(false)
   const [pulsingIsbn, setPulsingIsbn] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
@@ -245,7 +246,11 @@ function BulkAdd() {
   // Barcode scanner hook
   useBarcodeScanner({
     onScan: handleBarcodeScanned,
-    enabled: !processingState.isProcessing && !processingState.showManualDialog && !isManualMode
+    enabled:
+      !processingState.isProcessing &&
+      !processingState.showManualDialog &&
+      !isManualMode &&
+      !isTagDialogOpen
   })
 
   // Generate unique local ISBN for books without barcodes
@@ -469,6 +474,8 @@ function BulkAdd() {
               selectedTagIds={preselectedTagIds}
               onTagsChange={setPreselectedTagIds}
               showAsPreselection={true}
+              dialogOpen={isTagDialogOpen}
+              onDialogOpenChange={setIsTagDialogOpen}
             />
           </div>
 
