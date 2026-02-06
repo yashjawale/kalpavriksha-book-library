@@ -25,9 +25,10 @@ function registerController<T extends Record<string, (...args: any[]) => any>>(
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
+    width: 1120,
     height: 670,
     show: false,
+    minWidth: 1085,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
