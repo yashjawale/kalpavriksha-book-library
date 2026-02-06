@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import Bulk from '../assets/images/bulk.svg'
 import { Label } from '@renderer/components/ui/label'
 import { Spinner } from '@renderer/components/ui/spinner'
+import { cn } from '@renderer/lib/utils'
 import {
   Dialog,
   DialogClose,
@@ -96,6 +97,7 @@ function BulkAdd() {
   })
   const [isManualMode, setIsManualMode] = useState(false)
   const [preselectedTagIds, setPreselectedTagIds] = useState<number[]>([])
+  const [pulsingIsbn, setPulsingIsbn] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
   // React Hook Form for manual entry dialog
@@ -163,6 +165,33 @@ function BulkAdd() {
       })
 
       try {
+        // Check if book already exists in the database
+        const existingBook = recentBooks.find((book) => book.isbn === isbn)
+
+        if (existingBook) {
+          // Book exists, increment its count
+          const newCount = existingBook.totalStock + 1
+          dispatchProcessing({
+            type: 'UPDATE_TEXT',
+            text: `Book "${existingBook.title}" already exists, increasing count to ${newCount}...`
+          })
+          await updateStockMutation.mutateAsync({ isbn, stockCount: newCount })
+
+          // Trigger pulse animation
+          setPulsingIsbn(isbn)
+          setTimeout(() => setPulsingIsbn(null), 1000)
+
+          dispatchProcessing({
+            type: 'UPDATE_TEXT',
+            text: `Successfully updated count for "${existingBook.title}" to ${newCount}`
+          })
+          // Reset after short delay
+          setTimeout(() => {
+            dispatchProcessing({ type: 'RESET' })
+          }, ANIMATION_DELAY)
+          return
+        }
+
         // Try Google Books first
         dispatchProcessing({ type: 'UPDATE_TEXT', text: 'Searching Google Books...' })
         let bookInfo = await window.electron.ipcRenderer.invoke('bookApi:getGoogleBooksInfo', isbn)
@@ -210,7 +239,7 @@ function BulkAdd() {
         }, ANIMATION_DELAY)
       }
     },
-    [createBookMutation, preselectedTagIds]
+    [createBookMutation, updateStockMutation, preselectedTagIds, recentBooks]
   )
 
   // Barcode scanner hook
@@ -315,6 +344,10 @@ function BulkAdd() {
 
   const handleStockChange = useCallback(
     (isbn: string, newStock: number) => {
+      // Trigger pulse animation
+      setPulsingIsbn(isbn)
+      setTimeout(() => setPulsingIsbn(null), 1000)
+
       // Optimistic update
       queryClient.setQueryData(['books', 'recent'], (old: Book[] | undefined) => {
         if (!old) return old
@@ -502,7 +535,10 @@ function BulkAdd() {
               </TableHeader>
               <TableBody>
                 {recentBooks.map((book) => (
-                  <TableRow key={book.isbn}>
+                  <TableRow
+                    key={book.isbn}
+                    className={cn(pulsingIsbn === book.isbn && 'animate-pulse-primary')}
+                  >
                     <TableCell className="font-medium">{book.title}</TableCell>
                     <TableCell className="text-muted-foreground text-sm">
                       {book.author || '-'}

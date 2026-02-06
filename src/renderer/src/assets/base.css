@@ -158,3 +158,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes pulse-primary {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: oklch(from var(--primary) l c h / 0.15);
+  }
+}
+
+.animate-pulse-primary {
+  animation: pulse-primary 1s ease-in-out;
+}
