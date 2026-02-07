@@ -203,6 +203,12 @@ function BulkAdd() {
           bookInfo = await window.electron.ipcRenderer.invoke('bookApi:getOpenLibraryInfo', isbn)
         }
 
+        // If not found, try IndianBooks
+        if (!bookInfo) {
+          dispatchProcessing({ type: 'UPDATE_TEXT', text: 'Searching Indian Registry...' })
+          bookInfo = await window.electron.ipcRenderer.invoke('bookApi:getIndianBooksInfo', isbn)
+        }
+
         if (bookInfo && bookInfo.title) {
           // Book found, add it to database
           dispatchProcessing({

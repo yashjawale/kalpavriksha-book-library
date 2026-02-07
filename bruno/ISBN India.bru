@@ -1,0 +1,144 @@
+meta {
+  name: ISBN India
+  type: http
+  seq: 3
+}
+
+post {
+  url: https://isbn.gov.in/Home/FillSearchText
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "data": {
+      "draw": 1,
+      "columns": [
+        {
+          "data": "Index1",
+          "name": "Index1",
+          "searchable": true,
+          "orderable": true,
+          "search": {
+            "value": "",
+            "regex": false
+          }
+        },
+        {
+          "data": "title",
+          "name": "title",
+          "searchable": true,
+          "orderable": true,
+          "search": {
+            "value": "",
+            "regex": false
+          }
+        },
+        {
+          "data": "isbn_number",
+          "name": "isbn_number",
+          "searchable": true,
+          "orderable": true,
+          "search": {
+            "value": "",
+            "regex": false
+          }
+        },
+        {
+          "data": "productform",
+          "name": "productform",
+          "searchable": true,
+          "orderable": true,
+          "search": {
+            "value": "",
+            "regex": false
+          }
+        },
+        {
+          "data": "language",
+          "name": "language",
+          "searchable": true,
+          "orderable": true,
+          "search": {
+            "value": "",
+            "regex": false
+          }
+        },
+        {
+          "data": "applicant_type",
+          "name": "applicant_type",
+          "searchable": true,
+          "orderable": true,
+          "search": {
+            "value": "",
+            "regex": false
+          }
+        },
+        {
+          "data": "publisher",
+          "name": "publisher",
+          "searchable": true,
+          "orderable": true,
+          "search": {
+            "value": "",
+            "regex": false
+          }
+        },
+        {
+          "data": "Inprint",
+          "name": "Inprint",
+          "searchable": true,
+          "orderable": true,
+          "search": {
+            "value": "",
+            "regex": false
+          }
+        },
+        {
+          "data": "Author",
+          "name": "Author",
+          "searchable": true,
+          "orderable": true,
+          "search": {
+            "value": "",
+            "regex": false
+          }
+        },
+        {
+          "data": "publicationdate",
+          "name": "publicationdate",
+          "searchable": true,
+          "orderable": true,
+          "search": {
+            "value": "",
+            "regex": false
+          }
+        }
+      ],
+      "order": [
+        {
+          "column": 0,
+          "dir": "asc"
+        }
+      ],
+      "start": 0,
+      "length": 50,
+      "search": {
+        "value": "",
+        "regex": false
+      }
+    },
+    "_obj": {
+      "Type": "isbn_number_Nodash",
+  //     "SearchValue": "9789355852946",
+      "SearchValue": "9780141033198",
+      "ViewReport": 1
+    }
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
