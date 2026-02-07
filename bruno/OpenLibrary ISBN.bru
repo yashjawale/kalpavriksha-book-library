@@ -1,0 +1,22 @@
+meta {
+  name: OpenLibrary ISBN
+  type: http
+  seq: 1
+}
+
+get {
+  url: https://openlibrary.org/api/books?bibkeys=ISBN:9780141033198&jscmd=details&format=json
+  body: none
+  auth: inherit
+}
+
+params:query {
+  bibkeys: ISBN:9780141033198
+  jscmd: details
+  format: json
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
