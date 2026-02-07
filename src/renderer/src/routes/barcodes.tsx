@@ -205,7 +205,7 @@ export default function BarcodesPage() {
   }
 
   return (
-    <div className="container mx-auto">
+    <div className="w-full">
       {/* <h1 className="text-2xl font-bold pb-6 pt-4">Generate & Print Barcodes</h1> */}
       <Card>
         <CardHeader>

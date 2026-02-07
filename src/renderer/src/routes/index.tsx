@@ -141,7 +141,7 @@ export default function ManageBooks() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="w-full">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
