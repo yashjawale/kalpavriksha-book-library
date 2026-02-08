@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/ui/card'
 import { Spinner } from '@renderer/components/ui/spinner'
 import type { Book } from '@renderer/types/book'
 import { DataTable } from '@renderer/components/ui/data-table'
 import { getBooksColumns } from '@renderer/components/columns/books-columns'
+import PageTitle from '@renderer/components/ui/page-title'
 
 export const Route = createFileRoute('/')({
   component: ManageBooks
@@ -72,21 +72,15 @@ export default function ManageBooks() {
 
   return (
     <div className="w-full">
-      <Card>
-        <CardHeader>
-          <CardTitle>Manage Books</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            columns={columns}
-            data={allBooks}
-            searchPlaceholder="Search books..."
-            pageSize={25}
-            globalFilterFn={globalFilterFn}
-            initialSorting={[{ id: 'createdAt', desc: true }]}
-          />
-        </CardContent>
-      </Card>
+      <PageTitle title="Manage Books" />
+      <DataTable
+        columns={columns}
+        data={allBooks}
+        searchPlaceholder="Search books..."
+        pageSize={25}
+        globalFilterFn={globalFilterFn}
+        initialSorting={[{ id: 'createdAt', desc: true }]}
+      />
     </div>
   )
 }

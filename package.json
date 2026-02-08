@@ -55,6 +55,7 @@
     "jsbarcode": "^3.12.3",
     "lucide-react": "^0.563.0",
     "papaparse": "^5.5.3",
+    "radix-ui": "^1.4.3",
     "react-hook-form": "^7.71.1",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.18",

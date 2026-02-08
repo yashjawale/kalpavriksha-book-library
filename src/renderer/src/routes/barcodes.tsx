@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/ui/card'
 import { Button } from '@renderer/components/ui/button'
 import { Spinner } from '@renderer/components/ui/spinner'
 import { Download } from 'lucide-react'
@@ -11,6 +10,8 @@ import JsBarcode from 'jsbarcode'
 import { BarcodePDF } from '../components/BarcodePDF'
 import { DataTable } from '@renderer/components/ui/data-table'
 import { getBarcodesColumns } from '@renderer/components/columns/barcodes-columns'
+import PageTitle from '@renderer/components/ui/page-title'
+import { ToggleGroup, ToggleGroupItem } from '@renderer/components/ui/toggle-group'
 
 export const Route = createFileRoute('/barcodes')({
   component: BarcodesPage
@@ -168,42 +169,40 @@ export default function BarcodesPage() {
 
   return (
     <div className="w-full">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Generate & Print Barcodes</CardTitle>
-            <Button onClick={handleDownloadPDF} disabled={selectedBooks.size === 0 || isGenerating}>
-              {isGenerating ? (
-                <>
-                  <Spinner className="size-4 mr-2" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Download className="size-4 mr-2" />
-                  Download PDF ({selectedBooks.size})
-                </>
-              )}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            columns={columns}
-            data={books}
-            pageSize={25}
-            enableRowSelection
-            rowSelection={rowSelection}
-            onRowSelectionChange={setRowSelection}
-            getRowId={(book) => book.isbn}
-          />
-          {books.length === 0 && (
-            <div className="text-center text-muted-foreground py-8">
-              No custom books found. Add books manually to see them here.
-            </div>
+      <PageTitle title="Print Barcodes" />
+      <div className="flex items-center justify-between pb-4 gap-4">
+        <ToggleGroup type="single" defaultValue="custom" variant="outline">
+          <ToggleGroupItem value="custom">Custom</ToggleGroupItem>
+          <ToggleGroupItem value="isbn">ISBN (non code)</ToggleGroupItem>
+        </ToggleGroup>
+        <Button onClick={handleDownloadPDF} disabled={selectedBooks.size === 0 || isGenerating}>
+          {isGenerating ? (
+            <>
+              <Spinner className="size-4 mr-2" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Download className="size-4 mr-2" />
+              Download PDF ({selectedBooks.size})
+            </>
           )}
-        </CardContent>
-      </Card>
+        </Button>
+      </div>
+      <DataTable
+        columns={columns}
+        data={books}
+        pageSize={25}
+        enableRowSelection
+        rowSelection={rowSelection}
+        onRowSelectionChange={setRowSelection}
+        getRowId={(book) => book.isbn}
+      />
+      {books.length === 0 && (
+        <div className="text-center text-muted-foreground py-8">
+          No custom books found. Add books manually to see them here.
+        </div>
+      )}
     </div>
   )
 }

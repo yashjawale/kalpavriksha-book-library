@@ -7,7 +7,7 @@ import '@fontsource-variable/inter'
 
 const RootLayout = () => (
   <>
-    <div className="dark text-foreground">
+    <div className="text-foreground">
       <SidebarProvider>
         <AppSidebar />
         <main className="p-4 w-full max-w-full overflow-x-hidden">
