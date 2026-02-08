@@ -8,7 +8,7 @@ import '@fontsource/fira-sans'
 
 const RootLayout = () => (
   <>
-    <div className="text-foreground">
+    <div className="dark text-foreground">
       <SidebarProvider>
         <AppSidebar />
         <main className="p-4 w-full max-w-full overflow-x-hidden">

@@ -1,8 +1,8 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { Book } from '@renderer/types/book'
 import { Button } from '@renderer/components/ui/button'
-import { Input } from '@renderer/components/ui/input'
 import { Trash2 } from 'lucide-react'
+import { StockInput } from './StockInput'
 
 interface RecentBooksColumnsProps {
   onStockChange?: (isbn: string, newStock: number) => void
@@ -67,16 +67,7 @@ export function getRecentBooksColumns({
         const isbn = row.original.isbn
         const stock = row.getValue('totalStock') as number
         return onStockChange ? (
-          <Input
-            type="number"
-            min="0"
-            value={stock}
-            onChange={(e) => {
-              const newValue = parseInt(e.target.value) || 0
-              onStockChange(isbn, Math.max(0, newValue))
-            }}
-            className="w-20"
-          />
+          <StockInput isbn={isbn} initialStock={stock} onStockChange={onStockChange} />
         ) : (
           <div>{stock}</div>
         )
