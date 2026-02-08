@@ -22,7 +22,7 @@ export function getBooksColumns({
             variant="ghost"
             size="sm"
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="hover:bg-transparent -ml-4"
+            className="hover:bg-transparent -ml-2"
           >
             Title
             <ArrowUpDown className="ml-2 size-4" />
@@ -30,7 +30,8 @@ export function getBooksColumns({
         )
       },
       cell: ({ row }) => {
-        return <div className="font-medium">{row.getValue('title')}</div>
+        const title = row.getValue('title') as string | null
+        return <div className="font-medium truncate max-w-64">{title || '-'}</div>
       }
     },
     {
@@ -38,7 +39,9 @@ export function getBooksColumns({
       header: 'Author',
       cell: ({ row }) => {
         const author = row.getValue('author') as string | null
-        return <div className="text-sm text-muted-foreground">{author || '-'}</div>
+        return (
+          <div className="text-sm text-muted-foreground truncate max-w-44">{author || '-'}</div>
+        )
       }
     },
     {
@@ -46,7 +49,9 @@ export function getBooksColumns({
       header: 'Publisher',
       cell: ({ row }) => {
         const publisher = row.getValue('publisher') as string | null
-        return <div className="text-sm text-muted-foreground">{publisher || '-'}</div>
+        return (
+          <div className="text-sm text-muted-foreground truncate max-w-44">{publisher || '-'}</div>
+        )
       }
     },
     {
@@ -98,7 +103,7 @@ export function getBooksColumns({
             variant="ghost"
             size="sm"
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="hover:bg-transparent -ml-4"
+            className="hover:bg-transparent -ml-2"
           >
             Stock
             <ArrowUpDown className="ml-2 size-4" />

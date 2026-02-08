@@ -18,7 +18,7 @@ export function getRecentBooksColumns({
       accessorKey: 'title',
       header: 'Title',
       cell: ({ row }) => {
-        return <div className="font-medium">{row.getValue('title')}</div>
+        return <div className="font-medium truncate max-w-64">{row.getValue('title')}</div>
       }
     },
     {
@@ -26,7 +26,9 @@ export function getRecentBooksColumns({
       header: 'Author',
       cell: ({ row }) => {
         const author = row.getValue('author') as string | null
-        return <div className="text-sm text-muted-foreground">{author || '-'}</div>
+        return (
+          <div className="text-sm text-muted-foreground truncate max-w-44">{author || '-'}</div>
+        )
       }
     },
     {
@@ -34,7 +36,9 @@ export function getRecentBooksColumns({
       header: 'Publisher',
       cell: ({ row }) => {
         const publisher = row.getValue('publisher') as string | null
-        return <div className="text-sm text-muted-foreground">{publisher || '-'}</div>
+        return (
+          <div className="text-sm text-muted-foreground truncate max-w-44">{publisher || '-'}</div>
+        )
       }
     },
     {
