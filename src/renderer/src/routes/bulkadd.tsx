@@ -460,7 +460,7 @@ function BulkAdd() {
         </DialogContent>
       </Dialog>
 
-      <Card className="bg-primary/8">
+      <Card className="bg-primary/5">
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">

@@ -36,7 +36,9 @@
   --sidebar-border: oklch(0.92 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  --font-sans: 'Inter Variable', sans-serif;
+  /* --font-sans: 'Inter Variable', sans-serif; */
+  --font-sans: 'Fira Sans', sans-serif;
+
   --font-serif:
     'Geist', 'Geist Fallback', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
   --font-mono:
