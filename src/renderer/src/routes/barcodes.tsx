@@ -1,58 +1,47 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/ui/card'
 import { Button } from '@renderer/components/ui/button'
-import { Checkbox } from '@renderer/components/ui/checkbox'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@renderer/components/ui/table'
 import { Spinner } from '@renderer/components/ui/spinner'
-import { Input } from '@renderer/components/ui/input'
-import { Trash2, Download, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
-import type { Book, UpdateStockData } from '@renderer/types/book'
+import { Download } from 'lucide-react'
+import type { Book } from '@renderer/types/book'
 import { pdf } from '@react-pdf/renderer'
 import JsBarcode from 'jsbarcode'
 import { BarcodePDF } from '../components/BarcodePDF'
+import { DataTable } from '@renderer/components/ui/data-table'
+import { getBarcodesColumns } from '@renderer/components/columns/barcodes-columns'
 
 export const Route = createFileRoute('/barcodes')({
   component: BarcodesPage
 })
 
 export default function BarcodesPage() {
-  const [selectedBooks, setSelectedBooks] = useState<Set<string>>(new Set())
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
   const [isGenerating, setIsGenerating] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 25
+  const [printCounts, setPrintCounts] = useState<Record<string, number>>({})
   const queryClient = useQueryClient()
 
-  const { data: allBooks = [], isLoading } = useQuery<Book[]>({
-    queryKey: ['books'],
-    queryFn: async () => await window.api.books.getAll()
+  const { data: books = [], isLoading } = useQuery<Book[]>({
+    queryKey: ['books', 'kvb'],
+    queryFn: async () =>
+      await window.api.books.getAll(1, Number.MAX_SAFE_INTEGER, 'updatedAt', 'desc', 'KVB-')
   })
 
-  // Filter to only show books with KVB- prefix
-  const books = allBooks.filter((book) => book.isbn.startsWith('KVB-'))
+  // Initialize print counts with actual stock when books change
+  useEffect(() => {
+    const counts: Record<string, number> = {}
+    books.forEach((book) => {
+      counts[book.isbn] = book.totalStock
+    })
+    setPrintCounts(counts)
+  }, [books])
 
-  // Paginate books
-  const totalPages = Math.ceil(books.length / itemsPerPage)
-  const paginatedBooks = books.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-
-  // Mutation for updating stock
-  const updateStockMutation = useMutation({
-    mutationFn: async ({ isbn, stockCount }: UpdateStockData) => {
-      return await window.api.books.updateStock(isbn, stockCount)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['books'] })
-    }
-  })
+  // Get selected books from rowSelection
+  const selectedBooks = useMemo(
+    () => new Set(Object.keys(rowSelection).filter((key) => rowSelection[key])),
+    [rowSelection]
+  )
 
   // Mutation for deleting a book
   const deleteBookMutation = useMutation({
@@ -60,29 +49,17 @@ export default function BarcodesPage() {
       return await window.api.books.delete(isbn)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['books', 'kvb'] })
     }
   })
 
-  // Debounced stock update
-  const debouncedStockUpdate = useDebouncedCallback((isbn: string, stockCount: number) => {
-    updateStockMutation.mutate({ isbn, stockCount })
-  }, 500)
-
-  // Stock update handler with optimistic update
-  const handleStockChange = useCallback(
-    (isbn: string, newStock: number) => {
-      // Optimistic update
-      queryClient.setQueryData(['books'], (old: Book[] | undefined) => {
-        if (!old) return old
-        return old.map((book) => (book.isbn === isbn ? { ...book, totalStock: newStock } : book))
-      })
-
-      // Debounce the actual API call - key is isbn, then the actual params
-      debouncedStockUpdate(isbn, isbn, newStock)
-    },
-    [queryClient, debouncedStockUpdate]
-  )
+  // Handle print count changes (local state only, doesn't update DB)
+  const handlePrintCountChange = useCallback((isbn: string, count: number) => {
+    setPrintCounts((prev) => ({
+      ...prev,
+      [isbn]: count
+    }))
+  }, [])
 
   const handleDelete = async (isbn: string, title: string): Promise<void> => {
     const confirmed = confirm(
@@ -92,39 +69,15 @@ export default function BarcodesPage() {
 
     try {
       await deleteBookMutation.mutateAsync(isbn)
-      // Remove from selected books if it was selected
-      if (selectedBooks.has(isbn)) {
-        const newSelected = new Set(selectedBooks)
-        newSelected.delete(isbn)
-        setSelectedBooks(newSelected)
+      // Remove from selection if it was selected
+      if (rowSelection[isbn]) {
+        const newSelection = { ...rowSelection }
+        delete newSelection[isbn]
+        setRowSelection(newSelection)
       }
     } catch (error) {
       console.error('Error deleting book:', error)
       alert('Failed to delete book. Please try again.')
-    }
-  }
-
-  const toggleBook = (isbn: string): void => {
-    const newSelected = new Set(selectedBooks)
-    if (newSelected.has(isbn)) {
-      newSelected.delete(isbn)
-    } else {
-      newSelected.add(isbn)
-    }
-    setSelectedBooks(newSelected)
-  }
-
-  const toggleAll = (): void => {
-    if (selectedBooks.size === paginatedBooks.length && paginatedBooks.length > 0) {
-      // Deselect all on current page
-      const newSelected = new Set(selectedBooks)
-      paginatedBooks.forEach((book) => newSelected.delete(book.isbn))
-      setSelectedBooks(newSelected)
-    } else {
-      // Select all on current page
-      const newSelected = new Set(selectedBooks)
-      paginatedBooks.forEach((book) => newSelected.add(book.isbn))
-      setSelectedBooks(newSelected)
     }
   }
 
@@ -149,22 +102,24 @@ export default function BarcodesPage() {
 
     try {
       setIsGenerating(true)
-      const booksToPrint = books.filter((b) => selectedBooks.has(b.isbn))
+      const selectedISBNs = Object.keys(rowSelection).filter((key) => rowSelection[key])
+      const booksToPrint = books.filter((b) => selectedISBNs.includes(b.isbn))
 
       if (booksToPrint.length === 0) {
         alert('Please select at least one book to generate barcodes.')
         return
       }
 
-      // Repeat books according to their stock count
+      // Repeat books according to their print count
       const booksWithBarcodes = booksToPrint.flatMap((book) => {
         const barcodeDataUrl = generateBarcodeDataUrl(book.isbn)
         if (!barcodeDataUrl) {
           console.warn(`Failed to generate barcode for ${book.isbn}`)
           return []
         }
-        // Create an array with length equal to stock count
-        return Array.from({ length: book.totalStock }, (_, index) => ({
+        const printCount = printCounts[book.isbn] || book.totalStock
+        // Create an array with length equal to print count
+        return Array.from({ length: printCount }, (_, index) => ({
           isbn: book.isbn,
           title: book.title,
           barcodeDataUrl,
@@ -196,6 +151,13 @@ export default function BarcodesPage() {
     }
   }
 
+  const columns = getBarcodesColumns({
+    onPrintCountChange: handlePrintCountChange,
+    printCounts,
+    onDelete: handleDelete,
+    isDeleting: deleteBookMutation.isPending
+  })
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -206,7 +168,6 @@ export default function BarcodesPage() {
 
   return (
     <div className="w-full">
-      {/* <h1 className="text-2xl font-bold pb-6 pt-4">Generate & Print Barcodes</h1> */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -227,101 +188,18 @@ export default function BarcodesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={
-                      paginatedBooks.length > 0 &&
-                      paginatedBooks.every((book) => selectedBooks.has(book.isbn))
-                    }
-                    onCheckedChange={toggleAll}
-                  />
-                </TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead className="w-40">ISBN</TableHead>
-                <TableHead className="w-22">Stock</TableHead>
-                <TableHead className="w-25">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedBooks.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    No custom books found. Add books manually to see them here.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginatedBooks.map((book) => (
-                  <TableRow key={book.isbn}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedBooks.has(book.isbn)}
-                        onCheckedChange={() => toggleBook(book.isbn)}
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">{book.title}</TableCell>
-                    <TableCell className="font-mono text-sm">{book.isbn}</TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={book.totalStock}
-                        onChange={(e) => {
-                          const newValue = parseInt(e.target.value) || 0
-                          handleStockChange(book.isbn, Math.max(0, newValue))
-                        }}
-                        className=""
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(book.isbn, book.title)}
-                        className="text-destructive hover:text-destructive"
-                        disabled={deleteBookMutation.isPending}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-muted-foreground">
-                Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
-                {Math.min(currentPage * itemsPerPage, books.length)} of {books.length} books
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="size-4" />
-                  Previous
-                </Button>
-                <div className="text-sm">
-                  Page {currentPage} of {totalPages}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                  <ChevronRight className="size-4" />
-                </Button>
-              </div>
+          <DataTable
+            columns={columns}
+            data={books}
+            pageSize={25}
+            enableRowSelection
+            rowSelection={rowSelection}
+            onRowSelectionChange={setRowSelection}
+            getRowId={(book) => book.isbn}
+          />
+          {books.length === 0 && (
+            <div className="text-center text-muted-foreground py-8">
+              No custom books found. Add books manually to see them here.
             </div>
           )}
         </CardContent>

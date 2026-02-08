@@ -31,6 +31,10 @@ interface DataTableProps<TData, TValue> {
   pageSize?: number
   globalFilterFn?: (row: TData, filterValue: string) => boolean
   initialSorting?: SortingState
+  enableRowSelection?: boolean
+  onRowSelectionChange?: (selectedRows: Record<string, boolean>) => void
+  rowSelection?: Record<string, boolean>
+  getRowId?: (row: TData) => string
 }
 
 export function DataTable<TData, TValue>({
@@ -40,13 +44,29 @@ export function DataTable<TData, TValue>({
   searchPlaceholder = 'Search...',
   pageSize = 25,
   globalFilterFn,
-  initialSorting = []
+  initialSorting = [],
+  enableRowSelection = false,
+  onRowSelectionChange,
+  rowSelection: externalRowSelection,
+  getRowId
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = useState({})
+  const [internalRowSelection, setInternalRowSelection] = useState({})
   const [globalFilter, setGlobalFilter] = useState('')
+
+  const rowSelection = externalRowSelection !== undefined ? externalRowSelection : internalRowSelection
+
+  const handleRowSelectionChange = (updater: any) => {
+    const newSelection = typeof updater === 'function' ? updater(rowSelection) : updater
+    
+    if (onRowSelectionChange) {
+      onRowSelectionChange(newSelection)
+    } else {
+      setInternalRowSelection(newSelection)
+    }
+  }
 
   const table = useReactTable({
     data,
@@ -58,8 +78,10 @@ export function DataTable<TData, TValue>({
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: handleRowSelectionChange,
     onGlobalFilterChange: setGlobalFilter,
+    enableRowSelection,
+    getRowId,
     globalFilterFn: globalFilterFn
       ? (row, _columnId, filterValue) => globalFilterFn(row.original, filterValue)
       : undefined,

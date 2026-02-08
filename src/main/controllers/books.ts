@@ -5,13 +5,17 @@ export const booksController = {
     page: number = 1,
     perPage: number = 25,
     orderBy: string = 'updatedAt',
-    order: 'asc' | 'desc' = 'desc'
+    order: 'asc' | 'desc' = 'desc',
+    isbnPrefix?: string
   ) => {
     const skip = (page - 1) * perPage
     const orderByClause = orderBy ? { [orderBy]: order } : {}
+    const whereClause = isbnPrefix ? { isbn: { startsWith: isbnPrefix } } : {}
+
     return await prisma.book.findMany({
       skip,
       take: perPage,
+      where: whereClause,
       orderBy: orderByClause,
       include: {
         bookTags: {
