@@ -10,6 +10,7 @@ import { BookCatalogPDF } from '@renderer/components/BookCatalogPDF'
 import type { Book } from '@renderer/types/book'
 import Logo from '../assets/images/logo.svg'
 import Papa from 'papaparse'
+import PageTitle from '@renderer/components/ui/page-title'
 
 export const Route = createFileRoute('/managedata')({
   component: ManageData
@@ -164,7 +165,7 @@ export default function ManageData() {
   }
   return (
     <>
-      <h1 className="text-2xl font-bold pb-6 pt-4">Manage Data</h1>
+      <PageTitle title="Data & Reports" />
       <Card className="mb-4">
         <CardHeader>
           <CardTitle>Data & Reports</CardTitle>
