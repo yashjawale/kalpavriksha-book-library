@@ -21,12 +21,34 @@ export default function BarcodesPage() {
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
   const [isGenerating, setIsGenerating] = useState(false)
   const [printCounts, setPrintCounts] = useState<Record<string, number>>({})
+  const [bookType, setBookType] = useState<'custom' | 'isbn'>('custom')
   const queryClient = useQueryClient()
 
   const { data: books = [], isLoading } = useQuery<Book[]>({
-    queryKey: ['books', 'kvb'],
-    queryFn: async () =>
-      await window.api.books.getAll(1, Number.MAX_SAFE_INTEGER, 'updatedAt', 'desc', 'KVB-')
+    queryKey: ['books', 'barcodes', bookType],
+    queryFn: async () => {
+      if (bookType === 'custom') {
+        // Custom books: books starting with KVB-
+        return await window.api.books.getAll(
+          1,
+          Number.MAX_SAFE_INTEGER,
+          'updatedAt',
+          'desc',
+          'KVB-'
+        )
+      } else {
+        // ISBN books: books NOT starting with KVB- AND needsBarcodeSticker = true
+        const allIsbnBooks = await window.api.books.getAll(
+          1,
+          Number.MAX_SAFE_INTEGER,
+          'updatedAt',
+          'desc',
+          undefined,
+          true
+        )
+        return allIsbnBooks.filter((book) => !book.isbn.startsWith('KVB-'))
+      }
+    }
   })
 
   // Initialize print counts with actual stock when books change
@@ -50,7 +72,7 @@ export default function BarcodesPage() {
       return await window.api.books.delete(isbn)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['books', 'kvb'] })
+      queryClient.invalidateQueries({ queryKey: ['books', 'barcodes'] })
     }
   })
 
@@ -171,9 +193,14 @@ export default function BarcodesPage() {
     <div className="w-full">
       <PageTitle title="Print Barcodes" />
       <div className="flex items-center justify-between pb-4 gap-4">
-        <ToggleGroup type="single" defaultValue="custom" variant="outline">
-          <ToggleGroupItem value="custom">Custom</ToggleGroupItem>
-          <ToggleGroupItem value="isbn">ISBN (non code)</ToggleGroupItem>
+        <ToggleGroup
+          type="single"
+          value={bookType}
+          onValueChange={(value) => value && setBookType(value as 'custom' | 'isbn')}
+          variant="outline"
+        >
+          <ToggleGroupItem value="custom">Custom Books</ToggleGroupItem>
+          <ToggleGroupItem value="isbn">ISBN Books</ToggleGroupItem>
         </ToggleGroup>
         <Button onClick={handleDownloadPDF} disabled={selectedBooks.size === 0 || isGenerating}>
           {isGenerating ? (
@@ -199,8 +226,10 @@ export default function BarcodesPage() {
         getRowId={(book) => book.isbn}
       />
       {books.length === 0 && (
-        <div className="text-center text-muted-foreground py-8">
-          No custom books found. Add books manually to see them here.
+        <div className="text-center text-muted-foreground py-8 text-sm font-light">
+          {bookType === 'custom'
+            ? 'No custom books found. Add books manually to see them here.'
+            : 'No ISBN books without barcode stickers found. Add books via Manual ISBN mode to see them here.'}
         </div>
       )}
     </div>

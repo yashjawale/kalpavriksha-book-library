@@ -9,8 +9,18 @@ const api = {
       perPage?: number,
       orderBy?: string,
       order?: 'asc' | 'desc',
-      isbnPrefix?: string
-    ) => ipcRenderer.invoke('books:getAll', page, perPage, orderBy, order, isbnPrefix),
+      isbnPrefix?: string,
+      needsBarcodeSticker?: boolean
+    ) =>
+      ipcRenderer.invoke(
+        'books:getAll',
+        page,
+        perPage,
+        orderBy,
+        order,
+        isbnPrefix,
+        needsBarcodeSticker
+      ),
     getById: (isbn: string) => ipcRenderer.invoke('books:getById', isbn),
     create: (data: {
       isbn: string
@@ -18,6 +28,7 @@ const api = {
       author?: string
       publisher?: string
       totalStock?: number
+      needsBarcodeSticker?: boolean
       tagIds?: number[]
     }) => ipcRenderer.invoke('books:create', data),
     updateStock: (isbn: string, stockCount: number) =>

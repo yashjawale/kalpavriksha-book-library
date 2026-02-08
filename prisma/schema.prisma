@@ -11,17 +11,18 @@ datasource db {
 }
 
 model Book {
-  isbn        String   @id
-  title       String
-  author      String?
-  publisher   String?
-  totalStock  Int      @default(1)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isbn               String   @id
+  title              String
+  author             String?
+  publisher          String?
+  totalStock         Int      @default(1)
+  needsBarcodeSticker Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   // Relations
-  loans       Loan[]
-  bookTags    BookTag[]
+  loans              Loan[]
+  bookTags           BookTag[]
 
   @@map("books")
 }

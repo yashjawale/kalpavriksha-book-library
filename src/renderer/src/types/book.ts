@@ -10,6 +10,7 @@ export interface Book {
   author?: string | null
   publisher?: string | null
   totalStock: number
+  needsBarcodeSticker: boolean
   createdAt: Date
   updatedAt: Date
   bookTags?: { tag: Tag }[]
@@ -21,6 +22,7 @@ export interface CreateBookData {
   author?: string
   publisher?: string
   totalStock: number
+  needsBarcodeSticker?: boolean
   tagIds?: number[]
 }
 

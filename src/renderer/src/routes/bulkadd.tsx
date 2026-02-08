@@ -21,17 +21,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useBarcodeScanner } from '@renderer/hooks/use-barcode-scanner'
 import { useDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 import type { Book, CreateBookData, UpdateStockData } from '@renderer/types/book'
-import { Switch } from '@renderer/components/ui/switch'
 import { useForm } from 'react-hook-form'
 import { TagSelector } from '@renderer/components/TagSelector'
 import { SimpleDataTable } from '@renderer/components/ui/simple-data-table'
 import { getRecentBooksColumns } from '@renderer/components/columns/recent-books-columns'
+import { ToggleGroup, ToggleGroupItem } from '@renderer/components/ui/toggle-group'
 
 export const Route = createFileRoute('/bulkadd')({
   component: BulkAdd
 })
 
 const ANIMATION_DELAY = 1000
+
+type BulkAddMode = 'scan' | 'manual-isbn' | 'manual'
 
 type BookFormData = {
   title: string
@@ -88,7 +90,7 @@ function BulkAdd() {
     showManualDialog: false,
     currentIsbn: ''
   })
-  const [isManualMode, setIsManualMode] = useState(false)
+  const [mode, setMode] = useState<BulkAddMode>('scan')
   const [preselectedTagIds, setPreselectedTagIds] = useState<number[]>([])
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false)
   const [pulsingIsbn, setPulsingIsbn] = useState<string | null>(null)
@@ -111,6 +113,13 @@ function BulkAdd() {
       author: '',
       publisher: '',
       count: 1
+    }
+  })
+
+  // React Hook Form for manual ISBN mode
+  const manualIsbnForm = useForm<{ isbn: string }>({
+    defaultValues: {
+      isbn: ''
     }
   })
 
@@ -151,7 +160,7 @@ function BulkAdd() {
   })
 
   const handleBarcodeScanned = useCallback(
-    async (isbn: string) => {
+    async (isbn: string, needsBarcodeSticker: boolean = false) => {
       dispatchProcessing({
         type: 'START_PROCESSING',
         isbn,
@@ -214,6 +223,7 @@ function BulkAdd() {
             author: bookInfo.author,
             publisher: bookInfo.publisher,
             tagIds: preselectedTagIds,
+            needsBarcodeSticker,
             totalStock: 1
           })
           dispatchProcessing({
@@ -248,7 +258,7 @@ function BulkAdd() {
     enabled:
       !processingState.isProcessing &&
       !processingState.showManualDialog &&
-      !isManualMode &&
+      mode === 'scan' &&
       !isTagDialogOpen
   })
 
@@ -277,6 +287,7 @@ function BulkAdd() {
         author: data.author || undefined,
         publisher: data.publisher || undefined,
         tagIds: preselectedTagIds,
+        needsBarcodeSticker: false, // Custom books always need barcodes but we handle them differently
         totalStock: data.count
       })
       dispatchProcessing({
@@ -300,6 +311,12 @@ function BulkAdd() {
     }
   })
 
+  const handleManualIsbnSubmit = manualIsbnForm.handleSubmit(async (data) => {
+    if (!data.isbn.trim()) return
+    await handleBarcodeScanned(data.isbn.trim(), true) // needsBarcodeSticker = true
+    manualIsbnForm.reset()
+  })
+
   const handleManualEntry = dialogForm.handleSubmit(async (data) => {
     dispatchProcessing({ type: 'HIDE_MANUAL_DIALOG' })
     dispatchProcessing({
@@ -315,6 +332,7 @@ function BulkAdd() {
         author: data.author || undefined,
         publisher: data.publisher || undefined,
         tagIds: preselectedTagIds,
+        needsBarcodeSticker: mode === 'manual-isbn', // Only mark as needing barcode sticker if in manual ISBN mode
         totalStock: data.count
       })
       dispatchProcessing({ type: 'UPDATE_TEXT', text: `Successfully added "${data.title}"` })
@@ -454,19 +472,25 @@ function BulkAdd() {
               <h1 className="text-lg font-medium max-w-md">
                 {processingState.isProcessing
                   ? processingState.processingText
-                  : isManualMode
-                    ? 'Enter book details manually'
-                    : 'Scan a barcode to begin adding books'}
+                  : mode === 'scan'
+                    ? 'Scan a barcode to begin adding books'
+                    : mode === 'manual-isbn'
+                      ? 'Enter ISBN manually (for books without barcode stickers)'
+                      : 'Enter book details manually (for books without ISBN)'}
               </h1>
             </div>
             <div className="flex items-center space-x-2">
-              <Label htmlFor="manual-mode">Manual Entry</Label>
-              <Switch
-                id="manual-mode"
-                checked={isManualMode}
-                onCheckedChange={setIsManualMode}
+              <ToggleGroup
+                type="single"
+                value={mode}
+                onValueChange={(value) => value && setMode(value as BulkAddMode)}
                 disabled={processingState.isProcessing}
-              />
+                variant="outline"
+              >
+                <ToggleGroupItem value="scan">Scan</ToggleGroupItem>
+                <ToggleGroupItem value="manual-isbn">Manual ISBN</ToggleGroupItem>
+                <ToggleGroupItem value="manual">Manual</ToggleGroupItem>
+              </ToggleGroup>
             </div>
             {/* Tag preselection - always visible */}
           </div>
@@ -483,7 +507,19 @@ function BulkAdd() {
             />
           </div>
 
-          {isManualMode && !processingState.isProcessing && (
+          {mode === 'manual-isbn' && !processingState.isProcessing && (
+            <form onSubmit={handleManualIsbnSubmit} className="flex gap-2 pt-2">
+              <Input
+                placeholder="Enter ISBN Code"
+                className="bg-background flex-1"
+                {...manualIsbnForm.register('isbn', { required: true })}
+                autoFocus
+              />
+              <Button type="submit">Lookup ISBN</Button>
+            </form>
+          )}
+
+          {mode === 'manual' && !processingState.isProcessing && (
             <form onSubmit={handleManualAdd} className="flex gap-2 pt-2">
               <div className="flex-1 space-y-2">
                 <Input

@@ -6,11 +6,20 @@ export const booksController = {
     perPage: number = 25,
     orderBy: string = 'updatedAt',
     order: 'asc' | 'desc' = 'desc',
-    isbnPrefix?: string
+    isbnPrefix?: string,
+    needsBarcodeSticker?: boolean
   ) => {
     const skip = (page - 1) * perPage
     const orderByClause = orderBy ? { [orderBy]: order } : {}
-    const whereClause = isbnPrefix ? { isbn: { startsWith: isbnPrefix } } : {}
+    const whereClause: { isbn?: { startsWith: string }; needsBarcodeSticker?: boolean } = {}
+
+    if (isbnPrefix) {
+      whereClause.isbn = { startsWith: isbnPrefix }
+    }
+
+    if (needsBarcodeSticker !== undefined) {
+      whereClause.needsBarcodeSticker = needsBarcodeSticker
+    }
 
     return await prisma.book.findMany({
       skip,
@@ -46,6 +55,7 @@ export const booksController = {
     author?: string
     publisher?: string
     totalStock?: number
+    needsBarcodeSticker?: boolean
     tagIds?: number[]
   }) => {
     return await prisma.book.create({
@@ -55,6 +65,7 @@ export const booksController = {
         author: data.author,
         publisher: data.publisher,
         totalStock: data.totalStock ?? 1,
+        needsBarcodeSticker: data.needsBarcodeSticker ?? false,
         bookTags: data.tagIds
           ? {
               create: data.tagIds.map((tagId) => ({
