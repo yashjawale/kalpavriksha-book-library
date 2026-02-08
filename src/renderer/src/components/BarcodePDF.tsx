@@ -13,41 +13,41 @@ interface BarcodePDFProps {
 
 const styles = StyleSheet.create({
   page: {
-    padding: 30,
+    padding: 10,
     backgroundColor: '#ffffff'
   },
   container: {
     display: 'flex',
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 15
+    flexWrap: 'wrap'
   },
   barcodeItem: {
-    width: '30%',
-    border: '1px solid #cccccc',
+    width: '25%',
     padding: 6,
-    marginBottom: 10,
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center'
+    alignItems: 'center',
+    gap: 4,
+    border: '0.5px solid #e0e0e0'
   },
   title: {
-    fontSize: 8,
+    fontSize: 6,
     fontWeight: 'bold',
-    marginBottom: 4,
     textAlign: 'center',
-    maxWidth: '100%'
+    maxWidth: '100%',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
   },
   barcodeImage: {
-    width: 130,
-    height: 35,
-    marginVertical: 3
+    width: 120,
+    height: 30,
+    marginVertical: 1
   },
   isbn: {
-    fontSize: 7,
+    fontSize: 6,
     color: '#666666',
-    fontFamily: 'Courier',
-    marginTop: 2
+    fontFamily: 'Courier'
   }
 })
 
