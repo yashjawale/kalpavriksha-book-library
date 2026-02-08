@@ -170,5 +170,5 @@
 }
 
 .animate-pulse-primary {
-  animation: pulse-primary 1s ease-in-out;
+  animation: pulse-primary 1.5s ease;
 }

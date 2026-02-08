@@ -10,7 +10,7 @@ const RootLayout = () => (
     <div className="dark text-foreground">
       <SidebarProvider>
         <AppSidebar />
-        <main className="p-4 w-full">
+        <main className="p-4 w-full max-w-full overflow-x-hidden">
           <SidebarTrigger className="mb-2" />
           <Outlet />
         </main>

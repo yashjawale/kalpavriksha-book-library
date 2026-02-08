@@ -17,15 +17,6 @@ import { Field, FieldGroup } from '@renderer/components/ui/field'
 import { useState, useCallback, useReducer } from 'react'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@renderer/components/ui/table'
-import { Trash2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useBarcodeScanner } from '@renderer/hooks/use-barcode-scanner'
 import { useDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
@@ -33,6 +24,8 @@ import type { Book, CreateBookData, UpdateStockData } from '@renderer/types/book
 import { Switch } from '@renderer/components/ui/switch'
 import { useForm } from 'react-hook-form'
 import { TagSelector } from '@renderer/components/TagSelector'
+import { SimpleDataTable } from '@renderer/components/ui/simple-data-table'
+import { getRecentBooksColumns } from '@renderer/components/columns/recent-books-columns'
 
 export const Route = createFileRoute('/bulkadd')({
   component: BulkAdd
@@ -382,6 +375,11 @@ function BulkAdd() {
     [deleteBookMutation]
   )
 
+  const recentBooksColumns = getRecentBooksColumns({
+    onStockChange: handleStockChange,
+    onDelete: handleDelete
+  })
+
   return (
     <>
       {/* Dialog for entering name manually */}
@@ -534,61 +532,14 @@ function BulkAdd() {
               No books added yet. Start scanning to add books.
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead className="w-32">Author</TableHead>
-                  <TableHead className="w-32">Publisher</TableHead>
-                  <TableHead className="w-40">ISBN</TableHead>
-                  <TableHead className="w-40">Date Added</TableHead>
-                  <TableHead className="w-22">Count</TableHead>
-                  <TableHead className="w-25">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentBooks.map((book) => (
-                  <TableRow
-                    key={book.isbn}
-                    className={cn(pulsingIsbn === book.isbn && 'animate-pulse-primary')}
-                  >
-                    <TableCell className="font-medium">{book.title}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {book.author || '-'}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {book.publisher || '-'}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{book.isbn}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {new Date(book.createdAt).toLocaleDateString('en-IN')}
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={book.totalStock}
-                        onChange={(e) => {
-                          const newValue = parseInt(e.target.value) || 0
-                          handleStockChange(book.isbn, Math.max(0, newValue))
-                        }}
-                        className=""
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(book.isbn)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <SimpleDataTable
+              columns={recentBooksColumns}
+              data={recentBooks}
+              getRowClassName={(book: Book) =>
+                cn(pulsingIsbn === book.isbn && 'animate-pulse-primary')
+              }
+              emptyMessage="No books added yet. Start scanning to add books."
+            />
           )}
         </CardContent>
       </Card>
