@@ -117,6 +117,51 @@ export const booksController = {
     return await prisma.book.delete({
       where: { isbn }
     })
+  },
+
+  bulkDelete: async (isbns: string[]) => {
+    return await prisma.book.deleteMany({
+      where: {
+        isbn: {
+          in: isbns
+        }
+      }
+    })
+  },
+
+  bulkUpdateTags: async (isbns: string[], tagIds: number[]) => {
+    // For each book, first delete all existing tags, then add the new ones
+    for (const isbn of isbns) {
+      // Delete existing tags
+      await prisma.bookTag.deleteMany({
+        where: { bookIsbn: isbn }
+      })
+
+      // Add new tags
+      if (tagIds.length > 0) {
+        await prisma.bookTag.createMany({
+          data: tagIds.map((tagId) => ({
+            bookIsbn: isbn,
+            tagId
+          }))
+        })
+      }
+    }
+
+    return await prisma.book.findMany({
+      where: {
+        isbn: {
+          in: isbns
+        }
+      },
+      include: {
+        bookTags: {
+          include: {
+            tag: true
+          }
+        }
+      }
+    })
   }
 }
 

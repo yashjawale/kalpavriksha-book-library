@@ -35,7 +35,10 @@ const api = {
       ipcRenderer.invoke('books:updateStock', isbn, stockCount),
     incrementStockByOne: (isbn: string) => ipcRenderer.invoke('books:incrementStockByOne', isbn),
     decrementStockByOne: (isbn: string) => ipcRenderer.invoke('books:decrementStockByOne', isbn),
-    delete: (isbn: string) => ipcRenderer.invoke('books:delete', isbn)
+    delete: (isbn: string) => ipcRenderer.invoke('books:delete', isbn),
+    bulkDelete: (isbns: string[]) => ipcRenderer.invoke('books:bulkDelete', isbns),
+    bulkUpdateTags: (isbns: string[], tagIds: number[]) =>
+      ipcRenderer.invoke('books:bulkUpdateTags', isbns, tagIds)
   },
   tags: {
     getAll: () => ipcRenderer.invoke('tags:getAll'),

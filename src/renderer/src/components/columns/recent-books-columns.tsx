@@ -3,6 +3,7 @@ import type { Book } from '@renderer/types/book'
 import { Button } from '@renderer/components/ui/button'
 import { Trash2 } from 'lucide-react'
 import { StockInput } from './StockInput'
+import { TagBadge } from '@renderer/components/TagBadge'
 
 interface RecentBooksColumnsProps {
   onStockChange?: (isbn: string, newStock: number) => void
@@ -46,6 +47,22 @@ export function getRecentBooksColumns({
       header: 'ISBN',
       cell: ({ row }) => {
         return <div className="font-mono text-sm text-muted-foreground">{row.getValue('isbn')}</div>
+      }
+    },
+    {
+      accessorKey: 'bookTags',
+      header: 'Tags',
+      cell: ({ row }) => {
+        const bookTags = row.original.bookTags
+        return (
+          <div className="flex gap-1">
+            {bookTags && bookTags.length > 0 ? (
+              bookTags.map((bt) => <TagBadge key={bt.tag.id} tag={bt.tag} />)
+            ) : (
+              <span className="text-sm text-muted-foreground">-</span>
+            )}
+          </div>
+        )
       }
     },
     {

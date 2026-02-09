@@ -3,8 +3,8 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@renderer/components/ui/button'
 import { Spinner } from '@renderer/components/ui/spinner'
-import { Download } from 'lucide-react'
-import type { Book } from '@renderer/types/book'
+import { Download, Filter } from 'lucide-react'
+import type { Book, Tag } from '@renderer/types/book'
 import { pdf } from '@react-pdf/renderer'
 import JsBarcode from 'jsbarcode'
 import { BarcodePDF } from '../components/BarcodePDF'
@@ -12,6 +12,15 @@ import { DataTable } from '@renderer/components/ui/data-table'
 import { getBarcodesColumns } from '@renderer/components/columns/barcodes-columns'
 import PageTitle from '@renderer/components/ui/page-title'
 import { ToggleGroup, ToggleGroupItem } from '@renderer/components/ui/toggle-group'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@renderer/components/ui/dropdown-menu'
 
 export const Route = createFileRoute('/barcodes')({
   component: BarcodesPage
@@ -22,6 +31,7 @@ export default function BarcodesPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [printCounts, setPrintCounts] = useState<Record<string, number>>({})
   const [bookType, setBookType] = useState<'custom' | 'isbn'>('custom')
+  const [selectedTagFilters, setSelectedTagFilters] = useState<number[]>([])
   const queryClient = useQueryClient()
 
   const { data: books = [], isLoading } = useQuery<Book[]>({
@@ -51,14 +61,28 @@ export default function BarcodesPage() {
     }
   })
 
+  const { data: allTags = [] } = useQuery<Tag[]>({
+    queryKey: ['tags'],
+    queryFn: async () => await window.api.tags.getAll()
+  })
+
+  // Filter books by selected tags
+  const filteredBooks = useMemo(() => {
+    if (selectedTagFilters.length === 0) return books
+    return books.filter((book) => {
+      if (!book.bookTags || book.bookTags.length === 0) return false
+      return selectedTagFilters.some((tagId) => book.bookTags!.some((bt) => bt.tag.id === tagId))
+    })
+  }, [books, selectedTagFilters])
+
   // Initialize print counts with actual stock when books change
   useEffect(() => {
     const counts: Record<string, number> = {}
-    books.forEach((book) => {
+    filteredBooks.forEach((book) => {
       counts[book.isbn] = book.totalStock
     })
     setPrintCounts(counts)
-  }, [books])
+  }, [filteredBooks])
 
   // Get selected books from rowSelection
   const selectedBooks = useMemo(
@@ -126,7 +150,7 @@ export default function BarcodesPage() {
     try {
       setIsGenerating(true)
       const selectedISBNs = Object.keys(rowSelection).filter((key) => rowSelection[key])
-      const booksToPrint = books.filter((b) => selectedISBNs.includes(b.isbn))
+      const booksToPrint = filteredBooks.filter((b) => selectedISBNs.includes(b.isbn))
 
       if (booksToPrint.length === 0) {
         alert('Please select at least one book to generate barcodes.')
@@ -174,6 +198,12 @@ export default function BarcodesPage() {
     }
   }
 
+  const handleToggleTagFilter = (tagId: number): void => {
+    setSelectedTagFilters((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    )
+  }
+
   const columns = getBarcodesColumns({
     onPrintCountChange: handlePrintCountChange,
     printCounts,
@@ -202,29 +232,68 @@ export default function BarcodesPage() {
           <ToggleGroupItem value="custom">Custom Books</ToggleGroupItem>
           <ToggleGroupItem value="isbn">ISBN Books</ToggleGroupItem>
         </ToggleGroup>
-        <Button onClick={handleDownloadPDF} disabled={selectedBooks.size === 0 || isGenerating}>
-          {isGenerating ? (
-            <>
-              <Spinner className="size-4 mr-2" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Download className="size-4 mr-2" />
-              Download PDF ({selectedBooks.size})
-            </>
+        <div className="flex items-center gap-2">
+          {allTags.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Filter className="size-4 mr-2" />
+                  Filter by Tags
+                  {selectedTagFilters.length > 0 && ` (${selectedTagFilters.length})`}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Filter by Tags</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {allTags.map((tag) => (
+                  <DropdownMenuCheckboxItem
+                    key={tag.id}
+                    checked={selectedTagFilters.includes(tag.id)}
+                    onCheckedChange={() => handleToggleTagFilter(tag.id)}
+                  >
+                    {tag.name}
+                  </DropdownMenuCheckboxItem>
+                ))}
+                {selectedTagFilters.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setSelectedTagFilters([])}>
+                      Clear filters
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
-        </Button>
+          <Button onClick={handleDownloadPDF} disabled={selectedBooks.size === 0 || isGenerating}>
+            {isGenerating ? (
+              <>
+                <Spinner className="size-4 mr-2" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Download className="size-4 mr-2" />
+                Download PDF ({selectedBooks.size})
+              </>
+            )}
+          </Button>
+        </div>
       </div>
       <DataTable
         columns={columns}
-        data={books}
+        data={filteredBooks}
         pageSize={25}
         enableRowSelection
         rowSelection={rowSelection}
         onRowSelectionChange={setRowSelection}
         getRowId={(book) => book.isbn}
       />
+      {filteredBooks.length === 0 && books.length > 0 && selectedTagFilters.length > 0 && (
+        <div className="text-center text-muted-foreground py-8 text-sm font-light">
+          No books found with the selected tag filters.
+        </div>
+      )}
       {books.length === 0 && (
         <div className="text-center text-muted-foreground py-8 text-sm font-light">
           {bookType === 'custom'

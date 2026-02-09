@@ -4,6 +4,7 @@ import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { Checkbox } from '@renderer/components/ui/checkbox'
 import { Trash2 } from 'lucide-react'
+import { TagBadge } from '@renderer/components/TagBadge'
 
 interface BarcodesColumnsProps {
   onPrintCountChange?: (isbn: string, count: number) => void
@@ -50,6 +51,22 @@ export function getBarcodesColumns({
       header: 'ISBN',
       cell: ({ row }) => {
         return <div className="font-mono text-sm">{row.getValue('isbn')}</div>
+      }
+    },
+    {
+      accessorKey: 'bookTags',
+      header: 'Tags',
+      cell: ({ row }) => {
+        const bookTags = row.original.bookTags
+        return (
+          <div className="flex gap-1">
+            {bookTags && bookTags.length > 0 ? (
+              bookTags.map((bt) => <TagBadge key={bt.tag.id} tag={bt.tag} />)
+            ) : (
+              <span className="text-sm text-muted-foreground">-</span>
+            )}
+          </div>
+        )
       }
     },
     {
