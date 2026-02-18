@@ -7,7 +7,7 @@ import { getBooksColumns } from '@renderer/components/columns/books-columns'
 import PageTitle from '@renderer/components/ui/page-title'
 import { useState, useMemo } from 'react'
 import { Button } from '@renderer/components/ui/button'
-import { Trash2, Tag as TagIcon } from 'lucide-react'
+import { Trash2, Tag as TagIcon, Plus, Minus } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -40,6 +40,8 @@ export default function ManageBooks() {
   const [addStockDialogOpen, setAddStockDialogOpen] = useState(false)
   const [changeTagsDialogOpen, setChangeTagsDialogOpen] = useState(false)
   const [bulkChangeTagsDialogOpen, setBulkChangeTagsDialogOpen] = useState(false)
+  const [bulkAddTagDialogOpen, setBulkAddTagDialogOpen] = useState(false)
+  const [bulkRemoveTagDialogOpen, setBulkRemoveTagDialogOpen] = useState(false)
   const [selectedBook, setSelectedBook] = useState<{
     isbn: string
     title: string
@@ -48,6 +50,8 @@ export default function ManageBooks() {
   const [stockToAdd, setStockToAdd] = useState(1)
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
   const [selectedTagFilters, setSelectedTagFilters] = useState<number[]>([])
+  const [selectedAddTagIds, setSelectedAddTagIds] = useState<number[]>([])
+  const [selectedRemoveTagIds, setSelectedRemoveTagIds] = useState<number[]>([])
 
   const { data: allBooks = [], isLoading } = useQuery<Book[]>({
     queryKey: ['books'],
@@ -124,6 +128,26 @@ export default function ManageBooks() {
   const bulkUpdateTagsMutation = useMutation({
     mutationFn: async ({ isbns, tagIds }: { isbns: string[]; tagIds: number[] }) => {
       return await window.api.books.bulkUpdateTags(isbns, tagIds)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] })
+      setRowSelection({})
+    }
+  })
+
+  const bulkAddTagMutation = useMutation({
+    mutationFn: async ({ isbns, tagIds }: { isbns: string[]; tagIds: number[] }) => {
+      return await window.api.books.bulkAddTag(isbns, tagIds)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] })
+      setRowSelection({})
+    }
+  })
+
+  const bulkRemoveTagMutation = useMutation({
+    mutationFn: async ({ isbns, tagIds }: { isbns: string[]; tagIds: number[] }) => {
+      return await window.api.books.bulkRemoveTag(isbns, tagIds)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] })
@@ -223,6 +247,45 @@ export default function ManageBooks() {
     }
   }
 
+  const handleBulkAddTag = (): void => {
+    setSelectedAddTagIds([])
+    setBulkAddTagDialogOpen(true)
+  }
+
+  const handleBulkAddTagConfirm = async (): Promise<void> => {
+    if (selectedAddTagIds.length === 0) return
+
+    try {
+      await bulkAddTagMutation.mutateAsync({ isbns: selectedISBNs, tagIds: selectedAddTagIds })
+      setBulkAddTagDialogOpen(false)
+      setSelectedAddTagIds([])
+    } catch (error) {
+      console.error('Error adding tag:', error)
+      alert('Failed to add tag. Please try again.')
+    }
+  }
+
+  const handleBulkRemoveTag = (): void => {
+    setSelectedRemoveTagIds([])
+    setBulkRemoveTagDialogOpen(true)
+  }
+
+  const handleBulkRemoveTagConfirm = async (): Promise<void> => {
+    if (selectedRemoveTagIds.length === 0) return
+
+    try {
+      await bulkRemoveTagMutation.mutateAsync({
+        isbns: selectedISBNs,
+        tagIds: selectedRemoveTagIds
+      })
+      setBulkRemoveTagDialogOpen(false)
+      setSelectedRemoveTagIds([])
+    } catch (error) {
+      console.error('Error removing tag:', error)
+      alert('Failed to remove tag. Please try again.')
+    }
+  }
+
   const handleToggleTagFilter = (tagId: number): void => {
     setSelectedTagFilters((prev) =>
       prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
@@ -283,6 +346,24 @@ export default function ManageBooks() {
               >
                 <TagIcon className="size-4 mr-2" />
                 Change Tags ({selectedISBNs.length})
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBulkAddTag}
+                disabled={bulkAddTagMutation.isPending}
+              >
+                <Plus className="size-4 mr-2" />
+                Add Tags ({selectedISBNs.length})
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBulkRemoveTag}
+                disabled={bulkRemoveTagMutation.isPending}
+              >
+                <Minus className="size-4 mr-2" />
+                Remove Tags ({selectedISBNs.length})
               </Button>
             </>
           )}
@@ -433,6 +514,75 @@ export default function ManageBooks() {
                 </>
               ) : (
                 'Save Changes'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Add Tag Dialog */}
+      <Dialog open={bulkAddTagDialogOpen} onOpenChange={setBulkAddTagDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Tags to Multiple Books</DialogTitle>
+            <DialogDescription>
+              Add tags to {selectedISBNs.length} selected book(s). Existing tags will be kept.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <TagSelector selectedTagIds={selectedAddTagIds} onTagsChange={setSelectedAddTagIds} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkAddTagDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleBulkAddTagConfirm}
+              disabled={bulkAddTagMutation.isPending || selectedAddTagIds.length === 0}
+            >
+              {bulkAddTagMutation.isPending ? (
+                <>
+                  <Spinner className="size-4 mr-2" />
+                  Adding...
+                </>
+              ) : (
+                'Add Tags'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Remove Tag Dialog */}
+      <Dialog open={bulkRemoveTagDialogOpen} onOpenChange={setBulkRemoveTagDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove Tags from Multiple Books</DialogTitle>
+            <DialogDescription>
+              Remove tags from {selectedISBNs.length} selected book(s). Other tags will be kept.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <TagSelector
+              selectedTagIds={selectedRemoveTagIds}
+              onTagsChange={setSelectedRemoveTagIds}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkRemoveTagDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleBulkRemoveTagConfirm}
+              disabled={bulkRemoveTagMutation.isPending || selectedRemoveTagIds.length === 0}
+            >
+              {bulkRemoveTagMutation.isPending ? (
+                <>
+                  <Spinner className="size-4 mr-2" />
+                  Removing...
+                </>
+              ) : (
+                'Remove Tags'
               )}
             </Button>
           </DialogFooter>

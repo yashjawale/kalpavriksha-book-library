@@ -162,6 +162,75 @@ export const booksController = {
         }
       }
     })
+  },
+
+  bulkAddTag: async (isbns: string[], tagIds: number[]) => {
+    // For each book and tag combination, add the tag if it doesn't already exist
+    for (const isbn of isbns) {
+      for (const tagId of tagIds) {
+        const existing = await prisma.bookTag.findUnique({
+          where: {
+            bookIsbn_tagId: {
+              bookIsbn: isbn,
+              tagId
+            }
+          }
+        })
+
+        if (!existing) {
+          await prisma.bookTag.create({
+            data: {
+              bookIsbn: isbn,
+              tagId
+            }
+          })
+        }
+      }
+    }
+
+    return await prisma.book.findMany({
+      where: {
+        isbn: {
+          in: isbns
+        }
+      },
+      include: {
+        bookTags: {
+          include: {
+            tag: true
+          }
+        }
+      }
+    })
+  },
+
+  bulkRemoveTag: async (isbns: string[], tagIds: number[]) => {
+    // For each book, remove the specified tags if they exist
+    await prisma.bookTag.deleteMany({
+      where: {
+        bookIsbn: {
+          in: isbns
+        },
+        tagId: {
+          in: tagIds
+        }
+      }
+    })
+
+    return await prisma.book.findMany({
+      where: {
+        isbn: {
+          in: isbns
+        }
+      },
+      include: {
+        bookTags: {
+          include: {
+            tag: true
+          }
+        }
+      }
+    })
   }
 }
 
