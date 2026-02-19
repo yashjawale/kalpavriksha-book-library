@@ -8,3 +8,4 @@ out
 /generated/prisma
 .env
 dev.db
+/coverage
