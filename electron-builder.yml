@@ -16,11 +16,16 @@ asarUnpack:
   - resources/**
 win:
   executableName: kalpavriksha-book-library
+  target:
+    - nsis
+    - msi
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+msi:
+  artifactName: ${name}-${version}.${ext}
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
@@ -35,6 +40,7 @@ linux:
   target:
     - AppImage
     - deb
+    - rpm
   maintainer: electronjs.org
   category: Utility
 appImage:
