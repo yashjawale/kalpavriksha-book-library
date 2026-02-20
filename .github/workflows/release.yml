@@ -42,9 +42,6 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: npm run build:win
 
-      - name: List dist directory
-        run: ls -la dist/ || dir dist\
-
       - name: release
         uses: softprops/action-gh-release@v1
         with:
