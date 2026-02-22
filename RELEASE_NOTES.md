@@ -1,7 +1,5 @@
-## What's New in v0.1.5
-
-Tests the new release pipeline
+## What's New in v0.1.6
 
 ### Changes
 
-- Application ready for adding books in bulk
+-
