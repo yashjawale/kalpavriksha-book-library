@@ -72,6 +72,11 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
+  // App version handler
+  ipcMain.handle('app:getVersion', () => {
+    return app.getVersion()
+  })
+
   // Auto-register controllers
   registerController('books', booksController)
   registerController('tags', tagsController)

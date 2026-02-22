@@ -1,6 +1,6 @@
 {
   "name": "kalpavriksha-book-library",
-  "version": "1.0.0",
+  "version": "0.1.4",
   "description": "An Electron application with React and TypeScript",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -21,7 +21,10 @@
     "build:linux": "electron-vite build && electron-builder --linux",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "prepare": "husky"
+    "prepare": "husky",
+    "release:patch": "npm version patch && git push && git push --tags",
+    "release:minor": "npm version minor && git push && git push --tags",
+    "release:major": "npm version major && git push && git push --tags"
   },
   "lint-staged": {
     "**/*": "npm run format"

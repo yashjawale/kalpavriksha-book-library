@@ -11,9 +11,13 @@ import {
 } from '@renderer/components/ui/sidebar'
 import { Link } from '@tanstack/react-router'
 import Logo from '../assets/images/logo.svg'
-import { UploadIcon, PrinterIcon, BookOpen, Database } from 'lucide-react'
+import { UploadIcon, PrinterIcon, BookOpen, Database, Info } from 'lucide-react'
+import { AboutDialog } from './AboutDialog'
+import { useState } from 'react'
 
 export function AppSidebar() {
+  const [aboutDialogOpen, setAboutDialogOpen] = useState(false)
+
   const links = [
     { to: '/', label: 'Manage Books', icon: BookOpen },
     { to: '/bulkadd', label: 'Bulk Add', icon: UploadIcon },
@@ -50,8 +54,18 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter />
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={() => setAboutDialogOpen(true)}>
+              <Info />
+              <span>About</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
       <SidebarRail />
+      <AboutDialog open={aboutDialogOpen} onOpenChange={setAboutDialogOpen} />
     </Sidebar>
   )
 }

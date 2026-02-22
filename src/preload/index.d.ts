@@ -8,6 +8,9 @@ type ControllerAPI<T extends Record<string, (...args: never[]) => unknown>> = {
 }
 
 interface API {
+  app: {
+    getVersion: () => Promise<string>
+  }
   books: ControllerAPI<BooksController>
   tags: ControllerAPI<TagsController>
 }
