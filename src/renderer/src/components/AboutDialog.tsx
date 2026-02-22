@@ -34,7 +34,7 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-106.25">
         <DialogHeader>
           <div className="flex items-center gap-4 mb-4">
             <img src={Logo} alt="Logo" width={64} />
