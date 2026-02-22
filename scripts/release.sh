@@ -82,16 +82,18 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 0
 fi
 
-# Check for uncommitted changes
-if [[ -n $(git status -s) ]]; then
+# Check for uncommitted changes (excluding RELEASE_NOTES.md)
+RELEASE_NOTES_FILE="RELEASE_NOTES.md"
+UNCOMMITTED=$(git status -s | grep -v "RELEASE_NOTES.md" || true)
+
+if [[ -n "$UNCOMMITTED" ]]; then
     echo -e "${RED}Error: You have uncommitted changes${NC}"
     echo "Please commit or stash your changes before releasing"
-    git status -s
+    git status -s | grep -v "RELEASE_NOTES.md"
     exit 1
 fi
 
-# Create release notes file if it doesn't exist
-RELEASE_NOTES_FILE="RELEASE_NOTES.md"
+# Create release notes file
 echo "## What's New in v$NEW_VERSION" > $RELEASE_NOTES_FILE
 echo "" >> $RELEASE_NOTES_FILE
 echo "### Changes" >> $RELEASE_NOTES_FILE
@@ -118,14 +120,14 @@ fi
 echo ""
 echo -e "${BLUE}Creating release v$NEW_VERSION...${NC}"
 
-# Bump version, create commit and tag
-npm version $RELEASE_TYPE -m "Release v%s"
-
-# Add release notes to commit if modified
+# Commit release notes first if they exist and were modified
 if [ -f $RELEASE_NOTES_FILE ]; then
     git add $RELEASE_NOTES_FILE
-    git commit --amend --no-edit
+    git commit -m "Add release notes for v$NEW_VERSION" || true
 fi
+
+# Bump version, create commit and tag
+npm version $RELEASE_TYPE -m "Release v%s"
 
 # Push commits and tags
 echo ""
