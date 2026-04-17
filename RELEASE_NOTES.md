@@ -1,4 +1,4 @@
-## What's New in v0.1.6
+## What's New in v0.1.7
 
 ### Changes
 
