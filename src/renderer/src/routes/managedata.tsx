@@ -4,7 +4,7 @@ import { Button } from '@renderer/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/ui/card'
 import { createFileRoute } from '@tanstack/react-router'
 import { Spinner } from '@renderer/components/ui/spinner'
-import { Download, Upload } from 'lucide-react'
+import { Download, Upload, AlertTriangle } from 'lucide-react'
 import { pdf } from '@react-pdf/renderer'
 import { BookCatalogPDF } from '@renderer/components/BookCatalogPDF'
 import type { Book } from '@renderer/types/book'
@@ -156,6 +156,26 @@ export default function ManageData() {
     }
   }
 
+  const handleClearDatabase = async () => {
+    const confirmed = confirm(
+      'Are you absolutely sure you want to clear the entire database?\n\nThis will permanently delete all books, tags, loans, and users. This action CANNOT be undone. Please ensure you have exported a backup first.'
+    )
+    if (!confirmed) return
+
+    try {
+      const result = await window.electron.ipcRenderer.invoke('database:clear')
+      if (result.success) {
+        alert('Database cleared successfully! The application will now reload.')
+        window.location.reload()
+      } else {
+        alert(`Failed to clear database: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('Error clearing database:', error)
+      alert('Failed to clear database. Please try again.')
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -218,6 +238,24 @@ export default function ManageData() {
               Restore a backup file
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4 border-destructive/50">
+        <CardHeader>
+          <CardTitle className="text-destructive flex items-center">
+            <AlertTriangle className="size-5 mr-2" />
+            Danger Zone
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            Permanently delete all data from the database. This action cannot be undone.
+          </p>
+          <Button variant="destructive" className="mt-4" onClick={handleClearDatabase}>
+            <AlertTriangle className="size-4 mr-2" />
+            Clear Database
+          </Button>
         </CardContent>
       </Card>
     </>

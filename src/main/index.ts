@@ -5,7 +5,8 @@ import icon from '../../resources/icon.png?asset'
 import { booksController } from './controllers/books'
 import { tagsController } from './controllers/tags'
 import { getBookInfoGoogleBooks, getBookInfoIndian, getBookInfoOpenLibrary } from './lib/bookApi'
-import { dbFilePath } from './lib/prisma'
+import { prisma, dbFilePath } from './lib/prisma'
+import { initializeDatabase } from './lib/initDatabase'
 import * as fs from 'fs'
 
 // Helper to automatically register IPC handlers for a controller
@@ -139,6 +140,33 @@ app.whenReady().then(() => {
       return { success: true }
     } catch (error) {
       console.error('Error importing database:', error)
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('database:clear', async () => {
+    try {
+      // Disconnect prisma to release file lock
+      await prisma.$disconnect()
+
+      // Delete database file
+      if (fs.existsSync(dbFilePath)) {
+        fs.unlinkSync(dbFilePath)
+      }
+
+      // Delete backup file if you want to completely reset?
+      // The prompt says "clear out database, which resets everything"
+      // We'll just reset the active database, the user can use export/import for backups.
+
+      // Re-initialize (runs migrations to create tables)
+      initializeDatabase(dbFilePath)
+
+      // Reconnect prisma
+      await prisma.$connect()
+
+      return { success: true }
+    } catch (error) {
+      console.error('Error clearing database:', error)
       return { success: false, error: (error as Error).message }
     }
   })
