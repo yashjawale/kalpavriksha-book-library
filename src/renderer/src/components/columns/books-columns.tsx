@@ -64,7 +64,11 @@ export function getBooksColumns({
       },
       cell: ({ row }) => {
         const title = row.getValue('title') as string | null
-        return <div className="font-medium truncate max-w-64">{title || '-'}</div>
+        return (
+          <div className="font-medium truncate max-w-64" title={title || undefined}>
+            {title || '-'}
+          </div>
+        )
       }
     },
     {
@@ -73,7 +77,12 @@ export function getBooksColumns({
       cell: ({ row }) => {
         const author = row.getValue('author') as string | null
         return (
-          <div className="text-sm text-muted-foreground truncate max-w-44">{author || '-'}</div>
+          <div
+            className="text-sm text-muted-foreground truncate max-w-44"
+            title={author || undefined}
+          >
+            {author || '-'}
+          </div>
         )
       }
     },
@@ -83,7 +92,12 @@ export function getBooksColumns({
       cell: ({ row }) => {
         const publisher = row.getValue('publisher') as string | null
         return (
-          <div className="text-sm text-muted-foreground truncate max-w-44">{publisher || '-'}</div>
+          <div
+            className="text-sm text-muted-foreground truncate max-w-44"
+            title={publisher || undefined}
+          >
+            {publisher || '-'}
+          </div>
         )
       }
     },
