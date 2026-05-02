@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { Book } from '@renderer/types/book'
 import { Button } from '@renderer/components/ui/button'
-import { ArrowUpDown, MoreVertical, Plus, Tag } from 'lucide-react'
+import { ArrowUpDown, MoreVertical, Plus, Tag, Pencil } from 'lucide-react'
 import { TagBadge } from '@renderer/components/TagBadge'
 import { Checkbox } from '@renderer/components/ui/checkbox'
 import {
@@ -17,13 +17,15 @@ interface BooksColumnsProps {
   isDeleting?: boolean
   onAddStock?: (isbn: string, title: string, currentStock: number) => void
   onChangeTags?: (isbn: string, title: string) => void
+  onEditDetails?: (book: Book) => void
 }
 
 export function getBooksColumns({
   onDelete,
   isDeleting,
   onAddStock,
-  onChangeTags
+  onChangeTags,
+  onEditDetails
 }: BooksColumnsProps = {}): ColumnDef<Book>[] {
   return [
     {
@@ -169,7 +171,7 @@ export function getBooksColumns({
         )
       }
     },
-    ...(onDelete || onAddStock || onChangeTags
+    ...(onDelete || onAddStock || onChangeTags || onEditDetails
       ? [
           {
             id: 'actions',
@@ -184,6 +186,12 @@ export function getBooksColumns({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    {onEditDetails && (
+                      <DropdownMenuItem onClick={() => onEditDetails(row.original)}>
+                        <Pencil className="mr-2 size-4" />
+                        Edit Details
+                      </DropdownMenuItem>
+                    )}
                     {onAddStock && (
                       <DropdownMenuItem
                         onClick={() =>
@@ -202,7 +210,9 @@ export function getBooksColumns({
                         Change Tags
                       </DropdownMenuItem>
                     )}
-                    {(onAddStock || onChangeTags) && onDelete && <DropdownMenuSeparator />}
+                    {(onAddStock || onChangeTags || onEditDetails) && onDelete && (
+                      <DropdownMenuSeparator />
+                    )}
                     {onDelete && (
                       <DropdownMenuItem
                         onClick={() => onDelete(row.original.isbn, row.original.title)}
