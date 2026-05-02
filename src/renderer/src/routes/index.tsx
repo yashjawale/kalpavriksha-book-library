@@ -38,6 +38,13 @@ export default function ManageBooks() {
   const queryClient = useQueryClient()
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
   const [addStockDialogOpen, setAddStockDialogOpen] = useState(false)
+  const [editDetailsDialogOpen, setEditDetailsDialogOpen] = useState(false)
+  const [editDetailsForm, setEditDetailsForm] = useState<{
+    isbn: string
+    title: string
+    author: string
+    publisher: string
+  } | null>(null)
   const [changeTagsDialogOpen, setChangeTagsDialogOpen] = useState(false)
   const [bulkChangeTagsDialogOpen, setBulkChangeTagsDialogOpen] = useState(false)
   const [bulkAddTagDialogOpen, setBulkAddTagDialogOpen] = useState(false)
@@ -101,6 +108,21 @@ export default function ManageBooks() {
   const updateStockMutation = useMutation({
     mutationFn: async ({ isbn, newStock }: { isbn: string; newStock: number }) => {
       return await window.api.books.updateStock(isbn, newStock)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] })
+    }
+  })
+
+  const updateDetailsMutation = useMutation({
+    mutationFn: async ({
+      isbn,
+      details
+    }: {
+      isbn: string
+      details: { title: string; author: string; publisher: string }
+    }) => {
+      return await window.api.books.updateDetails(isbn, details)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] })
@@ -210,6 +232,36 @@ export default function ManageBooks() {
     }
   }
 
+  const handleEditDetails = (book: Book): void => {
+    setEditDetailsForm({
+      isbn: book.isbn,
+      title: book.title,
+      author: book.author || '',
+      publisher: book.publisher || ''
+    })
+    setEditDetailsDialogOpen(true)
+  }
+
+  const handleEditDetailsConfirm = async (): Promise<void> => {
+    if (!editDetailsForm || !editDetailsForm.title.trim()) return
+
+    try {
+      await updateDetailsMutation.mutateAsync({
+        isbn: editDetailsForm.isbn,
+        details: {
+          title: editDetailsForm.title,
+          author: editDetailsForm.author,
+          publisher: editDetailsForm.publisher
+        }
+      })
+      setEditDetailsDialogOpen(false)
+      setEditDetailsForm(null)
+    } catch (error) {
+      console.error('Error updating details:', error)
+      alert('Failed to update details. Please try again.')
+    }
+  }
+
   const handleChangeTags = (isbn: string, title: string): void => {
     const book = allBooks.find((b) => b.isbn === isbn)
     setSelectedBook({ isbn, title, currentStock: 0 })
@@ -296,7 +348,8 @@ export default function ManageBooks() {
     onDelete: handleDelete,
     isDeleting: deleteBookMutation.isPending,
     onAddStock: handleAddStock,
-    onChangeTags: handleChangeTags
+    onChangeTags: handleChangeTags,
+    onEditDetails: handleEditDetails
   })
 
   // Global filter function for searching across multiple fields
@@ -413,6 +466,70 @@ export default function ManageBooks() {
         onRowSelectionChange={setRowSelection}
         getRowId={(book) => book.isbn}
       />
+
+      {/* Edit Details Dialog */}
+      <Dialog open={editDetailsDialogOpen} onOpenChange={setEditDetailsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Book Details</DialogTitle>
+            <DialogDescription>Update details for: {editDetailsForm?.isbn}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="editTitle">
+                Title <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="editTitle"
+                value={editDetailsForm?.title || ''}
+                onChange={(e) =>
+                  setEditDetailsForm((prev) => (prev ? { ...prev, title: e.target.value } : null))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editAuthor">Author</Label>
+              <Input
+                id="editAuthor"
+                value={editDetailsForm?.author || ''}
+                onChange={(e) =>
+                  setEditDetailsForm((prev) => (prev ? { ...prev, author: e.target.value } : null))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editPublisher">Publisher</Label>
+              <Input
+                id="editPublisher"
+                value={editDetailsForm?.publisher || ''}
+                onChange={(e) =>
+                  setEditDetailsForm((prev) =>
+                    prev ? { ...prev, publisher: e.target.value } : null
+                  )
+                }
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDetailsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEditDetailsConfirm}
+              disabled={updateDetailsMutation.isPending || !editDetailsForm?.title.trim()}
+            >
+              {updateDetailsMutation.isPending ? (
+                <>
+                  <Spinner className="size-4 mr-2" />
+                  Updating...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Stock Dialog */}
       <Dialog open={addStockDialogOpen} onOpenChange={setAddStockDialogOpen}>

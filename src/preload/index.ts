@@ -34,6 +34,10 @@ const api = {
       needsBarcodeSticker?: boolean
       tagIds?: number[]
     }) => ipcRenderer.invoke('books:create', data),
+    updateDetails: (
+      isbn: string,
+      details: { title: string; author?: string; publisher?: string }
+    ) => ipcRenderer.invoke('books:updateDetails', isbn, details),
     updateStock: (isbn: string, stockCount: number) =>
       ipcRenderer.invoke('books:updateStock', isbn, stockCount),
     incrementStockByOne: (isbn: string) => ipcRenderer.invoke('books:incrementStockByOne', isbn),

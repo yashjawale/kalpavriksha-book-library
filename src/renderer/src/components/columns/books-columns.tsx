@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { Book } from '@renderer/types/book'
 import { Button } from '@renderer/components/ui/button'
-import { ArrowUpDown, MoreVertical, Plus, Tag } from 'lucide-react'
+import { ArrowUpDown, MoreVertical, Plus, Tag, Pencil } from 'lucide-react'
 import { TagBadge } from '@renderer/components/TagBadge'
 import { Checkbox } from '@renderer/components/ui/checkbox'
 import {
@@ -17,13 +17,15 @@ interface BooksColumnsProps {
   isDeleting?: boolean
   onAddStock?: (isbn: string, title: string, currentStock: number) => void
   onChangeTags?: (isbn: string, title: string) => void
+  onEditDetails?: (book: Book) => void
 }
 
 export function getBooksColumns({
   onDelete,
   isDeleting,
   onAddStock,
-  onChangeTags
+  onChangeTags,
+  onEditDetails
 }: BooksColumnsProps = {}): ColumnDef<Book>[] {
   return [
     {
@@ -62,7 +64,11 @@ export function getBooksColumns({
       },
       cell: ({ row }) => {
         const title = row.getValue('title') as string | null
-        return <div className="font-medium truncate max-w-64">{title || '-'}</div>
+        return (
+          <div className="font-medium truncate max-w-64" title={title || undefined}>
+            {title || '-'}
+          </div>
+        )
       }
     },
     {
@@ -71,7 +77,12 @@ export function getBooksColumns({
       cell: ({ row }) => {
         const author = row.getValue('author') as string | null
         return (
-          <div className="text-sm text-muted-foreground truncate max-w-44">{author || '-'}</div>
+          <div
+            className="text-sm text-muted-foreground truncate max-w-44"
+            title={author || undefined}
+          >
+            {author || '-'}
+          </div>
         )
       }
     },
@@ -81,7 +92,12 @@ export function getBooksColumns({
       cell: ({ row }) => {
         const publisher = row.getValue('publisher') as string | null
         return (
-          <div className="text-sm text-muted-foreground truncate max-w-44">{publisher || '-'}</div>
+          <div
+            className="text-sm text-muted-foreground truncate max-w-44"
+            title={publisher || undefined}
+          >
+            {publisher || '-'}
+          </div>
         )
       }
     },
@@ -169,7 +185,7 @@ export function getBooksColumns({
         )
       }
     },
-    ...(onDelete || onAddStock || onChangeTags
+    ...(onDelete || onAddStock || onChangeTags || onEditDetails
       ? [
           {
             id: 'actions',
@@ -184,6 +200,12 @@ export function getBooksColumns({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    {onEditDetails && (
+                      <DropdownMenuItem onClick={() => onEditDetails(row.original)}>
+                        <Pencil className="mr-2 size-4" />
+                        Edit Details
+                      </DropdownMenuItem>
+                    )}
                     {onAddStock && (
                       <DropdownMenuItem
                         onClick={() =>
@@ -202,7 +224,9 @@ export function getBooksColumns({
                         Change Tags
                       </DropdownMenuItem>
                     )}
-                    {(onAddStock || onChangeTags) && onDelete && <DropdownMenuSeparator />}
+                    {(onAddStock || onChangeTags || onEditDetails) && onDelete && (
+                      <DropdownMenuSeparator />
+                    )}
                     {onDelete && (
                       <DropdownMenuItem
                         onClick={() => onDelete(row.original.isbn, row.original.title)}
