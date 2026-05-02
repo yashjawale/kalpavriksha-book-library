@@ -168,8 +168,8 @@ function BulkAdd() {
       })
 
       try {
-        // Check if book already exists in the database
-        const existingBook = recentBooks.find((book) => book.isbn === isbn)
+        // Check if book already exists in the database (actual DB call)
+        const existingBook = await window.api.books.getById(isbn)
 
         if (existingBook) {
           // Book exists, increment its count
