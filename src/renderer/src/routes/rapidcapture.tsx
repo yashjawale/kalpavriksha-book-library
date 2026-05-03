@@ -31,10 +31,17 @@ function RapidCapture() {
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>(() => {
     return localStorage.getItem('selectedCameraId') || ''
   })
+  const [rotation, setRotation] = useState<number>(() => {
+    return parseInt(localStorage.getItem('cameraRotation') || '0', 10)
+  })
 
   useEffect(() => {
     localStorage.setItem('selectedCameraId', selectedDeviceId)
   }, [selectedDeviceId])
+
+  useEffect(() => {
+    localStorage.setItem('cameraRotation', rotation.toString())
+  }, [rotation])
 
   // New states
   const [preselectedTagIds, setPreselectedTagIds] = useState<number[]>([])
@@ -141,11 +148,26 @@ function RapidCapture() {
     if (!videoRef.current || !canvasRef.current) return null
     const video = videoRef.current
     const canvas = canvasRef.current
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
+
+    const vWidth = video.videoWidth
+    const vHeight = video.videoHeight
+
+    if (rotation === 90 || rotation === 270) {
+      canvas.width = vHeight
+      canvas.height = vWidth
+    } else {
+      canvas.width = vWidth
+      canvas.height = vHeight
+    }
+
     const ctx = canvas.getContext('2d')
     if (ctx) {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      ctx.save()
+      ctx.translate(canvas.width / 2, canvas.height / 2)
+      ctx.rotate((rotation * Math.PI) / 180)
+      ctx.drawImage(video, -vWidth / 2, -vHeight / 2, vWidth, vHeight)
+      ctx.restore()
+
       return canvas.toDataURL('image/jpeg', 0.8)
     }
     return null
@@ -227,7 +249,17 @@ function RapidCapture() {
           </p>
         </CardHeader>
         <CardContent className="p-6 flex flex-col flex-1 gap-4">
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <select
+              className="px-3 py-2 bg-background border rounded-md text-sm shadow-sm"
+              value={rotation}
+              onChange={(e) => setRotation(parseInt(e.target.value, 10))}
+            >
+              <option value={0}>0°</option>
+              <option value={90}>90° (Right)</option>
+              <option value={180}>180° (Upside Down)</option>
+              <option value={270}>270° (Left)</option>
+            </select>
             <select
               className="px-3 py-2 bg-background border rounded-md text-sm shadow-sm"
               value={selectedDeviceId}
@@ -242,7 +274,15 @@ function RapidCapture() {
             </select>
           </div>
           <div className="relative rounded-xl overflow-hidden bg-black flex-1 flex items-center justify-center shadow-inner">
-            <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className="w-full h-full object-cover transition-transform duration-300"
+              style={{
+                transform: `rotate(${rotation}deg) scale(${rotation % 180 === 90 ? 1.8 : 1})`
+              }}
+            />
             {flash && (
               <div className="absolute inset-0 bg-white/80 animate-in fade-in duration-100 z-10 pointer-events-none" />
             )}
