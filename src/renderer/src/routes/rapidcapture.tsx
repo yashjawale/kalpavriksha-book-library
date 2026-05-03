@@ -23,12 +23,18 @@ type CapturedBook = {
 function RapidCapture() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [stream, setStream] = useState<MediaStream | null>(null)
   const [step, setStep] = useState<'FRONT' | 'BACK'>('FRONT')
   const [frontImage, setFrontImage] = useState<string | null>(null)
   const [flash, setFlash] = useState(false)
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string>('')
+  const currentStreamRef = useRef<MediaStream | null>(null)
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>(() => {
+    return localStorage.getItem('selectedCameraId') || ''
+  })
+
+  useEffect(() => {
+    localStorage.setItem('selectedCameraId', selectedDeviceId)
+  }, [selectedDeviceId])
 
   // New states
   const [preselectedTagIds, setPreselectedTagIds] = useState<number[]>([])
@@ -42,7 +48,6 @@ function RapidCapture() {
   useEffect(() => {
     const fetchRecent = async () => {
       try {
-        // @ts-ignore IPC
         const data = await window.electron.ipcRenderer.invoke('capture:getRecentCaptures')
         setRecentCaptures(data)
 
@@ -51,7 +56,6 @@ function RapidCapture() {
         let updated = false
         for (const item of data) {
           if (!newThumbnails[item.id]) {
-            // @ts-ignore
             const f = await window.electron.ipcRenderer.invoke(
               'capture:getImageBase64',
               item.frontImage
@@ -73,6 +77,8 @@ function RapidCapture() {
 
   // Camera setup
   useEffect(() => {
+    let isMounted = true
+
     async function setupCamera(deviceId?: string) {
       try {
         const constraints: MediaStreamConstraints = {
@@ -81,7 +87,13 @@ function RapidCapture() {
             : { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
         }
         const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
-        setStream(mediaStream)
+
+        if (!isMounted) {
+          mediaStream.getTracks().forEach((track) => track.stop())
+          return
+        }
+
+        currentStreamRef.current = mediaStream
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream
         }
@@ -100,16 +112,26 @@ function RapidCapture() {
       try {
         const allDevices = await navigator.mediaDevices.enumerateDevices()
         const videoDevices = allDevices.filter((d) => d.kind === 'videoinput')
-        setDevices(videoDevices)
+
+        if (isMounted) {
+          setDevices(videoDevices)
+        }
       } catch (e) {
         console.error('Error fetching devices', e)
       }
     }
     fetchDevices()
 
+    const videoElement = videoRef.current
+
     return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop())
+      isMounted = false
+      if (currentStreamRef.current) {
+        currentStreamRef.current.getTracks().forEach((track) => track.stop())
+        currentStreamRef.current = null
+      }
+      if (videoElement) {
+        videoElement.srcObject = null
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -143,7 +165,6 @@ function RapidCapture() {
     } else {
       // Capture Back and Save
       try {
-        // @ts-ignore IPC
         const result = await window.electron.ipcRenderer.invoke(
           'capture:saveImages',
           frontImage,

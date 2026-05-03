@@ -51,7 +51,10 @@ export function startCaptureProcessor() {
           // @ts-ignore - The types might not exactly match
           const buffer = fs.readFileSync(pending.backImage)
           const blob = new Blob([buffer])
-          const results = await readBarcodesFromImageFile(blob, readerOptions as any)
+          const results = await readBarcodesFromImageFile(
+            blob,
+            readerOptions as Parameters<typeof readBarcodesFromImageFile>[1]
+          )
           if (results && results.length > 0) {
             isbn = results[0].text
             console.log(`Barcode found: ${isbn}`)
