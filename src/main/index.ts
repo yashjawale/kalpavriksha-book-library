@@ -4,6 +4,8 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { booksController } from './controllers/books'
 import { tagsController } from './controllers/tags'
+import { captureController } from './controllers/capture'
+import { startCaptureProcessor } from './lib/captureProcessor'
 import { getBookInfoGoogleBooks, getBookInfoIndian, getBookInfoOpenLibrary } from './lib/bookApi'
 import { dbFilePath } from './lib/prisma'
 import * as fs from 'fs'
@@ -80,6 +82,7 @@ app.whenReady().then(() => {
   // Auto-register controllers
   registerController('books', booksController)
   registerController('tags', tagsController)
+  registerController('capture', captureController)
 
   // Register book API handlers
   ipcMain.handle('bookApi:getGoogleBooksInfo', async (_, isbn: string) => {
@@ -142,6 +145,9 @@ app.whenReady().then(() => {
       return { success: false, error: (error as Error).message }
     }
   })
+
+  // Start the background capture processor
+  startCaptureProcessor()
 
   createWindow()
 

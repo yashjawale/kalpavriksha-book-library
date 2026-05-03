@@ -249,7 +249,7 @@ function BulkAdd() {
         }, ANIMATION_DELAY)
       }
     },
-    [createBookMutation, updateStockMutation, preselectedTagIds, recentBooks]
+    [createBookMutation, updateStockMutation, preselectedTagIds]
   )
 
   // Barcode scanner hook

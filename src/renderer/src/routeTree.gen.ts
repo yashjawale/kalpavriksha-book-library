@@ -9,11 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ReviewqueueRouteImport } from './routes/reviewqueue'
+import { Route as RapidcaptureRouteImport } from './routes/rapidcapture'
 import { Route as ManagedataRouteImport } from './routes/managedata'
 import { Route as BulkaddRouteImport } from './routes/bulkadd'
 import { Route as BarcodesRouteImport } from './routes/barcodes'
 import { Route as IndexRouteImport } from './routes/index'
 
+const ReviewqueueRoute = ReviewqueueRouteImport.update({
+  id: '/reviewqueue',
+  path: '/reviewqueue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RapidcaptureRoute = RapidcaptureRouteImport.update({
+  id: '/rapidcapture',
+  path: '/rapidcapture',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ManagedataRoute = ManagedataRouteImport.update({
   id: '/managedata',
   path: '/managedata',
@@ -40,12 +52,16 @@ export interface FileRoutesByFullPath {
   '/barcodes': typeof BarcodesRoute
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
+  '/rapidcapture': typeof RapidcaptureRoute
+  '/reviewqueue': typeof ReviewqueueRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/barcodes': typeof BarcodesRoute
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
+  '/rapidcapture': typeof RapidcaptureRoute
+  '/reviewqueue': typeof ReviewqueueRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +69,34 @@ export interface FileRoutesById {
   '/barcodes': typeof BarcodesRoute
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
+  '/rapidcapture': typeof RapidcaptureRoute
+  '/reviewqueue': typeof ReviewqueueRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/barcodes' | '/bulkadd' | '/managedata'
+  fullPaths:
+    | '/'
+    | '/barcodes'
+    | '/bulkadd'
+    | '/managedata'
+    | '/rapidcapture'
+    | '/reviewqueue'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/barcodes' | '/bulkadd' | '/managedata'
-  id: '__root__' | '/' | '/barcodes' | '/bulkadd' | '/managedata'
+  to:
+    | '/'
+    | '/barcodes'
+    | '/bulkadd'
+    | '/managedata'
+    | '/rapidcapture'
+    | '/reviewqueue'
+  id:
+    | '__root__'
+    | '/'
+    | '/barcodes'
+    | '/bulkadd'
+    | '/managedata'
+    | '/rapidcapture'
+    | '/reviewqueue'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,10 +104,26 @@ export interface RootRouteChildren {
   BarcodesRoute: typeof BarcodesRoute
   BulkaddRoute: typeof BulkaddRoute
   ManagedataRoute: typeof ManagedataRoute
+  RapidcaptureRoute: typeof RapidcaptureRoute
+  ReviewqueueRoute: typeof ReviewqueueRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reviewqueue': {
+      id: '/reviewqueue'
+      path: '/reviewqueue'
+      fullPath: '/reviewqueue'
+      preLoaderRoute: typeof ReviewqueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rapidcapture': {
+      id: '/rapidcapture'
+      path: '/rapidcapture'
+      fullPath: '/rapidcapture'
+      preLoaderRoute: typeof RapidcaptureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/managedata': {
       id: '/managedata'
       path: '/managedata'
@@ -107,6 +160,8 @@ const rootRouteChildren: RootRouteChildren = {
   BarcodesRoute: BarcodesRoute,
   BulkaddRoute: BulkaddRoute,
   ManagedataRoute: ManagedataRoute,
+  RapidcaptureRoute: RapidcaptureRoute,
+  ReviewqueueRoute: ReviewqueueRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
