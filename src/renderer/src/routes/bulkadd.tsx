@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import Bulk from '../assets/images/bulk.svg'
 import { Label } from '@renderer/components/ui/label'
 import { Spinner } from '@renderer/components/ui/spinner'
-import { cn } from '@renderer/lib/utils'
+import { cn, generateKVBId } from '@renderer/lib/utils'
 import {
   Dialog,
   DialogClose,
@@ -262,16 +262,6 @@ function BulkAdd() {
       !isTagDialogOpen
   })
 
-  // Generate unique local ISBN for books without barcodes
-  const generateLocalIsbn = () => {
-    const now = new Date()
-    const year = now.getFullYear()
-    const month = String(now.getMonth() + 1).padStart(2, '0')
-    const day = String(now.getDate()).padStart(2, '0')
-    const milliseconds = String(now.getMilliseconds()).padStart(3, '0')
-    return `KVB-${year}${month}${day}${milliseconds}`
-  }
-
   const handleManualAdd = manualModeForm.handleSubmit(async (data) => {
     dispatchProcessing({
       type: 'START_PROCESSING',
@@ -280,7 +270,7 @@ function BulkAdd() {
     })
 
     try {
-      const localIsbn = generateLocalIsbn()
+      const localIsbn = generateKVBId()
       await createBookMutation.mutateAsync({
         isbn: localIsbn,
         title: data.title,

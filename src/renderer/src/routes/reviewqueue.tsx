@@ -7,6 +7,7 @@ import { Label } from '@renderer/components/ui/label'
 import { useToast } from '@renderer/hooks/use-toast'
 import { Check, Trash2, Image as ImageIcon, Loader2, CopyPlus, PlusSquare, Tag } from 'lucide-react'
 import { TagSelector } from '@renderer/components/TagSelector'
+import { generateKVBId } from '@renderer/lib/utils'
 
 export const Route = createFileRoute('/reviewqueue')({
   component: ReviewQueue
@@ -119,14 +120,16 @@ function ReviewQueue() {
 
   const handleApprove = async (mode: 'INCREMENT' | 'NEW_ENTRY' = 'INCREMENT') => {
     if (!selectedId) return
-    if (!isbn || !title) {
+    if (!title) {
       toast({
         title: 'Validation Error',
-        description: 'ISBN and Title are required.',
+        description: 'Title is required.',
         variant: 'destructive'
       })
       return
     }
+
+    const finalIsbn = isbn.trim() || generateKVBId()
 
     try {
       // @ts-ignore - IPC types are not fully defined in the global window object
@@ -134,7 +137,7 @@ function ReviewQueue() {
         'capture:approve',
         selectedId,
         {
-          isbn,
+          isbn: finalIsbn,
           title,
           author,
           publisher,
@@ -236,7 +239,7 @@ function ReviewQueue() {
         <Card className="w-2/3 flex flex-col bg-card border-border/50 shadow-xl overflow-hidden">
           <CardContent className="flex-1 p-6 flex flex-col gap-6 overflow-auto">
             {/* Images side by side */}
-            <div className="flex gap-4 h-64 shrink-0">
+            <div className="flex gap-4 h-80 lg:h-[450px] xl:h-[550px] shrink-0">
               <div className="flex-1 bg-black rounded-lg overflow-hidden relative shadow-inner group">
                 {frontImgData ? (
                   <img
@@ -288,7 +291,7 @@ function ReviewQueue() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="isbn">ISBN (Required)</Label>
+                  <Label htmlFor="isbn">ISBN (Optional)</Label>
                   <Input
                     id="isbn"
                     value={isbn}
