@@ -11,7 +11,16 @@ import {
 } from '@renderer/components/ui/sidebar'
 import { Link } from '@tanstack/react-router'
 import Logo from '../assets/images/logo.svg'
-import { UploadIcon, PrinterIcon, BookOpen, Database, Info, Camera, ListChecks } from 'lucide-react'
+import {
+  UploadIcon,
+  PrinterIcon,
+  BookOpen,
+  Database,
+  Info,
+  Camera,
+  ListChecks,
+  Zap
+} from 'lucide-react'
 import { AboutDialog } from './AboutDialog'
 import { useState } from 'react'
 
@@ -23,6 +32,7 @@ export function AppSidebar() {
     { to: '/rapidcapture', label: 'Rapid Capture', icon: Camera },
     { to: '/reviewqueue', label: 'Review Queue', icon: ListChecks },
     { to: '/bulkadd', label: 'Bulk Add', icon: UploadIcon },
+    { to: '/rapidscan', label: 'Rapid Scan', icon: Zap },
     { to: '/barcodes', label: 'Print Barcodes', icon: PrinterIcon },
     { to: '/managedata', label: 'Manage Data', icon: Database }
   ]
