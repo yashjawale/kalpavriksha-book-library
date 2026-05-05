@@ -40,6 +40,38 @@ export const captureController = {
     }
   },
 
+  // Quick Capture: saves only the front image. ISBN may be pre-scanned via barcode scanner.
+  saveFrontImage: async (frontBase64: string, isbn?: string | null, tagIds?: number[]) => {
+    try {
+      const userDataPath = app.getPath('userData')
+      const capturesDir = join(userDataPath, 'captures')
+      if (!fs.existsSync(capturesDir)) {
+        fs.mkdirSync(capturesDir, { recursive: true })
+      }
+
+      const id = crypto.randomUUID()
+      const frontPath = join(capturesDir, `${id}_front.jpg`)
+
+      const frontBuffer = Buffer.from(frontBase64.replace(/^data:image\/\w+;base64,/, ''), 'base64')
+      fs.writeFileSync(frontPath, frontBuffer)
+
+      const capturedBook = await prisma.capturedBook.create({
+        data: {
+          frontImage: frontPath,
+          backImage: '', // No back image for quick capture
+          isbn: isbn || null,
+          tagIds: tagIds && tagIds.length > 0 ? JSON.stringify(tagIds) : null,
+          status: 'PENDING'
+        }
+      })
+
+      return { success: true, data: capturedBook }
+    } catch (error) {
+      console.error('Error saving front image:', error)
+      return { success: false, error: (error as Error).message }
+    }
+  },
+
   getQueue: async () => {
     return await prisma.capturedBook.findMany({
       where: { status: { in: ['PENDING', 'PROCESSED'] } },

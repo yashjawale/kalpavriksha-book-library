@@ -38,10 +38,10 @@ export function startCaptureProcessor() {
 
       console.log(`Processing captured book ID: ${pending.id}`)
 
-      let isbn: string | null = null
+      let isbn: string | null = pending.isbn // May already be set by Quick Capture
 
-      // Try reading barcode from back image
-      if (fs.existsSync(pending.backImage)) {
+      // Only read barcode from back image if isbn not already provided and backImage exists
+      if (!isbn && pending.backImage && fs.existsSync(pending.backImage)) {
         try {
           const readerOptions = {
             tryHarder: true,

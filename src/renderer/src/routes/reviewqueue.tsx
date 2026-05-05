@@ -5,7 +5,16 @@ import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { useToast } from '@renderer/hooks/use-toast'
-import { Check, Trash2, Image as ImageIcon, Loader2, CopyPlus, PlusSquare, Tag } from 'lucide-react'
+import {
+  Check,
+  Trash2,
+  Image as ImageIcon,
+  Loader2,
+  CopyPlus,
+  PlusSquare,
+  Tag,
+  ScanLine
+} from 'lucide-react'
 import { TagSelector } from '@renderer/components/TagSelector'
 import { generateKVBId } from '@renderer/lib/utils'
 
@@ -32,8 +41,7 @@ function ReviewQueue() {
   const [frontImgData, setFrontImgData] = useState<string | null>(null)
   const [backImgData, setBackImgData] = useState<string | null>(null)
 
-  // Form state
-  const [isbn, setIsbn] = useState('')
+  // Editable form state (ISBN removed — handled automatically)
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [publisher, setPublisher] = useState('')
@@ -77,7 +85,6 @@ function ReviewQueue() {
           selected.status === 'PROCESSED'
 
         if (isNewBook || justProcessed) {
-          setIsbn(selected.isbn || '')
           setTitle(selected.title || '')
           setAuthor(selected.author || '')
           setPublisher(selected.publisher || '')
@@ -95,17 +102,19 @@ function ReviewQueue() {
         }
 
         if (isNewBook) {
-          // Load images
           // @ts-ignore - IPC types are not fully defined in the global window object
           const f = await window.electron.ipcRenderer.invoke(
             'capture:getImageBase64',
             selected.frontImage
           )
-          // @ts-ignore - IPC types are not fully defined in the global window object
-          const b = await window.electron.ipcRenderer.invoke(
-            'capture:getImageBase64',
-            selected.backImage
-          )
+
+          // Only load back image if it's different from the front (not a Quick Capture entry)
+          const isQuickCapture = !selected.backImage || selected.backImage === selected.frontImage
+          const b = isQuickCapture
+            ? null
+            : // @ts-ignore - IPC types are not fully defined in the global window object
+              await window.electron.ipcRenderer.invoke('capture:getImageBase64', selected.backImage)
+
           setFrontImgData(f)
           setBackImgData(b)
         }
@@ -119,7 +128,7 @@ function ReviewQueue() {
   }, [selectedId, queue])
 
   const handleApprove = async (mode: 'INCREMENT' | 'NEW_ENTRY' = 'INCREMENT') => {
-    if (!selectedId) return
+    if (!selectedId || !selectedItem) return
     if (!title) {
       toast({
         title: 'Validation Error',
@@ -129,7 +138,8 @@ function ReviewQueue() {
       return
     }
 
-    const finalIsbn = isbn.trim() || generateKVBId()
+    // Use the scanned ISBN stored in DB, or generate a KVB ID
+    const finalIsbn = (selectedItem.isbn || '').trim() || generateKVBId()
 
     try {
       // @ts-ignore - IPC types are not fully defined in the global window object
@@ -177,7 +187,8 @@ function ReviewQueue() {
   }
 
   const selectedItem = queue.find((q) => q.id === selectedId)
-
+  const isQuickCapture =
+    selectedItem && (!selectedItem.backImage || selectedItem.backImage === selectedItem.frontImage)
   return (
     <div className="flex h-[calc(100vh-4rem)] gap-4 p-4">
       {/* Sidebar Queue List */}
@@ -220,10 +231,17 @@ function ReviewQueue() {
                     <div className="w-2 h-2 rounded-full bg-green-500 shrink-0 mt-1.5" />
                   )}
                 </div>
-                <div className="text-xs text-muted-foreground mt-1 flex items-center justify-between">
-                  <span className="font-mono">{item.isbn || 'No ISBN'}</span>
+                <div className="text-xs text-muted-foreground mt-1 flex items-center justify-between gap-2">
+                  {item.isbn ? (
+                    <span className="font-mono flex items-center gap-1">
+                      <ScanLine className="w-3 h-3 shrink-0" />
+                      {item.isbn}
+                    </span>
+                  ) : (
+                    <span className="italic opacity-60">KVB ID on save</span>
+                  )}
                   {item.isDuplicate && (
-                    <span className="bg-blue-500/10 text-blue-500 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase">
+                    <span className="bg-blue-500/10 text-blue-500 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase shrink-0">
                       Dup
                     </span>
                   )}
@@ -238,44 +256,68 @@ function ReviewQueue() {
       {selectedItem ? (
         <Card className="w-2/3 flex flex-col bg-card border-border/50 shadow-xl overflow-hidden">
           <CardContent className="flex-1 p-6 flex flex-col gap-6 overflow-auto">
-            {/* Images side by side */}
-            <div className="flex gap-4 h-80 lg:h-[450px] xl:h-[550px] shrink-0">
-              <div className="flex-1 bg-black rounded-lg overflow-hidden relative shadow-inner group">
-                {frontImgData ? (
-                  <img
-                    src={frontImgData}
-                    alt="Front Cover"
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                    <Loader2 className="animate-spin" />
+            {/* Images */}
+            {isQuickCapture ? (
+              /* Front-only (Quick Capture) — full width */
+              <div className="h-80 lg:h-[450px] xl:h-[550px] shrink-0">
+                <div className="h-full bg-black rounded-lg overflow-hidden relative shadow-inner group">
+                  {frontImgData ? (
+                    <img
+                      src={frontImgData}
+                      alt="Front Cover"
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      <Loader2 className="animate-spin" />
+                    </div>
+                  )}
+                  <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 text-xs rounded backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity">
+                    Front Cover
                   </div>
-                )}
-                <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 text-xs rounded backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity">
-                  Front
                 </div>
               </div>
-              <div className="flex-1 bg-black rounded-lg overflow-hidden relative shadow-inner group">
-                {backImgData ? (
-                  <img
-                    src={backImgData}
-                    alt="Back Cover"
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                    <Loader2 className="animate-spin" />
+            ) : (
+              /* Front + Back side by side (Rapid Capture) */
+              <div className="flex gap-4 h-80 lg:h-[450px] xl:h-[550px] shrink-0">
+                <div className="flex-1 bg-black rounded-lg overflow-hidden relative shadow-inner group">
+                  {frontImgData ? (
+                    <img
+                      src={frontImgData}
+                      alt="Front Cover"
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      <Loader2 className="animate-spin" />
+                    </div>
+                  )}
+                  <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 text-xs rounded backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity">
+                    Front
                   </div>
-                )}
-                <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 text-xs rounded backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity">
-                  Back (Barcode)
+                </div>
+                <div className="flex-1 bg-black rounded-lg overflow-hidden relative shadow-inner group">
+                  {backImgData ? (
+                    <img
+                      src={backImgData}
+                      alt="Back Cover"
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      <Loader2 className="animate-spin" />
+                    </div>
+                  )}
+                  <div className="absolute bottom-2 left-2 bg-black/60 text-white px-2 py-1 text-xs rounded backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity">
+                    Back (Barcode)
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Form */}
             <div className="space-y-4 flex-1">
+              {/* Status banners */}
               {selectedItem.status === 'PENDING' && (
                 <div className="bg-yellow-500/10 text-yellow-600 p-3 rounded flex items-center gap-2 text-sm border border-yellow-500/20">
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -289,18 +331,21 @@ function ReviewQueue() {
                 </div>
               )}
 
+              {/* ISBN read-only display */}
+              <div className="flex items-center gap-3 px-3 py-2 bg-muted/40 rounded-lg border text-sm">
+                <ScanLine className="w-4 h-4 text-muted-foreground shrink-0" />
+                {selectedItem.isbn ? (
+                  <span className="font-mono text-foreground">{selectedItem.isbn}</span>
+                ) : (
+                  <span className="text-muted-foreground italic">
+                    No barcode scanned — a KVB ID will be auto-generated on save
+                  </span>
+                )}
+              </div>
+
+              {/* Editable fields */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="isbn">ISBN (Optional)</Label>
-                  <Input
-                    id="isbn"
-                    value={isbn}
-                    onChange={(e) => setIsbn(e.target.value)}
-                    placeholder="e.g. 9780123456789"
-                    className="font-mono"
-                  />
-                </div>
-                <div className="space-y-2">
+                <div className="space-y-2 col-span-2">
                   <Label htmlFor="title">Title (Required)</Label>
                   <Input
                     id="title"
@@ -329,7 +374,7 @@ function ReviewQueue() {
                 </div>
               </div>
 
-              <div className="space-y-2 mt-4 bg-muted/30 p-4 rounded-lg border">
+              <div className="space-y-2 mt-2 bg-muted/30 p-4 rounded-lg border">
                 <Label className="flex items-center gap-2 mb-2">
                   <Tag className="w-4 h-4 text-primary" />
                   Selected Tags

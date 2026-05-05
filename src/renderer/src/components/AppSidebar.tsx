@@ -19,7 +19,8 @@ import {
   Info,
   Camera,
   ListChecks,
-  Zap
+  Zap,
+  ScanLine
 } from 'lucide-react'
 import { AboutDialog } from './AboutDialog'
 import { useState } from 'react'
@@ -30,6 +31,7 @@ export function AppSidebar() {
   const links = [
     { to: '/', label: 'Manage Books', icon: BookOpen },
     { to: '/rapidcapture', label: 'Rapid Capture', icon: Camera },
+    { to: '/quickcapture', label: 'Quick Capture', icon: ScanLine },
     { to: '/reviewqueue', label: 'Review Queue', icon: ListChecks },
     { to: '/bulkadd', label: 'Bulk Add', icon: UploadIcon },
     { to: '/rapidscan', label: 'Rapid Scan', icon: Zap },
