@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import path from 'path'
 import fs from 'fs'
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
@@ -152,6 +153,12 @@ async function run() {
   process.on('SIGINT', () => {
     if (shouldStop) {
       console.log('\nForce exiting...')
+      console.log(`Processed: ${processed}`)
+      console.log(`Updated: ${updated}`)
+      console.log(`Skipped: ${skipped}`)
+      console.log(`Failures: ${failures}`)
+      console.log(`Filled via APIs: ${apiFilled}`)
+      console.log(`Filled via AI: ${aiFilled}`)
       process.exit(1)
     }
     shouldStop = true
