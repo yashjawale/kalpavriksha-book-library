@@ -9,14 +9,13 @@ import {
   getBookInfoIndian
 } from '../src/main/lib/bookApi'
 
-type BackfillResult = {
-  id: number
-  isbn: string
+type BackfillUpdate = {
   title: string
   author: string
   publisher: string
   isDuplicate: boolean
   status: 'PROCESSED'
+  isbn?: string
 }
 
 type AiResult = {
@@ -167,35 +166,34 @@ async function run() {
 
   try {
     const captured = await prisma.capturedBook.findMany({
-      where: {
-        isbn: { not: null }
-      },
       orderBy: { createdAt: 'asc' }
     })
 
     if (captured.length === 0) {
-      console.log('No captured books with ISBN found.')
+      console.log('No captured books found.')
       return
     }
 
-    console.log(`Found ${captured.length} captured book(s) with ISBN.`)
+    console.log(`Found ${captured.length} captured book(s).`)
     console.log(`Mode: ${isDryRun ? 'DRY RUN' : 'WRITE'}`)
     console.log(`AI: ${aiEnabled ? (aiOnly ? 'ONLY' : 'FALLBACK') : 'DISABLED'}\n`)
 
     for (const record of captured) {
       processed += 1
 
-      const isbn = (record.isbn || '').trim()
-      if (!isbn) {
-        skipped += 1
-        console.log(`- Skipping ID ${record.id}: empty ISBN.`)
-        continue
-      }
-
       const hasTitle = !!record.title && record.title.trim().length > 0
       if (hasTitle) {
         skipped += 1
         console.log(`- Skipping ID ${record.id}: title already present.`)
+        if (shouldStop) break
+        continue
+      }
+
+      const isbn = (record.isbn || '').trim()
+      const hasIsbn = isbn.length > 0
+      if (!hasIsbn && !aiEnabled) {
+        skipped += 1
+        console.log(`- Skipping ID ${record.id}: empty ISBN and AI disabled.`)
         if (shouldStop) break
         continue
       }
@@ -206,20 +204,22 @@ async function run() {
         let publisher = record.publisher || ''
         let isDuplicate = record.isDuplicate
 
-        const existing = await prisma.book.findUnique({ where: { isbn } })
+        if (hasIsbn) {
+          const existing = await prisma.book.findUnique({ where: { isbn } })
 
-        if (existing) {
-          isDuplicate = true
-          title = existing.title
-          author = existing.author || ''
-          publisher = existing.publisher || ''
-        } else if (!aiOnly) {
-          const info = await getBookInfo(isbn)
-          if (info) {
-            title = info.title || ''
-            author = info.author || ''
-            publisher = info.publisher || ''
-            apiFilled += 1
+          if (existing) {
+            isDuplicate = true
+            title = existing.title
+            author = existing.author || ''
+            publisher = existing.publisher || ''
+          } else if (!aiOnly) {
+            const info = await getBookInfo(isbn)
+            if (info) {
+              title = info.title || ''
+              author = info.author || ''
+              publisher = info.publisher || ''
+              apiFilled += 1
+            }
           }
         }
 
@@ -233,14 +233,16 @@ async function run() {
           }
         }
 
-        const result: BackfillResult = {
-          id: record.id,
-          isbn,
+        const updateData: BackfillUpdate = {
           title,
           author,
           publisher,
           isDuplicate,
           status: 'PROCESSED'
+        }
+
+        if (hasIsbn) {
+          updateData.isbn = isbn
         }
 
         if (isDryRun) {
@@ -250,7 +252,7 @@ async function run() {
         } else {
           await prisma.capturedBook.update({
             where: { id: record.id },
-            data: result
+            data: updateData
           })
           updated += 1
           console.log(
