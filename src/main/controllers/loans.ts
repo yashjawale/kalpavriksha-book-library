@@ -1,51 +1,77 @@
 import { prisma } from '../lib/prisma'
 
 export const loansController = {
-  create: async (data: { bookIsbn: string; userEmail: string; dueDate?: Date | null }) => {
+  getAllActive: async () => {
+    return await prisma.loan.findMany({
+      where: { returnedAt: null },
+      include: {
+        book: true,
+        borrower: true
+      },
+      orderBy: { borrowedAt: 'desc' }
+    })
+  },
+
+  create: async (data: { bookIsbns: string[]; userEmail: string; dueDate?: Date | null }) => {
     // Check if user exists
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { email: data.userEmail }
     })
 
     if (!user) {
-      throw new Error(`User with email ${data.userEmail} does not exist.`)
+      // Create user if not existent? The schema needs the user. If they selected from the directory,
+      // they might not exist in the DB yet. The previous create checked and threw an error. Let's create instead to simplify.
+      user = await prisma.user.create({
+        data: { email: data.userEmail }
+      })
     }
 
-    // Check if book exists and has stock
-    const book = await prisma.book.findUnique({
-      where: { isbn: data.bookIsbn },
-      include: {
-        loans: {
-          where: { returnedAt: null }
+    const createdLoans: any[] = []
+
+    // Check books and create loans
+    for (const isbn of data.bookIsbns) {
+      const book = await prisma.book.findUnique({
+        where: { isbn: isbn },
+        include: {
+          loans: {
+            where: { returnedAt: null }
+          }
         }
-      }
-    })
+      })
 
-    if (!book) {
-      throw new Error(`Book with ISBN ${data.bookIsbn} not found`)
+      if (!book) {
+        throw new Error(`Book with ISBN ${isbn} not found.`)
+      }
+
+      const availableStock = book.totalStock - book.loans.length
+      if (availableStock <= 0) {
+        throw new Error(`Book ${book.title || isbn} is out of stock.`)
+      }
+
+      const loan = await prisma.loan.create({
+        data: {
+          bookIsbn: isbn,
+          userEmail: data.userEmail,
+          dueDate: data.dueDate
+        }
+      })
+      createdLoans.push(loan)
     }
 
-    const availableStock = book.totalStock - book.loans.length
-    if (availableStock <= 0) {
-      throw new Error('Book is out of stock')
-    }
-
-    // Create loan
-    const loan = await prisma.loan.create({
-      data: {
-        bookIsbn: data.bookIsbn,
-        userEmail: data.userEmail,
-        dueDate: data.dueDate
-      }
-    })
-
-    return loan
+    return createdLoans
   },
 
   returnBook: async (loanId: number) => {
     return await prisma.loan.update({
       where: { id: loanId },
       data: { returnedAt: new Date() }
+    })
+  },
+
+  extendLoan: async (loanId: number, dueDate: Date) => {
+    return await prisma.loan.update({
+      where: { id: loanId },
+      data: { dueDate }
     })
   }
 }

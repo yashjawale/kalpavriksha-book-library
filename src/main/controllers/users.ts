@@ -23,5 +23,12 @@ export const usersController = {
         }
       }
     })
+  },
+
+  updateName: async (email: string, name: string) => {
+    return await prisma.user.update({
+      where: { email },
+      data: { name }
+    })
   }
 }

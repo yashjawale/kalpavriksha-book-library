@@ -61,7 +61,8 @@ const api = {
   auth: {
     login: () => ipcRenderer.invoke('auth:login'),
     logout: () => ipcRenderer.invoke('auth:logout'),
-    getStatus: () => ipcRenderer.invoke('auth:getStatus')
+    getStatus: () => ipcRenderer.invoke('auth:getStatus'),
+    searchUsers: (query: string) => ipcRenderer.invoke('auth:searchUsers', query)
   },
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),
@@ -69,12 +70,16 @@ const api = {
   },
   users: {
     getAll: () => ipcRenderer.invoke('users:getAll'),
-    getByEmail: (email: string) => ipcRenderer.invoke('users:getByEmail', email)
+    getByEmail: (email: string) => ipcRenderer.invoke('users:getByEmail', email),
+    updateName: (email: string, name: string) => ipcRenderer.invoke('users:updateName', email, name)
   },
   loans: {
-    create: (data: { bookIsbn: string; userEmail: string; dueDate?: Date | null }) =>
+    getAllActive: () => ipcRenderer.invoke('loans:getAllActive'),
+    create: (data: { bookIsbns: string[]; userEmail: string; dueDate?: Date | null }) =>
       ipcRenderer.invoke('loans:create', data),
-    returnBook: (loanId: number) => ipcRenderer.invoke('loans:returnBook', loanId)
+    returnBook: (loanId: number) => ipcRenderer.invoke('loans:returnBook', loanId),
+    extendLoan: (loanId: number, dueDate: Date) =>
+      ipcRenderer.invoke('loans:extendLoan', loanId, dueDate)
   }
 }
 

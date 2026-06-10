@@ -21,10 +21,12 @@ interface API {
     }>
     logout: () => Promise<{ success: boolean }>
     getStatus: () => Promise<{ loggedIn: boolean; user?: Record<string, unknown> | null }>
+    searchUsers: (query: string) => Promise<Array<{ name: string; email: string }>>
   }
   users: {
     getAll: () => Promise<unknown[]>
     getByEmail: (email: string) => Promise<unknown>
+    updateName: (email: string, name: string) => Promise<unknown>
   }
   settings: {
     get: () => Promise<{ googleClientId: string; googleClientSecret: string }>
@@ -34,12 +36,14 @@ interface API {
     }) => Promise<{ googleClientId: string; googleClientSecret: string }>
   }
   loans: {
+    getAllActive: () => Promise<unknown[]>
     create: (data: {
-      bookIsbn: string
+      bookIsbns: string[]
       userEmail: string
       dueDate?: Date | null
-    }) => Promise<unknown>
+    }) => Promise<unknown[]>
     returnBook: (loanId: number) => Promise<unknown>
+    extendLoan: (loanId: number, dueDate: Date) => Promise<unknown>
   }
 }
 

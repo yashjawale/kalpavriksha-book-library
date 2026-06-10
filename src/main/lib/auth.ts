@@ -128,6 +128,30 @@ export const authController = {
 
   getStatus: async () => {
     return { loggedIn: !!currentUser, user: currentUser }
+  },
+
+  searchUsers: async (query: string): Promise<Array<{ name: string; email: string }>> => {
+    if (!currentUser) return []
+    try {
+      const client = getOAuthClient()
+      const service = google.admin({ version: 'directory_v1', auth: client })
+      const res = await service.users.list({
+        customer: 'my_customer',
+        maxResults: 10,
+        query: query
+      })
+      return (res.data.users || []).map((u) => ({
+        name: u.name?.fullName || '',
+        email: u.primaryEmail || ''
+      }))
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(`Error searching Google Directory: ${error.message}`)
+      } else {
+        console.error('Error searching Google Directory:', error)
+      }
+      return []
+    }
   }
 }
 
