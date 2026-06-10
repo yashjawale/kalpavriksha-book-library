@@ -11,15 +11,61 @@ import {
 } from '@renderer/components/ui/sidebar'
 import { Link } from '@tanstack/react-router'
 import Logo from '../assets/images/logo.svg'
-import { UploadIcon, PrinterIcon, BookOpen, Database, Info } from 'lucide-react'
+import {
+  UploadIcon,
+  PrinterIcon,
+  BookOpen,
+  Database,
+  Info,
+  Users,
+  ArrowRightLeft,
+  LogIn,
+  LogOut
+} from 'lucide-react'
 import { AboutDialog } from './AboutDialog'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export function AppSidebar() {
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false)
+  const [authStatus, setAuthStatus] = useState<{
+    loggedIn: boolean
+    user?: { name?: string; email?: string } | null
+  }>({
+    loggedIn: false
+  })
+
+  const checkAuth = async () => {
+    const status = await window.api.auth.getStatus()
+    setAuthStatus(status)
+  }
+
+  const handleLogin = async () => {
+    const result = await window.api.auth.login()
+    if (result && !result.success) {
+      alert(`Login failed: ${result.error}`)
+    }
+    checkAuth()
+  }
+
+  const handleLogout = async () => {
+    await window.api.auth.logout()
+    checkAuth()
+  }
+
+  useEffect(() => {
+    let mounted = true
+    window.api.auth.getStatus().then((status) => {
+      if (mounted) setAuthStatus(status)
+    })
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const links = [
     { to: '/', label: 'Manage Books', icon: BookOpen },
+    { to: '/rentals', label: 'Rentals', icon: ArrowRightLeft },
+    { to: '/users', label: 'Users', icon: Users },
     { to: '/bulkadd', label: 'Bulk Add', icon: UploadIcon },
     { to: '/barcodes', label: 'Print Barcodes', icon: PrinterIcon },
     { to: '/managedata', label: 'Manage Data', icon: Database }
@@ -56,6 +102,21 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          {authStatus.loggedIn ? (
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={handleLogout}>
+                <LogOut />
+                <span className="truncate">Logout {authStatus.user?.name}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ) : (
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={handleLogin}>
+                <LogIn />
+                <span>Login with Google</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton onClick={() => setAboutDialogOpen(true)}>
               <Info />

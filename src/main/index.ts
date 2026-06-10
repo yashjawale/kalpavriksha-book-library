@@ -8,7 +8,10 @@ import { getBookInfoGoogleBooks, getBookInfoIndian, getBookInfoOpenLibrary } fro
 import { prisma, dbFilePath } from './lib/prisma'
 import { initializeDatabase } from './lib/initDatabase'
 import * as fs from 'fs'
-
+import { usersController } from './controllers/users'
+import { loansController } from './controllers/loans'
+import { authController } from './lib/auth'
+import { settingsController } from './controllers/settings'
 // Helper to automatically register IPC handlers for a controller
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic controller registration requires accepting any function signature
 function registerController<T extends Record<string, (...args: any[]) => any>>(
@@ -81,6 +84,10 @@ app.whenReady().then(() => {
   // Auto-register controllers
   registerController('books', booksController)
   registerController('tags', tagsController)
+  registerController('users', usersController)
+  registerController('loans', loansController)
+  registerController('auth', authController)
+  registerController('settings', settingsController)
 
   // Register book API handlers
   ipcMain.handle('bookApi:getGoogleBooksInfo', async (_, isbn: string) => {

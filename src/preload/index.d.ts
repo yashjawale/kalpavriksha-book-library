@@ -13,6 +13,34 @@ interface API {
   }
   books: ControllerAPI<BooksController>
   tags: ControllerAPI<TagsController>
+  auth: {
+    login: () => Promise<{
+      success: boolean
+      user?: Record<string, unknown> | null
+      error?: string
+    }>
+    logout: () => Promise<{ success: boolean }>
+    getStatus: () => Promise<{ loggedIn: boolean; user?: Record<string, unknown> | null }>
+  }
+  users: {
+    getAll: () => Promise<unknown[]>
+    getByEmail: (email: string) => Promise<unknown>
+  }
+  settings: {
+    get: () => Promise<{ googleClientId: string; googleClientSecret: string }>
+    update: (settings: {
+      googleClientId?: string
+      googleClientSecret?: string
+    }) => Promise<{ googleClientId: string; googleClientSecret: string }>
+  }
+  loans: {
+    create: (data: {
+      bookIsbn: string
+      userEmail: string
+      dueDate?: Date | null
+    }) => Promise<unknown>
+    returnBook: (loanId: number) => Promise<unknown>
+  }
 }
 
 declare global {

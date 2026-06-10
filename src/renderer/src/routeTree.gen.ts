@@ -9,11 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RentalsRouteImport } from './routes/rentals'
 import { Route as ManagedataRouteImport } from './routes/managedata'
 import { Route as BulkaddRouteImport } from './routes/bulkadd'
 import { Route as BarcodesRouteImport } from './routes/barcodes'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as UsersIndexRouteImport } from './routes/users/index'
+import { Route as UsersEmailRouteImport } from './routes/users/$email'
 
+const RentalsRoute = RentalsRouteImport.update({
+  id: '/rentals',
+  path: '/rentals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ManagedataRoute = ManagedataRouteImport.update({
   id: '/managedata',
   path: '/managedata',
@@ -34,18 +42,34 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UsersIndexRoute = UsersIndexRouteImport.update({
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UsersEmailRoute = UsersEmailRouteImport.update({
+  id: '/users/$email',
+  path: '/users/$email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/barcodes': typeof BarcodesRoute
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
+  '/rentals': typeof RentalsRoute
+  '/users/$email': typeof UsersEmailRoute
+  '/users/': typeof UsersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/barcodes': typeof BarcodesRoute
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
+  '/rentals': typeof RentalsRoute
+  '/users/$email': typeof UsersEmailRoute
+  '/users': typeof UsersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +77,38 @@ export interface FileRoutesById {
   '/barcodes': typeof BarcodesRoute
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
+  '/rentals': typeof RentalsRoute
+  '/users/$email': typeof UsersEmailRoute
+  '/users/': typeof UsersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/barcodes' | '/bulkadd' | '/managedata'
+  fullPaths:
+    | '/'
+    | '/barcodes'
+    | '/bulkadd'
+    | '/managedata'
+    | '/rentals'
+    | '/users/$email'
+    | '/users/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/barcodes' | '/bulkadd' | '/managedata'
-  id: '__root__' | '/' | '/barcodes' | '/bulkadd' | '/managedata'
+  to:
+    | '/'
+    | '/barcodes'
+    | '/bulkadd'
+    | '/managedata'
+    | '/rentals'
+    | '/users/$email'
+    | '/users'
+  id:
+    | '__root__'
+    | '/'
+    | '/barcodes'
+    | '/bulkadd'
+    | '/managedata'
+    | '/rentals'
+    | '/users/$email'
+    | '/users/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,10 +116,20 @@ export interface RootRouteChildren {
   BarcodesRoute: typeof BarcodesRoute
   BulkaddRoute: typeof BulkaddRoute
   ManagedataRoute: typeof ManagedataRoute
+  RentalsRoute: typeof RentalsRoute
+  UsersEmailRoute: typeof UsersEmailRoute
+  UsersIndexRoute: typeof UsersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/rentals': {
+      id: '/rentals'
+      path: '/rentals'
+      fullPath: '/rentals'
+      preLoaderRoute: typeof RentalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/managedata': {
       id: '/managedata'
       path: '/managedata'
@@ -99,6 +158,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/users/': {
+      id: '/users/'
+      path: '/users'
+      fullPath: '/users/'
+      preLoaderRoute: typeof UsersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/users/$email': {
+      id: '/users/$email'
+      path: '/users/$email'
+      fullPath: '/users/$email'
+      preLoaderRoute: typeof UsersEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +180,9 @@ const rootRouteChildren: RootRouteChildren = {
   BarcodesRoute: BarcodesRoute,
   BulkaddRoute: BulkaddRoute,
   ManagedataRoute: ManagedataRoute,
+  RentalsRoute: RentalsRoute,
+  UsersEmailRoute: UsersEmailRoute,
+  UsersIndexRoute: UsersIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

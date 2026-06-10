@@ -57,6 +57,24 @@ const api = {
       ipcRenderer.invoke('tags:addTagsToBook', isbn, tagIds),
     removeTagFromBook: (isbn: string, tagId: number) =>
       ipcRenderer.invoke('tags:removeTagFromBook', isbn, tagId)
+  },
+  auth: {
+    login: () => ipcRenderer.invoke('auth:login'),
+    logout: () => ipcRenderer.invoke('auth:logout'),
+    getStatus: () => ipcRenderer.invoke('auth:getStatus')
+  },
+  settings: {
+    get: () => ipcRenderer.invoke('settings:get'),
+    update: (settings: Record<string, unknown>) => ipcRenderer.invoke('settings:update', settings)
+  },
+  users: {
+    getAll: () => ipcRenderer.invoke('users:getAll'),
+    getByEmail: (email: string) => ipcRenderer.invoke('users:getByEmail', email)
+  },
+  loans: {
+    create: (data: { bookIsbn: string; userEmail: string; dueDate?: Date | null }) =>
+      ipcRenderer.invoke('loans:create', data),
+    returnBook: (loanId: number) => ipcRenderer.invoke('loans:returnBook', loanId)
   }
 }
 

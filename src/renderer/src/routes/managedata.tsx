@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@renderer/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/ui/card'
+import { Input } from '@renderer/components/ui/input'
+import { Label } from '@renderer/components/ui/label'
 import { createFileRoute } from '@tanstack/react-router'
 import { Spinner } from '@renderer/components/ui/spinner'
-import { Download, Upload, AlertTriangle } from 'lucide-react'
+import { Download, Upload, AlertTriangle, Settings } from 'lucide-react'
 import { pdf } from '@react-pdf/renderer'
 import { BookCatalogPDF } from '@renderer/components/BookCatalogPDF'
 import type { Book } from '@renderer/types/book'
@@ -18,6 +20,36 @@ export const Route = createFileRoute('/managedata')({
 
 export default function ManageData() {
   const [isExporting, setIsExporting] = useState(false)
+  const [googleClientId, setGoogleClientId] = useState('')
+  const [googleClientSecret, setGoogleClientSecret] = useState('')
+  const [isSavingSettings, setIsSavingSettings] = useState(false)
+
+  // Fetch settings on mount
+  useEffect(() => {
+    let mounted = true
+    window.api.settings.get().then((settings) => {
+      if (mounted) {
+        setGoogleClientId(settings.googleClientId || '')
+        setGoogleClientSecret(settings.googleClientSecret || '')
+      }
+    })
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const handleSaveSettings = async () => {
+    setIsSavingSettings(true)
+    try {
+      await window.api.settings.update({ googleClientId, googleClientSecret })
+      alert('Google OAuth configuration saved successfully!')
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      alert('Failed to save settings.')
+    } finally {
+      setIsSavingSettings(false)
+    }
+  }
 
   const { data: books = [], isLoading } = useQuery<Book[]>({
     queryKey: ['books'],
@@ -186,6 +218,53 @@ export default function ManageData() {
   return (
     <>
       <PageTitle title="Data & Reports" />
+
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Settings className="size-5 mr-2" />
+            Google OAuth Configuration
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground mb-4">
+            Configure your Google OAuth credentials to enable Google Sign-In for users.
+          </p>
+          <div className="flex flex-col gap-4 max-w-xl">
+            <div className="grid gap-2">
+              <Label htmlFor="clientId">Client ID</Label>
+              <Input
+                id="clientId"
+                type="text"
+                placeholder="Enter Google Client ID"
+                value={googleClientId}
+                onChange={(e) => setGoogleClientId(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="clientSecret">Client Secret</Label>
+              <Input
+                id="clientSecret"
+                type="password"
+                placeholder="Enter Google Client Secret"
+                value={googleClientSecret}
+                onChange={(e) => setGoogleClientSecret(e.target.value)}
+              />
+            </div>
+            <Button onClick={handleSaveSettings} disabled={isSavingSettings} className="w-fit mt-2">
+              {isSavingSettings ? (
+                <>
+                  <Spinner className="size-4 mr-2" />
+                  Saving...
+                </>
+              ) : (
+                'Save Configuration'
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="mb-4">
         <CardHeader>
           <CardTitle>Data & Reports</CardTitle>
