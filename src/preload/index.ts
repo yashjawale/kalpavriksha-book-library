@@ -51,6 +51,8 @@ const api = {
     getAll: () => ipcRenderer.invoke('tags:getAll'),
     getById: (id: number) => ipcRenderer.invoke('tags:getById', id),
     create: (name: string) => ipcRenderer.invoke('tags:create', name),
+    update: (id: number, data: { name?: string; description?: string; color?: string }) =>
+      ipcRenderer.invoke('tags:update', id, data),
     createMany: (names: string[]) => ipcRenderer.invoke('tags:createMany', names),
     delete: (id: number) => ipcRenderer.invoke('tags:delete', id),
     addTagsToBook: (isbn: string, tagIds: number[]) =>

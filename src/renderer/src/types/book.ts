@@ -1,6 +1,8 @@
 export interface Tag {
   id: number
   name: string
+  description?: string | null
+  color?: string | null
   createdAt: Date
 }
 

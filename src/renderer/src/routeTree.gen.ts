@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TagsRouteImport } from './routes/tags'
 import { Route as RentalsRouteImport } from './routes/rentals'
 import { Route as ManagedataRouteImport } from './routes/managedata'
 import { Route as BulkaddRouteImport } from './routes/bulkadd'
@@ -17,6 +18,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as UsersIndexRouteImport } from './routes/users/index'
 import { Route as UsersEmailRouteImport } from './routes/users/$email'
 
+const TagsRoute = TagsRouteImport.update({
+  id: '/tags',
+  path: '/tags',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RentalsRoute = RentalsRouteImport.update({
   id: '/rentals',
   path: '/rentals',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
   '/rentals': typeof RentalsRoute
+  '/tags': typeof TagsRoute
   '/users/$email': typeof UsersEmailRoute
   '/users/': typeof UsersIndexRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
   '/rentals': typeof RentalsRoute
+  '/tags': typeof TagsRoute
   '/users/$email': typeof UsersEmailRoute
   '/users': typeof UsersIndexRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
   '/rentals': typeof RentalsRoute
+  '/tags': typeof TagsRoute
   '/users/$email': typeof UsersEmailRoute
   '/users/': typeof UsersIndexRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/bulkadd'
     | '/managedata'
     | '/rentals'
+    | '/tags'
     | '/users/$email'
     | '/users/'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/bulkadd'
     | '/managedata'
     | '/rentals'
+    | '/tags'
     | '/users/$email'
     | '/users'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/bulkadd'
     | '/managedata'
     | '/rentals'
+    | '/tags'
     | '/users/$email'
     | '/users/'
   fileRoutesById: FileRoutesById
@@ -117,12 +129,20 @@ export interface RootRouteChildren {
   BulkaddRoute: typeof BulkaddRoute
   ManagedataRoute: typeof ManagedataRoute
   RentalsRoute: typeof RentalsRoute
+  TagsRoute: typeof TagsRoute
   UsersEmailRoute: typeof UsersEmailRoute
   UsersIndexRoute: typeof UsersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tags': {
+      id: '/tags'
+      path: '/tags'
+      fullPath: '/tags'
+      preLoaderRoute: typeof TagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rentals': {
       id: '/rentals'
       path: '/rentals'
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   BulkaddRoute: BulkaddRoute,
   ManagedataRoute: ManagedataRoute,
   RentalsRoute: RentalsRoute,
+  TagsRoute: TagsRoute,
   UsersEmailRoute: UsersEmailRoute,
   UsersIndexRoute: UsersIndexRoute,
 }

@@ -68,6 +68,7 @@ export function AppSidebar() {
     { to: '/users', label: 'Users', icon: Users },
     { to: '/bulkadd', label: 'Bulk Add', icon: UploadIcon },
     { to: '/barcodes', label: 'Print Barcodes', icon: PrinterIcon },
+    { to: '/tags', label: 'Tags', icon: Database },
     { to: '/managedata', label: 'Manage Data', icon: Database }
   ]
 
