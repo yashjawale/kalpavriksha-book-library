@@ -51,16 +51,22 @@ function UserDetailsPage() {
   const [extensionDialogOpen, setExtensionDialogOpen] = useState(false)
   const [loanToExtend, setLoanToExtend] = useState<Loan | null>(null)
   const [newDueDate, setNewDueDate] = useState<string>('')
+  const [orgUnit, setOrgUnit] = useState<string | null>(null)
 
   const loadUser = async () => {
     const data = await window.api.users.getByEmail(email)
     setUser(data as User)
+    const googleData = await window.api.auth.getUserDetails(email)
+    if (googleData) setOrgUnit(googleData.orgUnitPath)
   }
 
   useEffect(() => {
     let mounted = true
     window.api.users.getByEmail(email).then((data) => {
       if (mounted) setUser(data as User)
+    })
+    window.api.auth.getUserDetails(email).then((googleData) => {
+      if (mounted && googleData) setOrgUnit(googleData.orgUnitPath)
     })
     return () => {
       mounted = false
@@ -146,6 +152,11 @@ function UserDetailsPage() {
               </div>
             )}
             <p className="text-muted-foreground">{user.email}</p>
+            {orgUnit && (
+              <p className="text-xs text-muted-foreground mt-1 bg-secondary w-fit px-2 py-0.5 rounded">
+                {orgUnit.startsWith('/') ? orgUnit.slice(1) : orgUnit}
+              </p>
+            )}
           </div>
         </div>
 

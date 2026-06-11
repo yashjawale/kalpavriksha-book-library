@@ -12,7 +12,12 @@ export const loansController = {
     })
   },
 
-  create: async (data: { bookIsbns: string[]; userEmail: string; dueDate?: Date | null }) => {
+  create: async (data: {
+    bookIsbns: string[]
+    userEmail: string
+    userName?: string
+    dueDate?: Date | null
+  }) => {
     // Check if user exists
     let user = await prisma.user.findUnique({
       where: { email: data.userEmail }
@@ -22,7 +27,7 @@ export const loansController = {
       // Create user if not existent? The schema needs the user. If they selected from the directory,
       // they might not exist in the DB yet. The previous create checked and threw an error. Let's create instead to simplify.
       user = await prisma.user.create({
-        data: { email: data.userEmail }
+        data: { email: data.userEmail, name: data.userName || null }
       })
     }
 

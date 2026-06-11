@@ -152,6 +152,26 @@ export const authController = {
       }
       return []
     }
+  },
+
+  getUserDetails: async (email: string) => {
+    if (!currentUser) return null
+    try {
+      const client = getOAuthClient()
+      const service = google.admin({ version: 'directory_v1', auth: client })
+      const res = await service.users.get({ userKey: email })
+      return {
+        name: res.data.name?.fullName || '',
+        orgUnitPath: res.data.orgUnitPath || ''
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(`Error fetching user details from Google Directory: ${error.message}`)
+      } else {
+        console.error('Error fetching user details from Google Directory:', error)
+      }
+      return null
+    }
   }
 }
 

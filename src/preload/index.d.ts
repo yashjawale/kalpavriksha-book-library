@@ -22,6 +22,7 @@ interface API {
     logout: () => Promise<{ success: boolean }>
     getStatus: () => Promise<{ loggedIn: boolean; user?: Record<string, unknown> | null }>
     searchUsers: (query: string) => Promise<Array<{ name: string; email: string }>>
+    getUserDetails: (email: string) => Promise<{ name: string; orgUnitPath: string } | null>
   }
   users: {
     getAll: () => Promise<unknown[]>
@@ -40,6 +41,7 @@ interface API {
     create: (data: {
       bookIsbns: string[]
       userEmail: string
+      userName?: string
       dueDate?: Date | null
     }) => Promise<unknown[]>
     returnBook: (loanId: number) => Promise<unknown>

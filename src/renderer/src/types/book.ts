@@ -16,6 +16,7 @@ export interface Book {
   createdAt: Date
   updatedAt: Date
   bookTags?: { tag: Tag }[]
+  loans?: { id: number }[]
 }
 
 export interface CreateBookData {

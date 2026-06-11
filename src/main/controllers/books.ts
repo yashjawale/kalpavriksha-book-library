@@ -6,15 +6,15 @@ export const booksController = {
     perPage: number = 25,
     orderBy: string = 'updatedAt',
     order: 'asc' | 'desc' = 'desc',
-    isbnPrefix?: string,
+    searchQuery?: string,
     needsBarcodeSticker?: boolean
   ) => {
     const skip = (page - 1) * perPage
     const orderByClause = orderBy ? { [orderBy]: order } : {}
-    const whereClause: { isbn?: { startsWith: string }; needsBarcodeSticker?: boolean } = {}
+    const whereClause: any = {}
 
-    if (isbnPrefix) {
-      whereClause.isbn = { startsWith: isbnPrefix }
+    if (searchQuery) {
+      whereClause.OR = [{ isbn: { contains: searchQuery } }, { title: { contains: searchQuery } }]
     }
 
     if (needsBarcodeSticker !== undefined) {
@@ -31,6 +31,10 @@ export const booksController = {
           include: {
             tag: true
           }
+        },
+        loans: {
+          where: { returnedAt: null },
+          select: { id: true }
         }
       }
     })
@@ -44,6 +48,10 @@ export const booksController = {
           include: {
             tag: true
           }
+        },
+        loans: {
+          where: { returnedAt: null },
+          select: { id: true }
         }
       }
     })
