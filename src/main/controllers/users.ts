@@ -1,14 +1,30 @@
 import { prisma } from '../lib/prisma'
 
 export const usersController = {
-  getAll: async () => {
-    return await prisma.user.findMany({
-      include: {
-        _count: {
-          select: { loans: true }
-        }
-      }
-    })
+  getAll: async (page: number = 1, perPage: number = 10, searchQuery?: string) => {
+    const skip = (page - 1) * perPage
+    const whereClause: any = {}
+
+    if (searchQuery) {
+      whereClause.OR = [{ name: { contains: searchQuery } }, { email: { contains: searchQuery } }]
+    }
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where: whereClause,
+        include: {
+          _count: {
+            select: { loans: { where: { returnedAt: null } } }
+          }
+        },
+        skip,
+        take: perPage,
+        orderBy: { email: 'asc' }
+      }),
+      prisma.user.count({ where: whereClause })
+    ])
+
+    return { users, total }
   },
 
   getByEmail: async (email: string) => {
@@ -17,7 +33,13 @@ export const usersController = {
       include: {
         loans: {
           include: {
-            book: true
+            book: {
+              include: {
+                bookTags: {
+                  include: { tag: true }
+                }
+              }
+            }
           },
           orderBy: { borrowedAt: 'desc' }
         }

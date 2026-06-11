@@ -8,10 +8,10 @@ import {
   TableHeader,
   TableRow
 } from '@renderer/components/ui/table'
-import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/ui/card'
+import { Card, CardContent } from '@renderer/components/ui/card'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
-import { ArrowLeft, BookOpen, CheckCircle, Pencil, Save, Plus } from 'lucide-react'
+import { ArrowLeft, Pencil } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -21,18 +21,23 @@ import {
   DialogFooter
 } from '@renderer/components/ui/dialog'
 import { addWeeks, format } from 'date-fns'
+import { Badge } from '@renderer/components/ui/badge'
 
 export const Route = createFileRoute('/users/$email')({
   component: UserDetailsPage
 })
 
+type Tag = { id: number; name: string }
 type Loan = {
   id: number
   bookIsbn: string
   borrowedAt: string
   returnedAt: string | null
   dueDate: string | null
-  book?: { title: string }
+  book?: {
+    title: string
+    bookTags?: { tag: Tag }[]
+  }
 }
 
 type User = {
@@ -44,6 +49,7 @@ type User = {
 function UserDetailsPage() {
   const { email } = Route.useParams()
   const [user, setUser] = useState<User | null>(null)
+  const [orgUnit, setOrgUnit] = useState<string | null>(null)
 
   const [isEditingName, setIsEditingName] = useState(false)
   const [editNameValue, setEditNameValue] = useState('')
@@ -51,13 +57,13 @@ function UserDetailsPage() {
   const [extensionDialogOpen, setExtensionDialogOpen] = useState(false)
   const [loanToExtend, setLoanToExtend] = useState<Loan | null>(null)
   const [newDueDate, setNewDueDate] = useState<string>('')
-  const [orgUnit, setOrgUnit] = useState<string | null>(null)
+
+  // For bulk extend
+  const [isBulkExtend, setIsBulkExtend] = useState(false)
 
   const loadUser = async () => {
     const data = await window.api.users.getByEmail(email)
     setUser(data as User)
-    const googleData = await window.api.auth.getUserDetails(email)
-    if (googleData) setOrgUnit(googleData.orgUnitPath)
   }
 
   useEffect(() => {
@@ -90,15 +96,24 @@ function UserDetailsPage() {
 
   const handleOpenExtendDialog = (loan: Loan) => {
     setLoanToExtend(loan)
+    setIsBulkExtend(false)
     const baseDate = loan.dueDate ? new Date(loan.dueDate) : new Date()
     setNewDueDate(format(addWeeks(baseDate, 1), 'yyyy-MM-dd'))
     setExtensionDialogOpen(true)
   }
 
   const handleExtendLoan = async () => {
-    if (!loanToExtend || !newDueDate) return
     try {
-      await window.api.loans.extendLoan(loanToExtend.id, new Date(newDueDate))
+      if (isBulkExtend) {
+        const activeLoanIds = user?.loans.filter((l) => !l.returnedAt).map((l) => l.id) || []
+        if (activeLoanIds.length > 0 && newDueDate) {
+          await window.api.loans.bulkExtendLoans(activeLoanIds, new Date(newDueDate))
+        }
+      } else {
+        if (loanToExtend && newDueDate) {
+          await window.api.loans.extendLoan(loanToExtend.id, new Date(newDueDate))
+        }
+      }
       setExtensionDialogOpen(false)
       setLoanToExtend(null)
       loadUser()
@@ -107,82 +122,107 @@ function UserDetailsPage() {
     }
   }
 
+  const handleBulkReturn = async () => {
+    if (!user) return
+    const activeLoanIds = user.loans.filter((l) => !l.returnedAt).map((l) => l.id)
+    if (activeLoanIds.length === 0) return
+    if (confirm(`Are you sure you want to mark all ${activeLoanIds.length} rentals as returned?`)) {
+      await window.api.loans.bulkReturnBooks(activeLoanIds)
+      loadUser()
+    }
+  }
+
+  const handleBulkExtend = () => {
+    setIsBulkExtend(true)
+    setNewDueDate(format(addWeeks(new Date(), 1), 'yyyy-MM-dd'))
+    setExtensionDialogOpen(true)
+  }
+
   if (!user) return <div className="p-4">Loading user details...</div>
 
   const currentLoans = user.loans.filter((l: Loan) => !l.returnedAt)
   const pastLoans = user.loans.filter((l: Loan) => l.returnedAt)
 
-  return (
-    <div className="flex flex-col gap-6 p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link to="/users">
-            <Button variant="outline" size="icon">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          </Link>
-          <div>
-            {!isEditingName ? (
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold tracking-tight">{user.name || 'Unknown User'}</h1>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setIsEditingName(true)
-                    setEditNameValue(user.name || '')
-                  }}
-                >
-                  <Pencil className="w-4 h-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Input
-                  value={editNameValue}
-                  onChange={(e) => setEditNameValue(e.target.value)}
-                  className="text-xl font-bold h-10 w-64"
-                />
-                <Button onClick={handleUpdateName} size="sm">
-                  <Save className="w-4 h-4 mr-2" /> Save
-                </Button>
-                <Button onClick={() => setIsEditingName(false)} size="sm" variant="outline">
-                  Cancel
-                </Button>
-              </div>
-            )}
-            <p className="text-muted-foreground">{user.email}</p>
-            {orgUnit && (
-              <p className="text-xs text-muted-foreground mt-1 bg-secondary w-fit px-2 py-0.5 rounded">
-                {orgUnit.startsWith('/') ? orgUnit.slice(1) : orgUnit}
-              </p>
-            )}
-          </div>
-        </div>
+  const renderTags = (loan: Loan) => {
+    const tags = loan.book?.bookTags?.map((t) => t.tag) || []
+    if (tags.length === 0) return <span className="text-muted-foreground">-</span>
+    return (
+      <div className="flex flex-wrap gap-1">
+        {tags.map((t) => (
+          <Badge variant="secondary" key={t.id} className="text-xs font-normal">
+            {t.name}
+          </Badge>
+        ))}
+      </div>
+    )
+  }
 
-        <Link to="/rentals">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" /> New Rental
-          </Button>
+  return (
+    <div className="flex flex-col gap-10 p-6 max-w-5xl mx-auto">
+      <div className="flex flex-col gap-4">
+        <Link
+          to="/users"
+          className="w-fit text-muted-foreground hover:text-foreground flex items-center gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" /> All Users
         </Link>
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-4xl font-bold tracking-tight">{user.name || 'Unknown User'}</h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setEditNameValue(user.name || '')
+                setIsEditingName(true)
+              }}
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
+          </div>
+          {orgUnit && (
+            <p className="text-sm text-muted-foreground mt-2">
+              {orgUnit.startsWith('/') ? orgUnit.slice(1) : orgUnit}
+            </p>
+          )}
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-blue-500" /> Current Rentals
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {currentLoans.length > 0 ? (
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-end mb-2">
+          <h2 className="text-2xl font-semibold tracking-tight">Current rentals</h2>
+        </div>
+        <Card className="rounded-xl border-border bg-card">
+          <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Book Title</TableHead>
-                  <TableHead>ISBN</TableHead>
-                  <TableHead>Borrowed At</TableHead>
-                  <TableHead>Expected Return</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="w-[30%]">Title</TableHead>
+                  <TableHead className="w-[20%]">Code</TableHead>
+                  <TableHead className="w-[20%]">Tags</TableHead>
+                  <TableHead>Expected return</TableHead>
+                  <TableHead className="text-right">
+                    {currentLoans.length > 0 && (
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleBulkReturn}
+                          className="h-7 text-xs"
+                        >
+                          Mark all as returned
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleBulkExtend}
+                          className="h-7 text-xs"
+                        >
+                          Extend all
+                        </Button>
+                      </div>
+                    )}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -191,48 +231,57 @@ function UserDetailsPage() {
                     <TableCell className="font-medium">
                       {loan.book?.title || 'Unknown Book'}
                     </TableCell>
-                    <TableCell>{loan.bookIsbn}</TableCell>
-                    <TableCell>{new Date(loan.borrowedAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-muted-foreground font-mono text-xs">
+                      {loan.bookIsbn}
+                    </TableCell>
+                    <TableCell>{renderTags(loan)}</TableCell>
                     <TableCell>
                       {loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : 'Not Set'}
                     </TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button
                         size="sm"
-                        variant="secondary"
-                        onClick={() => handleOpenExtendDialog(loan)}
+                        variant="outline"
+                        onClick={() => handleReturn(loan.id)}
+                        className="h-8"
                       >
-                        Extend Due Date
+                        Mark as returned
                       </Button>
-                      <Button size="sm" onClick={() => handleReturn(loan.id)}>
-                        Mark Returned
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleOpenExtendDialog(loan)}
+                        className="h-8"
+                      >
+                        Extend
                       </Button>
                     </TableCell>
                   </TableRow>
                 ))}
+                {currentLoans.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                      No active rentals.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
-          ) : (
-            <p className="text-muted-foreground py-4">No active rentals.</p>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-green-500" /> Past Rentals
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {pastLoans.length > 0 ? (
+      <div className="flex flex-col gap-4">
+        <h2 className="text-2xl font-semibold tracking-tight mb-2">Past rentals</h2>
+        <Card className="rounded-xl border-border bg-card">
+          <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Book Title</TableHead>
-                  <TableHead>ISBN</TableHead>
-                  <TableHead>Borrowed At</TableHead>
-                  <TableHead>Returned At</TableHead>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="w-[30%]">Title</TableHead>
+                  <TableHead className="w-[20%]">Code</TableHead>
+                  <TableHead className="w-[20%]">Tags</TableHead>
+                  <TableHead>Returned on</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -241,25 +290,37 @@ function UserDetailsPage() {
                     <TableCell className="font-medium">
                       {loan.book?.title || 'Unknown Book'}
                     </TableCell>
-                    <TableCell>{loan.bookIsbn}</TableCell>
-                    <TableCell>{new Date(loan.borrowedAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-muted-foreground font-mono text-xs">
+                      {loan.bookIsbn}
+                    </TableCell>
+                    <TableCell>{renderTags(loan)}</TableCell>
                     <TableCell>{new Date(loan.returnedAt!).toLocaleDateString()}</TableCell>
                   </TableRow>
                 ))}
+                {pastLoans.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+                      No past rentals.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
-          ) : (
-            <p className="text-muted-foreground py-4">No past rentals.</p>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
+      {/* Extend Dialog */}
       <Dialog open={extensionDialogOpen} onOpenChange={setExtensionDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Extend Loan Due Date</DialogTitle>
+            <DialogTitle>
+              {isBulkExtend ? 'Extend All Active Loans' : 'Extend Loan Due Date'}
+            </DialogTitle>
             <DialogDescription>
-              Set a new due date for {loanToExtend?.book?.title || 'this book'}
+              {isBulkExtend
+                ? 'Set a new due date for all currently active rentals.'
+                : `Set a new due date for ${loanToExtend?.book?.title || 'this book'}.`}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -270,6 +331,29 @@ function UserDetailsPage() {
               Cancel
             </Button>
             <Button onClick={handleExtendLoan}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Name Dialog */}
+      <Dialog open={isEditingName} onOpenChange={setIsEditingName}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User Name</DialogTitle>
+            <DialogDescription>Change the display name for {user.email}.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={editNameValue}
+              onChange={(e) => setEditNameValue(e.target.value)}
+              placeholder="Enter new name"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditingName(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateName}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

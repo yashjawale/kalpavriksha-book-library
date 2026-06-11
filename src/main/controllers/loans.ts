@@ -78,5 +78,19 @@ export const loansController = {
       where: { id: loanId },
       data: { dueDate }
     })
+  },
+
+  bulkReturnBooks: async (loanIds: number[]) => {
+    return await prisma.loan.updateMany({
+      where: { id: { in: loanIds } },
+      data: { returnedAt: new Date() }
+    })
+  },
+
+  bulkExtendLoans: async (loanIds: number[], dueDate: Date) => {
+    return await prisma.loan.updateMany({
+      where: { id: { in: loanIds } },
+      data: { dueDate }
+    })
   }
 }

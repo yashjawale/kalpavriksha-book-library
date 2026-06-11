@@ -72,7 +72,8 @@ const api = {
     update: (settings: Record<string, unknown>) => ipcRenderer.invoke('settings:update', settings)
   },
   users: {
-    getAll: () => ipcRenderer.invoke('users:getAll'),
+    getAll: (page?: number, perPage?: number, searchQuery?: string) =>
+      ipcRenderer.invoke('users:getAll', page, perPage, searchQuery),
     getByEmail: (email: string) => ipcRenderer.invoke('users:getByEmail', email),
     updateName: (email: string, name: string) => ipcRenderer.invoke('users:updateName', email, name)
   },
@@ -86,7 +87,10 @@ const api = {
     }) => ipcRenderer.invoke('loans:create', data),
     returnBook: (loanId: number) => ipcRenderer.invoke('loans:returnBook', loanId),
     extendLoan: (loanId: number, dueDate: Date) =>
-      ipcRenderer.invoke('loans:extendLoan', loanId, dueDate)
+      ipcRenderer.invoke('loans:extendLoan', loanId, dueDate),
+    bulkReturnBooks: (loanIds: number[]) => ipcRenderer.invoke('loans:bulkReturnBooks', loanIds),
+    bulkExtendLoans: (loanIds: number[], dueDate: Date) =>
+      ipcRenderer.invoke('loans:bulkExtendLoans', loanIds, dueDate)
   }
 }
 

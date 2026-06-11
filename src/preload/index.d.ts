@@ -25,7 +25,11 @@ interface API {
     getUserDetails: (email: string) => Promise<{ name: string; orgUnitPath: string } | null>
   }
   users: {
-    getAll: () => Promise<unknown[]>
+    getAll: (
+      page?: number,
+      perPage?: number,
+      searchQuery?: string
+    ) => Promise<{ users: unknown[]; total: number }>
     getByEmail: (email: string) => Promise<unknown>
     updateName: (email: string, name: string) => Promise<unknown>
   }
@@ -46,6 +50,8 @@ interface API {
     }) => Promise<unknown[]>
     returnBook: (loanId: number) => Promise<unknown>
     extendLoan: (loanId: number, dueDate: Date) => Promise<unknown>
+    bulkReturnBooks: (loanIds: number[]) => Promise<unknown>
+    bulkExtendLoans: (loanIds: number[], dueDate: Date) => Promise<unknown>
   }
 }
 
