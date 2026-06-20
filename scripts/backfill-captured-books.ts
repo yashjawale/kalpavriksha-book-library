@@ -25,7 +25,7 @@ type AiResult = {
 }
 
 const AI_PROMPT =
-  'Analyze this book cover image. Extract the Title, Author, and Publisher. If any field is missing or illegible, return \'\' (empty string). Respond *only* in the following JSON format:\n{\n"title": "...",\n"author": "...",\n"publisher": "..."\n} \n Ignore the blue technical publications book in the back by Soudamini Patil if its present, focus only on the book in the front. \n If the book is in hindi/marathi, give the output in hinglish i.e. same wordds but using english alphabets. \n If the book has information about issue date or volume, mention that in title too. \n If there is just a spread out hand in the image, return title as HAAND'
+  'Analyze this book cover image. Extract the Title, Author, and Publisher. If any field is missing or illegible, return \'\' (empty string). Respond *only* in the following JSON format:\n{\n"title": "...",\n"author": "...",\n"publisher": "..."\n} \n Ignore the blue technical publications book in the back by Soudamini Patil & Pranjali Deshpande if its present,there should won\'t be any book from technical publications. focus only on the book in the front. \n If the book is in hindi/marathi, give the output in hinglish i.e. same wordds but using english alphabets. \n If the book has information about issue date or volume, mention that in title too. \n If there is just a spread out hand in the image, return title as HAAND'
 
 function resolveDatabaseUrl(): string {
   let connectionString = process.env.DATABASE_URL || 'file:./dev.db'
