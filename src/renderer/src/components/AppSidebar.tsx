@@ -17,9 +17,7 @@ import {
   BookOpen,
   Database,
   Info,
-  Camera,
   ListChecks,
-  Zap,
   ScanLine
 } from 'lucide-react'
 import { AboutDialog } from './AboutDialog'
@@ -30,11 +28,9 @@ export function AppSidebar() {
 
   const links = [
     { to: '/', label: 'Manage Books', icon: BookOpen },
-    { to: '/rapidcapture', label: 'Rapid Capture', icon: Camera },
     { to: '/quickcapture', label: 'Quick Capture', icon: ScanLine },
     { to: '/reviewqueue', label: 'Review Queue', icon: ListChecks },
     { to: '/bulkadd', label: 'Bulk Add', icon: UploadIcon },
-    { to: '/rapidscan', label: 'Rapid Scan', icon: Zap },
     { to: '/barcodes', label: 'Print Barcodes', icon: PrinterIcon },
     { to: '/managedata', label: 'Manage Data', icon: Database }
   ]

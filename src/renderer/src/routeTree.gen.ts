@@ -10,8 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ReviewqueueRouteImport } from './routes/reviewqueue'
-import { Route as RapidscanRouteImport } from './routes/rapidscan'
-import { Route as RapidcaptureRouteImport } from './routes/rapidcapture'
 import { Route as QuickcaptureRouteImport } from './routes/quickcapture'
 import { Route as ManagedataRouteImport } from './routes/managedata'
 import { Route as BulkaddRouteImport } from './routes/bulkadd'
@@ -21,16 +19,6 @@ import { Route as IndexRouteImport } from './routes/index'
 const ReviewqueueRoute = ReviewqueueRouteImport.update({
   id: '/reviewqueue',
   path: '/reviewqueue',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RapidscanRoute = RapidscanRouteImport.update({
-  id: '/rapidscan',
-  path: '/rapidscan',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RapidcaptureRoute = RapidcaptureRouteImport.update({
-  id: '/rapidcapture',
-  path: '/rapidcapture',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QuickcaptureRoute = QuickcaptureRouteImport.update({
@@ -65,8 +53,6 @@ export interface FileRoutesByFullPath {
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
   '/quickcapture': typeof QuickcaptureRoute
-  '/rapidcapture': typeof RapidcaptureRoute
-  '/rapidscan': typeof RapidscanRoute
   '/reviewqueue': typeof ReviewqueueRoute
 }
 export interface FileRoutesByTo {
@@ -75,8 +61,6 @@ export interface FileRoutesByTo {
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
   '/quickcapture': typeof QuickcaptureRoute
-  '/rapidcapture': typeof RapidcaptureRoute
-  '/rapidscan': typeof RapidscanRoute
   '/reviewqueue': typeof ReviewqueueRoute
 }
 export interface FileRoutesById {
@@ -86,8 +70,6 @@ export interface FileRoutesById {
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
   '/quickcapture': typeof QuickcaptureRoute
-  '/rapidcapture': typeof RapidcaptureRoute
-  '/rapidscan': typeof RapidscanRoute
   '/reviewqueue': typeof ReviewqueueRoute
 }
 export interface FileRouteTypes {
@@ -98,8 +80,6 @@ export interface FileRouteTypes {
     | '/bulkadd'
     | '/managedata'
     | '/quickcapture'
-    | '/rapidcapture'
-    | '/rapidscan'
     | '/reviewqueue'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -108,8 +88,6 @@ export interface FileRouteTypes {
     | '/bulkadd'
     | '/managedata'
     | '/quickcapture'
-    | '/rapidcapture'
-    | '/rapidscan'
     | '/reviewqueue'
   id:
     | '__root__'
@@ -118,8 +96,6 @@ export interface FileRouteTypes {
     | '/bulkadd'
     | '/managedata'
     | '/quickcapture'
-    | '/rapidcapture'
-    | '/rapidscan'
     | '/reviewqueue'
   fileRoutesById: FileRoutesById
 }
@@ -129,8 +105,6 @@ export interface RootRouteChildren {
   BulkaddRoute: typeof BulkaddRoute
   ManagedataRoute: typeof ManagedataRoute
   QuickcaptureRoute: typeof QuickcaptureRoute
-  RapidcaptureRoute: typeof RapidcaptureRoute
-  RapidscanRoute: typeof RapidscanRoute
   ReviewqueueRoute: typeof ReviewqueueRoute
 }
 
@@ -141,20 +115,6 @@ declare module '@tanstack/react-router' {
       path: '/reviewqueue'
       fullPath: '/reviewqueue'
       preLoaderRoute: typeof ReviewqueueRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/rapidscan': {
-      id: '/rapidscan'
-      path: '/rapidscan'
-      fullPath: '/rapidscan'
-      preLoaderRoute: typeof RapidscanRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/rapidcapture': {
-      id: '/rapidcapture'
-      path: '/rapidcapture'
-      fullPath: '/rapidcapture'
-      preLoaderRoute: typeof RapidcaptureRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/quickcapture': {
@@ -201,8 +161,6 @@ const rootRouteChildren: RootRouteChildren = {
   BulkaddRoute: BulkaddRoute,
   ManagedataRoute: ManagedataRoute,
   QuickcaptureRoute: QuickcaptureRoute,
-  RapidcaptureRoute: RapidcaptureRoute,
-  RapidscanRoute: RapidscanRoute,
   ReviewqueueRoute: ReviewqueueRoute,
 }
 export const routeTree = rootRouteImport
