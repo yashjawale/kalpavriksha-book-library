@@ -20,7 +20,8 @@ import {
   Users,
   ArrowRightLeft,
   LogIn,
-  LogOut
+  LogOut,
+  LayoutDashboard
 } from 'lucide-react'
 import { AboutDialog } from './AboutDialog'
 import { useState, useEffect } from 'react'
@@ -63,7 +64,8 @@ export function AppSidebar() {
   }, [])
 
   const links = [
-    { to: '/', label: 'Manage Books', icon: BookOpen },
+    { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/books', label: 'Manage Books', icon: BookOpen },
     { to: '/rentals', label: 'Rentals', icon: ArrowRightLeft },
     { to: '/users', label: 'Users', icon: Users },
     { to: '/bulkadd', label: 'Bulk Add', icon: UploadIcon },

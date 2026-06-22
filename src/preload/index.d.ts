@@ -1,6 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type { BooksController } from '../main/controllers/books'
 import type { TagsController } from '../main/controllers/tags'
+import type { DashboardController } from '../main/controllers/dashboard'
 
 // Automatically infer API shape from controller type
 type ControllerAPI<T extends Record<string, (...args: never[]) => unknown>> = {
@@ -13,6 +14,7 @@ interface API {
   }
   books: ControllerAPI<BooksController>
   tags: ControllerAPI<TagsController>
+  dashboard: ControllerAPI<DashboardController>
   auth: {
     login: () => Promise<{
       success: boolean
@@ -42,6 +44,11 @@ interface API {
   }
   loans: {
     getAllActive: () => Promise<unknown[]>
+    getUpcomingReturns: (
+      page?: number,
+      perPage?: number,
+      searchQuery?: string
+    ) => Promise<{ loans: unknown[]; total: number }>
     create: (data: {
       bookIsbns: string[]
       userEmail: string

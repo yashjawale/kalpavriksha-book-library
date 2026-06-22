@@ -12,6 +12,32 @@ export const loansController = {
     })
   },
 
+  getUpcomingReturns: async (page: number = 1, perPage: number = 25, searchQuery?: string) => {
+    const skip = (page - 1) * perPage
+    const whereClause: any = { returnedAt: null }
+
+    if (searchQuery) {
+      whereClause.OR = [
+        { book: { title: { contains: searchQuery } } },
+        { borrower: { name: { contains: searchQuery } } },
+        { borrower: { email: { contains: searchQuery } } }
+      ]
+    }
+
+    const [loans, total] = await Promise.all([
+      prisma.loan.findMany({
+        where: whereClause,
+        include: { book: true, borrower: true },
+        orderBy: { dueDate: 'asc' },
+        skip,
+        take: perPage
+      }),
+      prisma.loan.count({ where: whereClause })
+    ])
+
+    return { loans, total }
+  },
+
   create: async (data: {
     bookIsbns: string[]
     userEmail: string

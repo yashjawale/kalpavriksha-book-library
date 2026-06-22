@@ -17,13 +17,15 @@ interface BooksColumnsProps {
   isDeleting?: boolean
   onAddStock?: (isbn: string, title: string, currentStock: number) => void
   onChangeTags?: (isbn: string, title: string) => void
+  onTitleClick?: (isbn: string) => void
 }
 
 export function getBooksColumns({
   onDelete,
   isDeleting,
   onAddStock,
-  onChangeTags
+  onChangeTags,
+  onTitleClick
 }: BooksColumnsProps = {}): ColumnDef<Book>[] {
   return [
     {
@@ -62,7 +64,23 @@ export function getBooksColumns({
       },
       cell: ({ row }) => {
         const title = row.getValue('title') as string | null
-        return <div className="font-medium truncate max-w-64">{title || '-'}</div>
+        const isbn = row.original.isbn
+
+        if (onTitleClick) {
+          return (
+            <span
+              onClick={(e) => {
+                e.stopPropagation()
+                onTitleClick(isbn)
+              }}
+              className="font-medium truncate max-w-64 block hover:underline hover:text-primary transition-colors cursor-pointer"
+            >
+              {title || '-'}
+            </span>
+          )
+        }
+
+        return <div className="font-medium truncate max-w-64 block">{title || '-'}</div>
       }
     },
     {

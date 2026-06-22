@@ -10,17 +10,25 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TagsRouteImport } from './routes/tags'
+import { Route as ReturnsRouteImport } from './routes/returns'
 import { Route as RentalsRouteImport } from './routes/rentals'
 import { Route as ManagedataRouteImport } from './routes/managedata'
 import { Route as BulkaddRouteImport } from './routes/bulkadd'
+import { Route as BooksRouteImport } from './routes/books'
 import { Route as BarcodesRouteImport } from './routes/barcodes'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UsersIndexRouteImport } from './routes/users/index'
 import { Route as UsersEmailRouteImport } from './routes/users/$email'
+import { Route as BooksIsbnRouteImport } from './routes/books_.$isbn'
 
 const TagsRoute = TagsRouteImport.update({
   id: '/tags',
   path: '/tags',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReturnsRoute = ReturnsRouteImport.update({
+  id: '/returns',
+  path: '/returns',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RentalsRoute = RentalsRouteImport.update({
@@ -36,6 +44,11 @@ const ManagedataRoute = ManagedataRouteImport.update({
 const BulkaddRoute = BulkaddRouteImport.update({
   id: '/bulkadd',
   path: '/bulkadd',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BooksRoute = BooksRouteImport.update({
+  id: '/books',
+  path: '/books',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BarcodesRoute = BarcodesRouteImport.update({
@@ -58,24 +71,35 @@ const UsersEmailRoute = UsersEmailRouteImport.update({
   path: '/users/$email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BooksIsbnRoute = BooksIsbnRouteImport.update({
+  id: '/books_/$isbn',
+  path: '/books/$isbn',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/barcodes': typeof BarcodesRoute
+  '/books': typeof BooksRoute
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
   '/rentals': typeof RentalsRoute
+  '/returns': typeof ReturnsRoute
   '/tags': typeof TagsRoute
+  '/books/$isbn': typeof BooksIsbnRoute
   '/users/$email': typeof UsersEmailRoute
   '/users/': typeof UsersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/barcodes': typeof BarcodesRoute
+  '/books': typeof BooksRoute
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
   '/rentals': typeof RentalsRoute
+  '/returns': typeof ReturnsRoute
   '/tags': typeof TagsRoute
+  '/books/$isbn': typeof BooksIsbnRoute
   '/users/$email': typeof UsersEmailRoute
   '/users': typeof UsersIndexRoute
 }
@@ -83,10 +107,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/barcodes': typeof BarcodesRoute
+  '/books': typeof BooksRoute
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
   '/rentals': typeof RentalsRoute
+  '/returns': typeof ReturnsRoute
   '/tags': typeof TagsRoute
+  '/books_/$isbn': typeof BooksIsbnRoute
   '/users/$email': typeof UsersEmailRoute
   '/users/': typeof UsersIndexRoute
 }
@@ -95,30 +122,39 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/barcodes'
+    | '/books'
     | '/bulkadd'
     | '/managedata'
     | '/rentals'
+    | '/returns'
     | '/tags'
+    | '/books/$isbn'
     | '/users/$email'
     | '/users/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/barcodes'
+    | '/books'
     | '/bulkadd'
     | '/managedata'
     | '/rentals'
+    | '/returns'
     | '/tags'
+    | '/books/$isbn'
     | '/users/$email'
     | '/users'
   id:
     | '__root__'
     | '/'
     | '/barcodes'
+    | '/books'
     | '/bulkadd'
     | '/managedata'
     | '/rentals'
+    | '/returns'
     | '/tags'
+    | '/books_/$isbn'
     | '/users/$email'
     | '/users/'
   fileRoutesById: FileRoutesById
@@ -126,10 +162,13 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BarcodesRoute: typeof BarcodesRoute
+  BooksRoute: typeof BooksRoute
   BulkaddRoute: typeof BulkaddRoute
   ManagedataRoute: typeof ManagedataRoute
   RentalsRoute: typeof RentalsRoute
+  ReturnsRoute: typeof ReturnsRoute
   TagsRoute: typeof TagsRoute
+  BooksIsbnRoute: typeof BooksIsbnRoute
   UsersEmailRoute: typeof UsersEmailRoute
   UsersIndexRoute: typeof UsersIndexRoute
 }
@@ -141,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/tags'
       fullPath: '/tags'
       preLoaderRoute: typeof TagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/returns': {
+      id: '/returns'
+      path: '/returns'
+      fullPath: '/returns'
+      preLoaderRoute: typeof ReturnsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rentals': {
@@ -162,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/bulkadd'
       fullPath: '/bulkadd'
       preLoaderRoute: typeof BulkaddRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/books': {
+      id: '/books'
+      path: '/books'
+      fullPath: '/books'
+      preLoaderRoute: typeof BooksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/barcodes': {
@@ -192,16 +245,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsersEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/books_/$isbn': {
+      id: '/books_/$isbn'
+      path: '/books/$isbn'
+      fullPath: '/books/$isbn'
+      preLoaderRoute: typeof BooksIsbnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BarcodesRoute: BarcodesRoute,
+  BooksRoute: BooksRoute,
   BulkaddRoute: BulkaddRoute,
   ManagedataRoute: ManagedataRoute,
   RentalsRoute: RentalsRoute,
+  ReturnsRoute: ReturnsRoute,
   TagsRoute: TagsRoute,
+  BooksIsbnRoute: BooksIsbnRoute,
   UsersEmailRoute: UsersEmailRoute,
   UsersIndexRoute: UsersIndexRoute,
 }

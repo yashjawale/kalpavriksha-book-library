@@ -12,6 +12,7 @@ import { usersController } from './controllers/users'
 import { loansController } from './controllers/loans'
 import { authController } from './lib/auth'
 import { settingsController } from './controllers/settings'
+import { dashboardController } from './controllers/dashboard'
 // Helper to automatically register IPC handlers for a controller
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic controller registration requires accepting any function signature
 function registerController<T extends Record<string, (...args: any[]) => any>>(
@@ -88,6 +89,7 @@ app.whenReady().then(() => {
   registerController('loans', loansController)
   registerController('auth', authController)
   registerController('settings', settingsController)
+  registerController('dashboard', dashboardController)
 
   // Register book API handlers
   ipcMain.handle('bookApi:getGoogleBooksInfo', async (_, isbn: string) => {

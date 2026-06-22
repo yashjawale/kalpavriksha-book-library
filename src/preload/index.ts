@@ -25,6 +25,7 @@ const api = {
         needsBarcodeSticker
       ),
     getById: (isbn: string) => ipcRenderer.invoke('books:getById', isbn),
+    getBookDetails: (isbn: string) => ipcRenderer.invoke('books:getBookDetails', isbn),
     create: (data: {
       isbn: string
       title: string

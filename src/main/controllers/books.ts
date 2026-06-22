@@ -57,6 +57,23 @@ export const booksController = {
     })
   },
 
+  getBookDetails: async (isbn: string) => {
+    return await prisma.book.findUnique({
+      where: { isbn },
+      include: {
+        bookTags: {
+          include: {
+            tag: true
+          }
+        },
+        loans: {
+          include: { borrower: true },
+          orderBy: { borrowedAt: 'desc' }
+        }
+      }
+    })
+  },
+
   create: async (data: {
     isbn: string
     title: string
