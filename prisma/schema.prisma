@@ -79,3 +79,20 @@ model Loan {
   @@index([userEmail])
   @@map("loans")
 }
+
+model CapturedBook {
+  id            Int      @id @default(autoincrement())
+  frontImage    String
+  backImage     String
+  isbn          String?
+  title         String?
+  author        String?
+  publisher     String?
+  tagIds        String?  // JSON string
+  status        String   @default("PENDING") // PENDING, PROCESSED
+  isDuplicate   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("captured_books")
+}
