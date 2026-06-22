@@ -1,5 +1,5 @@
 import { prisma } from '../lib/prisma'
-import { Prisma } from '@prisma/client'
+import { Prisma } from '../../../generated/prisma/client'
 
 export const usersController = {
   getAll: async (page: number = 1, perPage: number = 10, searchQuery?: string) => {
@@ -55,3 +55,5 @@ export const usersController = {
     })
   }
 }
+
+export type UsersController = typeof usersController

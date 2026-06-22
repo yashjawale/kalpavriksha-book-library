@@ -9,7 +9,7 @@ export const Route = createFileRoute('/')({
   component: Dashboard
 })
 
-export default function Dashboard() {
+function Dashboard() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => await window.api.dashboard.getStats()

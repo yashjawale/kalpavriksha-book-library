@@ -6,20 +6,16 @@ import { DataTable } from '@renderer/components/ui/data-table'
 import { Button } from '@renderer/components/ui/button'
 import { format } from 'date-fns'
 import { ColumnDef } from '@tanstack/react-table'
-import type { Book } from '@renderer/types/book'
 
-type LoanWithDetails = {
-  id: number
-  book: Book
-  borrower: { name: string | null; email: string }
-  dueDate: Date | null
-}
+type LoanWithDetails = Awaited<
+  ReturnType<typeof window.api.loans.getUpcomingReturns>
+>['loans'][number]
 
 export const Route = createFileRoute('/returns')({
   component: UpcomingReturns
 })
 
-export default function UpcomingReturns() {
+function UpcomingReturns() {
   const queryClient = useQueryClient()
 
   const { data, isLoading } = useQuery({
@@ -168,7 +164,7 @@ export default function UpcomingReturns() {
 
       <DataTable
         columns={columns}
-        data={data?.loans || []}
+        data={(data?.loans as LoanWithDetails[]) || []}
         pageSize={25}
         searchPlaceholder="Search by name, book or email"
         globalFilterFn={globalFilterFn}

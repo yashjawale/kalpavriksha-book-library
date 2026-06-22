@@ -80,6 +80,9 @@ model Loan {
 
   @@index([bookIsbn])
   @@index([userEmail])
+  @@index([returnedAt])
+  @@index([dueDate])
+  @@index([borrowedAt])
   @@map("loans")
 }
 

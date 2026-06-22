@@ -34,7 +34,7 @@ export const Route = createFileRoute('/books')({
   component: ManageBooks
 })
 
-export default function ManageBooks() {
+function ManageBooks() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})

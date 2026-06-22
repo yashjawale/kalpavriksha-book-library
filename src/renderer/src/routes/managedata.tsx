@@ -18,7 +18,7 @@ export const Route = createFileRoute('/managedata')({
   component: ManageData
 })
 
-export default function ManageData() {
+function ManageData() {
   const [isExporting, setIsExporting] = useState(false)
   const [googleClientId, setGoogleClientId] = useState('')
   const [googleClientSecret, setGoogleClientSecret] = useState('')

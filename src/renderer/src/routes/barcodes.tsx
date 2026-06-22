@@ -26,7 +26,7 @@ export const Route = createFileRoute('/barcodes')({
   component: BarcodesPage
 })
 
-export default function BarcodesPage() {
+function BarcodesPage() {
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
   const [isGenerating, setIsGenerating] = useState(false)
   const [printCounts, setPrintCounts] = useState<Record<string, number>>({})
@@ -81,6 +81,7 @@ export default function BarcodesPage() {
     filteredBooks.forEach((book) => {
       counts[book.isbn] = book.totalStock
     })
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPrintCounts(counts)
   }, [filteredBooks])
 

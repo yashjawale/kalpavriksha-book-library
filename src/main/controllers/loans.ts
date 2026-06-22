@@ -1,5 +1,5 @@
 import { prisma } from '../lib/prisma'
-import { Prisma, Loan } from '@prisma/client'
+import { Prisma, Loan } from '../../../generated/prisma/client'
 
 export const loansController = {
   getAllActive: async () => {
@@ -121,3 +121,5 @@ export const loansController = {
     })
   }
 }
+
+export type LoansController = typeof loansController

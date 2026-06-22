@@ -10,7 +10,7 @@ export const Route = createFileRoute('/books_/$isbn')({
   component: SingleBook
 })
 
-export default function SingleBook() {
+function SingleBook() {
   const { isbn } = Route.useParams()
   const queryClient = useQueryClient()
 

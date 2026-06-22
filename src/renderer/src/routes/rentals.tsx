@@ -42,13 +42,7 @@ function RentalsPage() {
 
   // Active rentals
   const [activeLoans, setActiveLoans] = useState<
-    {
-      id: number
-      book: Book
-      borrower: { name: string | null; email: string }
-      dueDate: Date | null
-      borrowedAt: Date
-    }[]
+    Awaited<ReturnType<typeof window.api.loans.getAllActive>>
   >([])
   const [loadingLoans, setLoadingLoans] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -143,7 +137,7 @@ function RentalsPage() {
     }
   }, [showForm, selectedBooks, fetchAndAddBookByIsbn])
 
-  const loadActiveLoans = async () => {
+  async function loadActiveLoans() {
     setLoadingLoans(true)
     try {
       const data = await window.api.loans.getAllActive()

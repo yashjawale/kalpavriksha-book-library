@@ -66,6 +66,7 @@ function ReviewQueue() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchQueue()
     const interval = setInterval(fetchQueue, 5000)
     return () => clearInterval(interval)
