@@ -70,7 +70,6 @@ export function AppSidebar() {
     { to: '/books', label: 'Manage Books', icon: BookOpen },
     { to: '/rentals', label: 'Rentals', icon: ArrowRightLeft },
     { to: '/users', label: 'Users', icon: Users },
-    { to: '/', label: 'Manage Books', icon: BookOpen },
     { to: '/quickcapture', label: 'Quick Capture', icon: ScanLine },
     { to: '/reviewqueue', label: 'Review Queue', icon: ListChecks },
     { to: '/bulkadd', label: 'Bulk Add', icon: UploadIcon },

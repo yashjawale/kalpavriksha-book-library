@@ -10,9 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TagsRouteImport } from './routes/tags'
+import { Route as ReviewqueueRouteImport } from './routes/reviewqueue'
 import { Route as ReturnsRouteImport } from './routes/returns'
 import { Route as RentalsRouteImport } from './routes/rentals'
-import { Route as ReviewqueueRouteImport } from './routes/reviewqueue'
 import { Route as QuickcaptureRouteImport } from './routes/quickcapture'
 import { Route as ManagedataRouteImport } from './routes/managedata'
 import { Route as BulkaddRouteImport } from './routes/bulkadd'
@@ -28,6 +28,11 @@ const TagsRoute = TagsRouteImport.update({
   path: '/tags',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReviewqueueRoute = ReviewqueueRouteImport.update({
+  id: '/reviewqueue',
+  path: '/reviewqueue',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReturnsRoute = ReturnsRouteImport.update({
   id: '/returns',
   path: '/returns',
@@ -35,11 +40,7 @@ const ReturnsRoute = ReturnsRouteImport.update({
 } as any)
 const RentalsRoute = RentalsRouteImport.update({
   id: '/rentals',
-  path: '/rentals',getParentRoute: () => rootRouteImport,
-} as any)
-const ReviewqueueRoute = ReviewqueueRouteImport.update({
-  id: '/reviewqueue',
-  path: '/reviewqueue',
+  path: '/rentals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QuickcaptureRoute = QuickcaptureRouteImport.update({
@@ -94,14 +95,14 @@ export interface FileRoutesByFullPath {
   '/books': typeof BooksRoute
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
+  '/quickcapture': typeof QuickcaptureRoute
   '/rentals': typeof RentalsRoute
   '/returns': typeof ReturnsRoute
+  '/reviewqueue': typeof ReviewqueueRoute
   '/tags': typeof TagsRoute
   '/books/$isbn': typeof BooksIsbnRoute
   '/users/$email': typeof UsersEmailRoute
   '/users/': typeof UsersIndexRoute
-  '/quickcapture': typeof QuickcaptureRoute
-  '/reviewqueue': typeof ReviewqueueRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -109,14 +110,14 @@ export interface FileRoutesByTo {
   '/books': typeof BooksRoute
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
+  '/quickcapture': typeof QuickcaptureRoute
   '/rentals': typeof RentalsRoute
   '/returns': typeof ReturnsRoute
+  '/reviewqueue': typeof ReviewqueueRoute
   '/tags': typeof TagsRoute
   '/books/$isbn': typeof BooksIsbnRoute
   '/users/$email': typeof UsersEmailRoute
   '/users': typeof UsersIndexRoute
-  '/quickcapture': typeof QuickcaptureRoute
-  '/reviewqueue': typeof ReviewqueueRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,14 +126,14 @@ export interface FileRoutesById {
   '/books': typeof BooksRoute
   '/bulkadd': typeof BulkaddRoute
   '/managedata': typeof ManagedataRoute
+  '/quickcapture': typeof QuickcaptureRoute
   '/rentals': typeof RentalsRoute
   '/returns': typeof ReturnsRoute
+  '/reviewqueue': typeof ReviewqueueRoute
   '/tags': typeof TagsRoute
   '/books_/$isbn': typeof BooksIsbnRoute
   '/users/$email': typeof UsersEmailRoute
   '/users/': typeof UsersIndexRoute
-  '/quickcapture': typeof QuickcaptureRoute
-  '/reviewqueue': typeof ReviewqueueRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -140,32 +141,31 @@ export interface FileRouteTypes {
     | '/'
     | '/barcodes'
     | '/books'
+    | '/bulkadd'
     | '/managedata'
+    | '/quickcapture'
     | '/rentals'
     | '/returns'
+    | '/reviewqueue'
     | '/tags'
     | '/books/$isbn'
     | '/users/$email'
     | '/users/'
-    | '/bulkadd'
-    | '/managedata'
-    | '/quickcapture'
-    | '/reviewqueue'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/barcodes'
     | '/books'
+    | '/bulkadd'
+    | '/managedata'
+    | '/quickcapture'
     | '/rentals'
     | '/returns'
+    | '/reviewqueue'
     | '/tags'
     | '/books/$isbn'
     | '/users/$email'
     | '/users'
-    | '/bulkadd'
-    | '/managedata'
-    | '/quickcapture'
-    | '/reviewqueue'
   id:
     | '__root__'
     | '/'
@@ -173,15 +173,14 @@ export interface FileRouteTypes {
     | '/books'
     | '/bulkadd'
     | '/managedata'
+    | '/quickcapture'
     | '/rentals'
     | '/returns'
+    | '/reviewqueue'
     | '/tags'
     | '/books_/$isbn'
     | '/users/$email'
     | '/users/'
-    | '/managedata'
-    | '/quickcapture'
-    | '/reviewqueue'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -190,14 +189,14 @@ export interface RootRouteChildren {
   BooksRoute: typeof BooksRoute
   BulkaddRoute: typeof BulkaddRoute
   ManagedataRoute: typeof ManagedataRoute
+  QuickcaptureRoute: typeof QuickcaptureRoute
   RentalsRoute: typeof RentalsRoute
   ReturnsRoute: typeof ReturnsRoute
+  ReviewqueueRoute: typeof ReviewqueueRoute
   TagsRoute: typeof TagsRoute
   BooksIsbnRoute: typeof BooksIsbnRoute
   UsersEmailRoute: typeof UsersEmailRoute
   UsersIndexRoute: typeof UsersIndexRoute
-  QuickcaptureRoute: typeof QuickcaptureRoute
-  ReviewqueueRoute: typeof ReviewqueueRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -207,6 +206,13 @@ declare module '@tanstack/react-router' {
       path: '/tags'
       fullPath: '/tags'
       preLoaderRoute: typeof TagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reviewqueue': {
+      id: '/reviewqueue'
+      path: '/reviewqueue'
+      fullPath: '/reviewqueue'
+      preLoaderRoute: typeof ReviewqueueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/returns': {
@@ -221,11 +227,6 @@ declare module '@tanstack/react-router' {
       path: '/rentals'
       fullPath: '/rentals'
       preLoaderRoute: typeof RentalsRouteImport
-    '/reviewqueue': {
-      id: '/reviewqueue'
-      path: '/reviewqueue'
-      fullPath: '/reviewqueue'
-      preLoaderRoute: typeof ReviewqueueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/quickcapture': {
@@ -300,14 +301,14 @@ const rootRouteChildren: RootRouteChildren = {
   BooksRoute: BooksRoute,
   BulkaddRoute: BulkaddRoute,
   ManagedataRoute: ManagedataRoute,
+  QuickcaptureRoute: QuickcaptureRoute,
   RentalsRoute: RentalsRoute,
   ReturnsRoute: ReturnsRoute,
+  ReviewqueueRoute: ReviewqueueRoute,
   TagsRoute: TagsRoute,
   BooksIsbnRoute: BooksIsbnRoute,
   UsersEmailRoute: UsersEmailRoute,
   UsersIndexRoute: UsersIndexRoute,
-  QuickcaptureRoute: QuickcaptureRoute,
-  ReviewqueueRoute: ReviewqueueRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
