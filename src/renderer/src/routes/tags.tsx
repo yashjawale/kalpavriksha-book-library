@@ -16,7 +16,8 @@ import { Card, CardHeader, CardContent } from '@renderer/components/ui/card'
 import PageTitle from '@renderer/components/ui/page-title'
 import { Edit2, Tag as TagIcon } from 'lucide-react'
 import type { Tag } from '@renderer/types/book'
-import { TagBadge, TAG_COLOR_OPTIONS, TAG_COLOR_MAP } from '@renderer/components/TagBadge'
+import { TagBadge } from '@renderer/components/TagBadge'
+import { TAG_COLOR_OPTIONS, TAG_COLOR_MAP } from '@renderer/utils/tag-colors'
 import { cn } from '@renderer/lib/utils'
 
 export const Route = createFileRoute('/tags')({

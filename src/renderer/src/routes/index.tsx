@@ -86,18 +86,24 @@ export default function Dashboard() {
                     </td>
                   </tr>
                 ) : (
-                  stats?.upcomingReturns?.map((loan: any) => (
-                    <tr key={loan.id} className="border-b last:border-0 hover:bg-muted/50">
-                      <td className="p-4 align-middle">
-                        {loan.borrower.name || loan.borrower.email}
-                      </td>
-                      <td className="p-4 align-middle">
-                        {loan.dueDate
-                          ? format(new Date(loan.dueDate), 'MMM d, yyyy')
-                          : 'No due date'}
-                      </td>
-                    </tr>
-                  ))
+                  stats?.upcomingReturns?.map(
+                    (loan: {
+                      id: number
+                      borrower: { name: string | null; email: string }
+                      dueDate: Date | null
+                    }) => (
+                      <tr key={loan.id} className="border-b last:border-0 hover:bg-muted/50">
+                        <td className="p-4 align-middle">
+                          {loan.borrower.name || loan.borrower.email}
+                        </td>
+                        <td className="p-4 align-middle">
+                          {loan.dueDate
+                            ? format(new Date(loan.dueDate), 'MMM d, yyyy')
+                            : 'No due date'}
+                        </td>
+                      </tr>
+                    )
+                  )
                 )}
               </tbody>
             </table>
@@ -127,16 +133,22 @@ export default function Dashboard() {
                     </td>
                   </tr>
                 ) : (
-                  stats?.recentRentals?.map((loan: any) => (
-                    <tr key={loan.id} className="border-b last:border-0 hover:bg-muted/50">
-                      <td className="p-4 align-middle">
-                        {loan.borrower.name || loan.borrower.email}
-                      </td>
-                      <td className="p-4 align-middle">
-                        {format(new Date(loan.borrowedAt), 'MMM d, yyyy')}
-                      </td>
-                    </tr>
-                  ))
+                  stats?.recentRentals?.map(
+                    (loan: {
+                      id: number
+                      borrower: { name: string | null; email: string }
+                      borrowedAt: Date
+                    }) => (
+                      <tr key={loan.id} className="border-b last:border-0 hover:bg-muted/50">
+                        <td className="p-4 align-middle">
+                          {loan.borrower.name || loan.borrower.email}
+                        </td>
+                        <td className="p-4 align-middle">
+                          {format(new Date(loan.borrowedAt), 'MMM d, yyyy')}
+                        </td>
+                      </tr>
+                    )
+                  )
                 )}
               </tbody>
             </table>

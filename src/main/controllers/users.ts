@@ -1,9 +1,10 @@
 import { prisma } from '../lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export const usersController = {
   getAll: async (page: number = 1, perPage: number = 10, searchQuery?: string) => {
     const skip = (page - 1) * perPage
-    const whereClause: any = {}
+    const whereClause: Prisma.UserWhereInput = {}
 
     if (searchQuery) {
       whereClause.OR = [{ name: { contains: searchQuery } }, { email: { contains: searchQuery } }]

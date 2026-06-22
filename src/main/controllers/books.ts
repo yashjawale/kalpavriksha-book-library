@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export const booksController = {
   getAll: async (
@@ -11,7 +12,7 @@ export const booksController = {
   ) => {
     const skip = (page - 1) * perPage
     const orderByClause = orderBy ? { [orderBy]: order } : {}
-    const whereClause: any = {}
+    const whereClause: Prisma.BookWhereInput = {}
 
     if (searchQuery) {
       whereClause.OR = [{ isbn: { contains: searchQuery } }, { title: { contains: searchQuery } }]

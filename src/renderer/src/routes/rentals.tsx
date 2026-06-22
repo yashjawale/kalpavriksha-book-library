@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/ui/card'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
@@ -41,7 +41,15 @@ function RentalsPage() {
   })
 
   // Active rentals
-  const [activeLoans, setActiveLoans] = useState<any[]>([])
+  const [activeLoans, setActiveLoans] = useState<
+    {
+      id: number
+      book: Book
+      borrower: { name: string | null; email: string }
+      dueDate: Date | null
+      borrowedAt: Date
+    }[]
+  >([])
   const [loadingLoans, setLoadingLoans] = useState(false)
   const [showForm, setShowForm] = useState(false)
 
@@ -68,6 +76,33 @@ function RentalsPage() {
     window.api.auth.getStatus().then(setAuthStatus)
     loadActiveLoans()
   }, [])
+
+  const fetchAndAddBookByIsbn = useCallback(
+    async (isbn: string) => {
+      try {
+        const book = await window.api.books.getById(isbn)
+        if (book) {
+          const openStock = book.totalStock - (book.loans?.length || 0)
+          if (openStock <= 0) {
+            toast.error(`Book "${book.title || isbn}" is out of stock.`)
+            return
+          }
+          if (!selectedBooks.find((b) => b.isbn === book.isbn)) {
+            setSelectedBooks((prev) => [...prev, book])
+            toast.success(`Added ${book.title}`)
+          } else {
+            toast.info(`Book already in list.`)
+          }
+        } else {
+          toast.error(`Book with ISBN ${isbn} not found.`)
+        }
+      } catch (err) {
+        console.error(err)
+        toast.error('Failed to fetch book.')
+      }
+    },
+    [selectedBooks]
+  )
 
   // Barcode scanner listener for New Rental screen
   useEffect(() => {
@@ -106,7 +141,7 @@ function RentalsPage() {
       window.removeEventListener('keydown', handleKeyDown)
       clearTimeout(barcodeTimeout)
     }
-  }, [showForm, selectedBooks])
+  }, [showForm, selectedBooks, fetchAndAddBookByIsbn])
 
   const loadActiveLoans = async () => {
     setLoadingLoans(true)
@@ -138,30 +173,6 @@ function RentalsPage() {
 
   const handleUserSearchInput = (value: string) => {
     debouncedUserSearch('user-search', value)
-  }
-
-  const fetchAndAddBookByIsbn = async (isbn: string) => {
-    try {
-      const book = await window.api.books.getById(isbn)
-      if (book) {
-        const openStock = book.totalStock - (book.loans?.length || 0)
-        if (openStock <= 0) {
-          toast.error(`Book "${book.title || isbn}" is out of stock.`)
-          return
-        }
-        if (!selectedBooks.find((b) => b.isbn === book.isbn)) {
-          setSelectedBooks((prev) => [...prev, book])
-          toast.success(`Added ${book.title}`)
-        } else {
-          toast.info(`Book already in list.`)
-        }
-      } else {
-        toast.error(`Book with ISBN ${isbn} not found.`)
-      }
-    } catch (err) {
-      console.error(err)
-      toast.error('Failed to fetch book.')
-    }
   }
 
   const debouncedBookSearch = useDebouncedCallback(async (query: string) => {

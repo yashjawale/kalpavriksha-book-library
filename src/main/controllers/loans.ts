@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma'
+import { Prisma, Loan } from '@prisma/client'
 
 export const loansController = {
   getAllActive: async () => {
@@ -14,7 +15,7 @@ export const loansController = {
 
   getUpcomingReturns: async (page: number = 1, perPage: number = 25, searchQuery?: string) => {
     const skip = (page - 1) * perPage
-    const whereClause: any = { returnedAt: null }
+    const whereClause: Prisma.LoanWhereInput = { returnedAt: null }
 
     if (searchQuery) {
       whereClause.OR = [
@@ -57,7 +58,7 @@ export const loansController = {
       })
     }
 
-    const createdLoans: any[] = []
+    const createdLoans: Loan[] = []
 
     // Check books and create loans
     for (const isbn of data.bookIsbns) {

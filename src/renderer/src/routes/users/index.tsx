@@ -61,7 +61,7 @@ function UsersPage() {
     return () => {
       mounted = false
     }
-  }, [page]) // searchQuery change handled by debouncedSearch
+  }, [page, searchQuery]) // searchQuery change handled by debouncedSearch
 
   const totalPages = Math.ceil(totalUsers / perPage)
 

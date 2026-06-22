@@ -6,6 +6,14 @@ import { DataTable } from '@renderer/components/ui/data-table'
 import { Button } from '@renderer/components/ui/button'
 import { format } from 'date-fns'
 import { ColumnDef } from '@tanstack/react-table'
+import type { Book } from '@renderer/types/book'
+
+type LoanWithDetails = {
+  id: number
+  book: Book
+  borrower: { name: string | null; email: string }
+  dueDate: Date | null
+}
 
 export const Route = createFileRoute('/returns')({
   component: UpcomingReturns
@@ -62,7 +70,7 @@ export default function UpcomingReturns() {
     }
   }
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<LoanWithDetails>[] = [
     {
       accessorKey: 'borrower',
       header: 'Name',
@@ -137,7 +145,7 @@ export default function UpcomingReturns() {
     }
   ]
 
-  const globalFilterFn = (loan: any, filterValue: string): boolean => {
+  const globalFilterFn = (loan: LoanWithDetails, filterValue: string): boolean => {
     const searchLower = filterValue.toLowerCase()
     const matchesUser =
       loan.borrower.name?.toLowerCase().includes(searchLower) ||
