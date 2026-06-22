@@ -21,7 +21,9 @@ import {
   ArrowRightLeft,
   LogIn,
   LogOut,
-  LayoutDashboard
+  LayoutDashboard,
+  ListChecks,
+  ScanLine
 } from 'lucide-react'
 import { AboutDialog } from './AboutDialog'
 import { useState, useEffect } from 'react'
@@ -68,6 +70,9 @@ export function AppSidebar() {
     { to: '/books', label: 'Manage Books', icon: BookOpen },
     { to: '/rentals', label: 'Rentals', icon: ArrowRightLeft },
     { to: '/users', label: 'Users', icon: Users },
+    { to: '/', label: 'Manage Books', icon: BookOpen },
+    { to: '/quickcapture', label: 'Quick Capture', icon: ScanLine },
+    { to: '/reviewqueue', label: 'Review Queue', icon: ListChecks },
     { to: '/bulkadd', label: 'Bulk Add', icon: UploadIcon },
     { to: '/barcodes', label: 'Print Barcodes', icon: PrinterIcon },
     { to: '/tags', label: 'Tags', icon: Database },

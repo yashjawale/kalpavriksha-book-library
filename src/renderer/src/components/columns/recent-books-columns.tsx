@@ -1,25 +1,32 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { Book } from '@renderer/types/book'
 import { Button } from '@renderer/components/ui/button'
-import { Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { StockInput } from './StockInput'
 import { TagBadge } from '@renderer/components/TagBadge'
 
 interface RecentBooksColumnsProps {
   onStockChange?: (isbn: string, newStock: number) => void
   onDelete?: (isbn: string) => void
+  onEditDetails?: (book: Book) => void
 }
 
 export function getRecentBooksColumns({
   onStockChange,
-  onDelete
+  onDelete,
+  onEditDetails
 }: RecentBooksColumnsProps = {}): ColumnDef<Book>[] {
   return [
     {
       accessorKey: 'title',
       header: 'Title',
       cell: ({ row }) => {
-        return <div className="font-medium truncate max-w-64">{row.getValue('title')}</div>
+        const title = row.getValue('title') as string
+        return (
+          <div className="font-medium truncate max-w-64" title={title || undefined}>
+            {title}
+          </div>
+        )
       }
     },
     {
@@ -28,7 +35,12 @@ export function getRecentBooksColumns({
       cell: ({ row }) => {
         const author = row.getValue('author') as string | null
         return (
-          <div className="text-sm text-muted-foreground truncate max-w-44">{author || '-'}</div>
+          <div
+            className="text-sm text-muted-foreground truncate max-w-44"
+            title={author || undefined}
+          >
+            {author || '-'}
+          </div>
         )
       }
     },
@@ -38,7 +50,12 @@ export function getRecentBooksColumns({
       cell: ({ row }) => {
         const publisher = row.getValue('publisher') as string | null
         return (
-          <div className="text-sm text-muted-foreground truncate max-w-44">{publisher || '-'}</div>
+          <div
+            className="text-sm text-muted-foreground truncate max-w-44"
+            title={publisher || undefined}
+          >
+            {publisher || '-'}
+          </div>
         )
       }
     },
@@ -90,21 +107,35 @@ export function getRecentBooksColumns({
         )
       }
     },
-    ...(onDelete
+    ...(onDelete || onEditDetails
       ? [
           {
             id: 'actions',
             header: 'Actions',
             cell: ({ row }) => {
               return (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDelete(row.original.isbn)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="size-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {onEditDetails && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onEditDetails(row.original)}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                  )}
+                  {onDelete && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDelete(row.original.isbn)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  )}
+                </div>
               )
             }
           } as ColumnDef<Book>

@@ -110,6 +110,20 @@ export const booksController = {
     })
   },
 
+  updateDetails: async (
+    isbn: string,
+    details: { title: string; author?: string; publisher?: string }
+  ) => {
+    return await prisma.book.update({
+      where: { isbn },
+      data: {
+        title: details.title,
+        author: details.author,
+        publisher: details.publisher
+      }
+    })
+  },
+
   updateStock: async (isbn: string, stockCount: number) => {
     return await prisma.book.update({
       where: { isbn },
