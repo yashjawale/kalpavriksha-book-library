@@ -1,18 +1,20 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { Book } from '@renderer/types/book'
 import { Button } from '@renderer/components/ui/button'
-import { Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { StockInput } from './StockInput'
 import { TagBadge } from '@renderer/components/TagBadge'
 
 interface RecentBooksColumnsProps {
   onStockChange?: (isbn: string, newStock: number) => void
   onDelete?: (isbn: string) => void
+  onEditDetails?: (book: Book) => void
 }
 
 export function getRecentBooksColumns({
   onStockChange,
-  onDelete
+  onDelete,
+  onEditDetails
 }: RecentBooksColumnsProps = {}): ColumnDef<Book>[] {
   return [
     {
@@ -105,21 +107,35 @@ export function getRecentBooksColumns({
         )
       }
     },
-    ...(onDelete
+    ...(onDelete || onEditDetails
       ? [
           {
             id: 'actions',
             header: 'Actions',
             cell: ({ row }) => {
               return (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDelete(row.original.isbn)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="size-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {onEditDetails && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onEditDetails(row.original)}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                  )}
+                  {onDelete && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDelete(row.original.isbn)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  )}
+                </div>
               )
             }
           } as ColumnDef<Book>
