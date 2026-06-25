@@ -260,7 +260,7 @@ function ReviewQueue() {
             {/* Images */}
             {isQuickCapture ? (
               /* Front-only (Quick Capture) — full width */
-              <div className="h-80 lg:h-[450px] xl:h-[550px] shrink-0">
+              <div className="h-80 lg:h-112.5 xl:h-137.5 shrink-0">
                 <div className="h-full bg-black rounded-lg overflow-hidden relative shadow-inner group">
                   {frontImgData ? (
                     <img
@@ -280,7 +280,7 @@ function ReviewQueue() {
               </div>
             ) : (
               /* Front + Back side by side (Rapid Capture) */
-              <div className="flex gap-4 h-80 lg:h-[450px] xl:h-[550px] shrink-0">
+              <div className="flex gap-4 h-80 lg:h-112.5 xl:h-137.5 shrink-0">
                 <div className="flex-1 bg-black rounded-lg overflow-hidden relative shadow-inner group">
                   {frontImgData ? (
                     <img

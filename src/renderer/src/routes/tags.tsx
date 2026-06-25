@@ -112,7 +112,7 @@ function TagsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground line-clamp-2 min-h-[40px]">
+              <p className="text-sm text-muted-foreground line-clamp-2 min-h-10">
                 {tag.description || (
                   <span className="italic opacity-50">No description provided</span>
                 )}
@@ -131,7 +131,7 @@ function TagsPage() {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-106.25">
           <DialogHeader>
             <DialogTitle>Edit Tag</DialogTitle>
           </DialogHeader>

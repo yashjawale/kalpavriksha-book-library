@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/u
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
-import { Lock, ArrowRightLeft, X, Search, Info } from 'lucide-react'
+import { Lock, X, Search, Info } from 'lucide-react'
 import { Combobox } from '@renderer/components/ui/combobox'
 import { useDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 import { addWeeks, format } from 'date-fns'
@@ -27,6 +27,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@renderer/components/ui/dialog'
+import PageTitle from '@renderer/components/ui/page-title'
 
 export const Route = createFileRoute('/rentals')({
   component: RentalsPage
@@ -273,12 +274,10 @@ function RentalsPage() {
 
   if (!showForm) {
     return (
-      <div className="max-w-6xl mx-auto flex flex-col gap-6 mt-8 p-4">
+      <div className="w-full">
+        <PageTitle title="Book Rentals" />
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-              <ArrowRightLeft className="w-8 h-8" /> All Rentals
-            </h1>
             <p className="text-muted-foreground">Manage active book rentals.</p>
           </div>
           <Button onClick={() => setShowForm(true)}>New Rental</Button>
@@ -423,12 +422,10 @@ function RentalsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto flex flex-col gap-6 mt-8 p-4">
+    <div className="w-full">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <ArrowRightLeft className="w-8 h-8" /> New Rental
-          </h1>
+          <PageTitle title="New Rental" />
           <p className="text-muted-foreground">Rent books to a student.</p>
         </div>
         <Button variant="ghost" onClick={() => setShowForm(false)}>

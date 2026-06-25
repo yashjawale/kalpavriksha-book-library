@@ -6,6 +6,7 @@ import { useToast } from '@renderer/hooks/use-toast'
 import { TagSelector } from '@renderer/components/TagSelector'
 import { Label } from '@renderer/components/ui/label'
 import { useBarcodeScanner } from '@renderer/hooks/use-barcode-scanner'
+import PageTitle from '@renderer/components/ui/page-title'
 
 export const Route = createFileRoute('/quickcapture')({
   component: QuickCapture
@@ -232,23 +233,22 @@ function QuickCapture() {
     <div className="flex h-[calc(100vh-4rem)] p-4 gap-4 bg-muted/20">
       {/* Left: Camera View */}
       <Card className="flex-1 bg-card shadow-xl overflow-hidden rounded-2xl border border-border/50 flex flex-col">
-        <CardHeader className="text-center pb-2 flex-shrink-0">
-          <CardTitle className="text-3xl font-black tracking-tight flex items-center justify-center gap-2">
-            <Camera className="w-8 h-8 text-primary" />
-            Quick Capture
+        <CardHeader className="pb-2">
+          <CardTitle>
+            <PageTitle title="Quick Capture" />
           </CardTitle>
           <p className="text-muted-foreground text-lg">
             Press{' '}
-            <kbd className="px-2 py-1 bg-muted rounded border shadow-sm font-mono text-sm mx-1">
+            <kbd className="px-2 bg-muted rounded border shadow-sm font-mono text-sm mx-1">
               Space
             </kbd>{' '}
             to capture &mdash; scan barcode first to attach ISBN
           </p>
         </CardHeader>
 
-        <CardContent className="p-6 flex flex-col flex-1 gap-4">
+        <CardContent className="flex flex-col flex-1 gap-4">
           {/* Camera controls */}
-          <div className="flex justify-end gap-2">
+          <div className="flex gap-2">
             <select
               className="px-3 py-2 bg-background border rounded-md text-sm shadow-sm"
               value={rotation}

@@ -23,7 +23,8 @@ import {
   LogOut,
   LayoutDashboard,
   ListChecks,
-  ScanLine
+  ScanLine,
+  TagIcon
 } from 'lucide-react'
 import { AboutDialog } from './AboutDialog'
 import { useState, useEffect } from 'react'
@@ -74,7 +75,7 @@ export function AppSidebar() {
     { to: '/reviewqueue', label: 'Review Queue', icon: ListChecks },
     { to: '/bulkadd', label: 'Bulk Add', icon: UploadIcon },
     { to: '/barcodes', label: 'Print Barcodes', icon: PrinterIcon },
-    { to: '/tags', label: 'Tags', icon: Database },
+    { to: '/tags', label: 'Tags', icon: TagIcon },
     { to: '/managedata', label: 'Manage Data', icon: Database }
   ]
 

@@ -13,6 +13,7 @@ import { Input } from '@renderer/components/ui/input'
 import { Button } from '@renderer/components/ui/button'
 import { useSimpleDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import PageTitle from '@renderer/components/ui/page-title'
 
 export const Route = createFileRoute('/users/')({
   component: UsersPage
@@ -68,7 +69,7 @@ function UsersPage() {
   return (
     <div className="flex flex-col gap-6 p-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">All Users</h1>
+        <PageTitle title="Users" />
         <div className="relative w-64">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
