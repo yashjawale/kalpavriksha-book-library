@@ -4,7 +4,8 @@ import { Spinner } from '@renderer/components/ui/spinner'
 import { Button } from '@renderer/components/ui/button'
 import { Pencil, ArrowLeft } from 'lucide-react'
 import { format } from 'date-fns'
-import { Badge } from '@renderer/components/ui/badge'
+import PageTitle from '@renderer/components/ui/page-title'
+import { TagBadge } from '@renderer/components/TagBadge'
 
 export const Route = createFileRoute('/books_/$isbn')({
   component: SingleBook
@@ -83,7 +84,7 @@ function SingleBook() {
   const availableStock = book.totalStock - activeLoans.length
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-8 pb-12">
+    <div className="w-full space-y-8 pb-12">
       <div className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer w-fit">
         <Link to="/books" className="flex items-center gap-2">
           <ArrowLeft className="size-4" />
@@ -94,7 +95,7 @@ function SingleBook() {
       <div className="flex justify-between items-start">
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <h1 className="text-4xl font-bold tracking-tight">{book.title}</h1>
+            <PageTitle title={book.title} />
             {/* The wireframe asks for an edit dialog for all fields. For now, we'll just have the button.
                 Actually implementing the full edit dialog might require a new component, we can add it later or a placeholder. */}
             <Button
@@ -126,9 +127,10 @@ function SingleBook() {
           {book.bookTags.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-2">
               {book.bookTags.map((bt) => (
-                <Badge key={bt.tag.id} variant="secondary">
-                  {bt.tag.name}
-                </Badge>
+                // <Badge key={bt.tag.id} variant="secondary">
+                //   {bt.tag.name}
+                // </Badge>
+                <TagBadge key={bt.tag.id} tag={bt.tag} />
               ))}
             </div>
           )}

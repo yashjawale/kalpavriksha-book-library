@@ -44,7 +44,7 @@ export function TagBadge({ tag, onRemove, className }: TagBadgeProps) {
           <div className="inline-block cursor-help">{badge}</div>
         </TooltipTrigger>
         <TooltipContent>
-          <p className="max-w-[200px] text-sm">{tag.description}</p>
+          <p className="max-w-50 text-sm">{tag.description}</p>
         </TooltipContent>
       </Tooltip>
     )
