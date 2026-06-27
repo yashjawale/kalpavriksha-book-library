@@ -7,7 +7,7 @@ import { format } from 'date-fns'
 import PageTitle from '@renderer/components/ui/page-title'
 import { TagBadge } from '@renderer/components/TagBadge'
 
-export const Route = createFileRoute('/books_/$isbn')({
+export const Route = createFileRoute('/books/$isbn')({
   component: SingleBook
 })
 

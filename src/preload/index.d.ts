@@ -30,11 +30,16 @@ interface API {
   }
   users: ControllerAPI<UsersController>
   settings: {
-    get: () => Promise<{ googleClientId: string; googleClientSecret: string }>
+    get: () => Promise<{
+      googleClientId: string
+      googleClientSecret: string
+      enableEmails: boolean
+    }>
     update: (settings: {
       googleClientId?: string
       googleClientSecret?: string
-    }) => Promise<{ googleClientId: string; googleClientSecret: string }>
+      enableEmails?: boolean
+    }) => Promise<{ googleClientId: string; googleClientSecret: string; enableEmails: boolean }>
   }
   loans: ControllerAPI<LoansController>
 }

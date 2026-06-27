@@ -1,5 +1,7 @@
 import { prisma } from '../lib/prisma'
 import { Prisma, Loan } from '../../../generated/prisma/client'
+import { getSettings } from '../lib/settings'
+import { sendTransactionEmail } from '../lib/auth'
 
 export const loansController = {
   getAllActive: async () => {
@@ -90,21 +92,52 @@ export const loansController = {
       createdLoans.push(loan)
     }
 
+    const settings = getSettings()
+    if (settings.enableEmails && data.userEmail) {
+      const bookTitles = createdLoans.length > 1 ? `${createdLoans.length} books` : `a book`
+      const dueDateStr = data.dueDate ? ` by ${new Date(data.dueDate).toLocaleDateString()}` : ''
+      const subject = `Library Rental Confirmation: ${bookTitles}`
+      const body = `Hello ${data.userName || ''},\n\nYou have successfully rented ${bookTitles} from the library. Please ensure they are returned${dueDateStr}.\n\nThank you,\nKalpavriksha Book Library`
+
+      // Fire and forget
+      sendTransactionEmail(data.userEmail, subject, body).catch(console.error)
+    }
+
     return createdLoans
   },
 
   returnBook: async (loanId: number) => {
-    return await prisma.loan.update({
+    const loan = await prisma.loan.update({
       where: { id: loanId },
-      data: { returnedAt: new Date() }
+      data: { returnedAt: new Date() },
+      include: { book: true, borrower: true }
     })
+
+    const settings = getSettings()
+    if (settings.enableEmails && loan.userEmail) {
+      const subject = `Library Book Returned: ${loan.book?.title || loan.bookIsbn}`
+      const body = `Hello ${loan.borrower?.name || ''},\n\nWe have successfully received your returned book: "${loan.book?.title || loan.bookIsbn}".\n\nThank you,\nKalpavriksha Book Library`
+      sendTransactionEmail(loan.userEmail, subject, body).catch(console.error)
+    }
+
+    return loan
   },
 
   extendLoan: async (loanId: number, dueDate: Date) => {
-    return await prisma.loan.update({
+    const loan = await prisma.loan.update({
       where: { id: loanId },
-      data: { dueDate }
+      data: { dueDate },
+      include: { book: true, borrower: true }
     })
+
+    const settings = getSettings()
+    if (settings.enableEmails && loan.userEmail) {
+      const subject = `Library Book Extension: ${loan.book?.title || loan.bookIsbn}`
+      const body = `Hello ${loan.borrower?.name || ''},\n\nYour rental for "${loan.book?.title || loan.bookIsbn}" has been extended. The new due date is ${new Date(dueDate).toLocaleDateString()}.\n\nThank you,\nKalpavriksha Book Library`
+      sendTransactionEmail(loan.userEmail, subject, body).catch(console.error)
+    }
+
+    return loan
   },
 
   bulkReturnBooks: async (loanIds: number[]) => {

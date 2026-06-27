@@ -6,7 +6,7 @@ import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { createFileRoute } from '@tanstack/react-router'
 import { Spinner } from '@renderer/components/ui/spinner'
-import { Download, Upload, AlertTriangle, Settings } from 'lucide-react'
+import { Download, Upload, AlertTriangle, Settings as SettingsIcon } from 'lucide-react'
 import { pdf } from '@react-pdf/renderer'
 import { BookCatalogPDF } from '@renderer/components/BookCatalogPDF'
 import type { Book } from '@renderer/types/book'
@@ -14,14 +14,15 @@ import Logo from '../assets/images/logo.svg'
 import Papa from 'papaparse'
 import PageTitle from '@renderer/components/ui/page-title'
 
-export const Route = createFileRoute('/managedata')({
-  component: ManageData
+export const Route = createFileRoute('/settings')({
+  component: Settings
 })
 
-function ManageData() {
+function Settings() {
   const [isExporting, setIsExporting] = useState(false)
   const [googleClientId, setGoogleClientId] = useState('')
   const [googleClientSecret, setGoogleClientSecret] = useState('')
+  const [enableEmails, setEnableEmails] = useState(false)
   const [isSavingSettings, setIsSavingSettings] = useState(false)
 
   // Fetch settings on mount
@@ -31,6 +32,7 @@ function ManageData() {
       if (mounted) {
         setGoogleClientId(settings.googleClientId || '')
         setGoogleClientSecret(settings.googleClientSecret || '')
+        setEnableEmails(settings.enableEmails || false)
       }
     })
     return () => {
@@ -41,8 +43,8 @@ function ManageData() {
   const handleSaveSettings = async () => {
     setIsSavingSettings(true)
     try {
-      await window.api.settings.update({ googleClientId, googleClientSecret })
-      alert('Google OAuth configuration saved successfully!')
+      await window.api.settings.update({ googleClientId, googleClientSecret, enableEmails })
+      alert('Settings saved successfully!')
     } catch (error) {
       console.error('Error saving settings:', error)
       alert('Failed to save settings.')
@@ -217,12 +219,12 @@ function ManageData() {
   }
   return (
     <>
-      <PageTitle title="Data & Reports" />
+      <PageTitle title="Settings" />
 
       <Card className="mb-4">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Settings className="size-5 mr-2" />
+            <SettingsIcon className="size-5 mr-2" />
             Google OAuth Configuration
           </CardTitle>
         </CardHeader>
@@ -251,6 +253,24 @@ function ManageData() {
                 onChange={(e) => setGoogleClientSecret(e.target.value)}
               />
             </div>
+
+            <div className="flex items-center space-x-2 pt-2 pb-2">
+              <input
+                type="checkbox"
+                id="enableEmails"
+                className="w-4 h-4 rounded border-gray-300"
+                checked={enableEmails}
+                onChange={(e) => setEnableEmails(e.target.checked)}
+              />
+              <Label htmlFor="enableEmails" className="cursor-pointer">
+                Enable Transactional Emails
+              </Label>
+            </div>
+            <p className="text-sm text-muted-foreground -mt-2">
+              Automatically send emails for new rentals, extensions, and returns from the logged-in
+              Google account.
+            </p>
+
             <Button onClick={handleSaveSettings} disabled={isSavingSettings} className="w-fit mt-2">
               {isSavingSettings ? (
                 <>

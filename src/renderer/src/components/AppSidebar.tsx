@@ -15,7 +15,6 @@ import {
   UploadIcon,
   PrinterIcon,
   BookOpen,
-  Database,
   Info,
   Users,
   ArrowRightLeft,
@@ -24,7 +23,8 @@ import {
   LayoutDashboard,
   ListChecks,
   ScanLine,
-  TagIcon
+  TagIcon,
+  Settings
 } from 'lucide-react'
 import { AboutDialog } from './AboutDialog'
 import { useState, useEffect } from 'react'
@@ -76,7 +76,7 @@ export function AppSidebar() {
     { to: '/bulkadd', label: 'Bulk Add', icon: UploadIcon },
     { to: '/barcodes', label: 'Print Barcodes', icon: PrinterIcon },
     { to: '/tags', label: 'Tags', icon: TagIcon },
-    { to: '/managedata', label: 'Manage Data', icon: Database }
+    { to: '/settings', label: 'Settings', icon: Settings }
   ]
 
   return (

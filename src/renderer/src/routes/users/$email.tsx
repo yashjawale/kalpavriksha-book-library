@@ -64,13 +64,13 @@ function UserDetailsPage() {
 
   const loadUser = async () => {
     const data = await window.api.users.getByEmail(email)
-    setUser(data as User)
+    setUser(data as unknown as User)
   }
 
   useEffect(() => {
     let mounted = true
     window.api.users.getByEmail(email).then((data) => {
-      if (mounted) setUser(data as User)
+      if (mounted) setUser(data as unknown as User)
     })
     window.api.auth.getUserDetails(email).then((googleData) => {
       if (mounted && googleData) setOrgUnit(googleData.orgUnitPath)

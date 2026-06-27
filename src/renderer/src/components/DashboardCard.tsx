@@ -12,7 +12,7 @@ export function DashboardCard({ value, label }: DashboardCardProps) {
         <CardTitle>{label}</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-7xl">{value ?? '-'}</p>
+        <p className="text-5xl">{value ?? '-'}</p>
       </CardContent>
     </Card>
   )

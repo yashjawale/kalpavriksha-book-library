@@ -36,7 +36,8 @@ export const authController = {
         const scopes = [
           'https://www.googleapis.com/auth/userinfo.profile',
           'https://www.googleapis.com/auth/userinfo.email',
-          'https://www.googleapis.com/auth/admin.directory.user.readonly'
+          'https://www.googleapis.com/auth/admin.directory.user.readonly',
+          'https://www.googleapis.com/auth/gmail.send'
         ]
 
         const authUrl = client.generateAuthUrl({
@@ -189,5 +190,45 @@ export async function fetchGoogleUserName(email: string): Promise<string | null>
       console.error('Error fetching user from Google Directory:', error)
     }
     return null
+  }
+}
+
+export async function sendTransactionEmail(
+  to: string,
+  subject: string,
+  messageText: string
+): Promise<boolean> {
+  if (!currentUser) return false
+  try {
+    const client = getOAuthClient()
+    const gmail = google.gmail({ version: 'v1', auth: client })
+
+    // Construct email according to RFC 2822
+    const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`
+    const messageParts = [
+      `To: ${to}`,
+      `Subject: ${utf8Subject}`,
+      'Content-Type: text/plain; charset=utf-8',
+      'MIME-Version: 1.0',
+      '',
+      messageText
+    ]
+    const message = messageParts.join('\n')
+    const encodedMessage = Buffer.from(message)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '')
+
+    await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: {
+        raw: encodedMessage
+      }
+    })
+    return true
+  } catch (error) {
+    console.error('Failed to send email:', error)
+    return false
   }
 }

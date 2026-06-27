@@ -5,11 +5,13 @@ import * as fs from 'fs'
 export interface AppSettings {
   googleClientId: string
   googleClientSecret: string
+  enableEmails: boolean
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   googleClientId: '',
-  googleClientSecret: ''
+  googleClientSecret: '',
+  enableEmails: false
 }
 
 export function getSettingsPath(): string {

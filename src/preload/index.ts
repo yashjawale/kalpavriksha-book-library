@@ -96,6 +96,9 @@ const api = {
     bulkReturnBooks: (loanIds: number[]) => ipcRenderer.invoke('loans:bulkReturnBooks', loanIds),
     bulkExtendLoans: (loanIds: number[], dueDate: Date) =>
       ipcRenderer.invoke('loans:bulkExtendLoans', loanIds, dueDate)
+  },
+  dashboard: {
+    getStats: () => ipcRenderer.invoke('dashboard:getStats')
   }
 }
 

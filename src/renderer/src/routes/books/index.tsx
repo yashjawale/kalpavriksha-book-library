@@ -30,7 +30,7 @@ import {
 } from '@renderer/components/ui/dropdown-menu'
 import { Filter } from 'lucide-react'
 
-export const Route = createFileRoute('/books')({
+export const Route = createFileRoute('/books/')({
   component: ManageBooks
 })
 

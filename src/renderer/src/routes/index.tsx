@@ -55,7 +55,7 @@ function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {stats?.upcomingReturns?.length === 0 ? (
+                {!stats?.upcomingReturns?.length ? (
                   <tr>
                     <td colSpan={2} className="p-4 text-center text-muted-foreground">
                       No upcoming returns.
@@ -104,7 +104,7 @@ function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {stats?.recentRentals?.length === 0 ? (
+                {!stats?.recentRentals?.length ? (
                   <tr>
                     <td colSpan={2} className="p-4 text-center text-muted-foreground">
                       No recent rentals.
