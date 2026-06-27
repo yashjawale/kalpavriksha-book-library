@@ -230,9 +230,7 @@ function NewRentalPage() {
         </div>
         <div className="flex gap-1 mt-1 flex-wrap">
           {b.bookTags?.slice(0, 3).map((tag) => (
-            <span key={tag.tag.id} className="text-[10px] bg-secondary px-1.5 py-0.5 rounded">
-              {tag.tag.name}
-            </span>
+            <TagBadge key={tag.tag.id} tag={tag.tag} />
           ))}
           {(b.bookTags?.length || 0) > 3 && (
             <span className="text-[10px] text-muted-foreground">+{b.bookTags!.length - 3}</span>

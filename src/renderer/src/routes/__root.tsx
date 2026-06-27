@@ -4,8 +4,7 @@ import { SidebarProvider, SidebarTrigger } from '@renderer/components/ui/sidebar
 import { AppSidebar } from '@renderer/components/AppSidebar'
 import { Toaster, toast } from 'sonner'
 import { useEffect, useRef } from 'react'
-// Supports weights 100-900
-// import '@fontsource-variable/inter'
+
 import '@fontsource/fira-sans'
 
 const RootLayout = () => {
@@ -25,8 +24,10 @@ const RootLayout = () => {
         return
       }
 
+      console.log(currentPath)
+
       // Ignore on bulk add page
-      if (currentPath === '/bulkadd') {
+      if (['/bulkadd', '/rentals/new'].includes(currentPath)) {
         return
       }
 
