@@ -37,7 +37,7 @@ const api = {
     }) => ipcRenderer.invoke('books:create', data),
     updateDetails: (
       isbn: string,
-      details: { title: string; author?: string; publisher?: string }
+      details: { title: string; author?: string; publisher?: string; tagIds?: number[] }
     ) => ipcRenderer.invoke('books:updateDetails', isbn, details),
     updateStock: (isbn: string, stockCount: number) =>
       ipcRenderer.invoke('books:updateStock', isbn, stockCount),

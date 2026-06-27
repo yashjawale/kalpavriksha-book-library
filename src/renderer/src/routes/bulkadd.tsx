@@ -26,6 +26,7 @@ import { TagSelector } from '@renderer/components/TagSelector'
 import { SimpleDataTable } from '@renderer/components/ui/simple-data-table'
 import { getRecentBooksColumns } from '@renderer/components/columns/recent-books-columns'
 import { ToggleGroup, ToggleGroupItem } from '@renderer/components/ui/toggle-group'
+import { EditBookDialog } from '@renderer/components/EditBookDialog'
 
 export const Route = createFileRoute('/bulkadd')({
   component: BulkAdd
@@ -95,12 +96,7 @@ function BulkAdd() {
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false)
   const [pulsingIsbn, setPulsingIsbn] = useState<string | null>(null)
   const [editDetailsDialogOpen, setEditDetailsDialogOpen] = useState(false)
-  const [editDetailsForm, setEditDetailsForm] = useState<{
-    isbn: string
-    title: string
-    author: string
-    publisher: string
-  } | null>(null)
+  const [editDetailsBook, setEditDetailsBook] = useState<Book | null>(null)
   const queryClient = useQueryClient()
 
   // React Hook Form for manual entry dialog
@@ -156,20 +152,7 @@ function BulkAdd() {
     }
   })
 
-  const updateDetailsMutation = useMutation({
-    mutationFn: async ({
-      isbn,
-      details
-    }: {
-      isbn: string
-      details: { title: string; author: string; publisher: string }
-    }) => {
-      return await window.api.books.updateDetails(isbn, details)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
-    }
-  })
+  // Removed updateDetailsMutation as it is now handled by EditBookDialog
 
   // Mutation for deleting a book
   const deleteBookMutation = useMutation({
@@ -406,34 +389,9 @@ function BulkAdd() {
   )
 
   const handleEditDetails = useCallback((book: Book): void => {
-    setEditDetailsForm({
-      isbn: book.isbn,
-      title: book.title,
-      author: book.author || '',
-      publisher: book.publisher || ''
-    })
+    setEditDetailsBook(book)
     setEditDetailsDialogOpen(true)
   }, [])
-
-  const handleEditDetailsConfirm = useCallback(async (): Promise<void> => {
-    if (!editDetailsForm || !editDetailsForm.title.trim()) return
-
-    try {
-      await updateDetailsMutation.mutateAsync({
-        isbn: editDetailsForm.isbn,
-        details: {
-          title: editDetailsForm.title,
-          author: editDetailsForm.author,
-          publisher: editDetailsForm.publisher
-        }
-      })
-      setEditDetailsDialogOpen(false)
-      setEditDetailsForm(null)
-    } catch (error) {
-      console.error('Error updating details:', error)
-      alert('Failed to update details. Please try again.')
-    }
-  }, [editDetailsForm, updateDetailsMutation])
 
   const handleTagDialogOpenChange = useCallback((open: boolean) => {
     setIsTagDialogOpen(open)
@@ -635,68 +593,11 @@ function BulkAdd() {
         </CardContent>
       </Card>
 
-      <Dialog open={editDetailsDialogOpen} onOpenChange={setEditDetailsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Book Details</DialogTitle>
-            <DialogDescription>Update details for: {editDetailsForm?.isbn}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="editTitle">
-                Title <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="editTitle"
-                value={editDetailsForm?.title || ''}
-                onChange={(e) =>
-                  setEditDetailsForm((prev) => (prev ? { ...prev, title: e.target.value } : null))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="editAuthor">Author</Label>
-              <Input
-                id="editAuthor"
-                value={editDetailsForm?.author || ''}
-                onChange={(e) =>
-                  setEditDetailsForm((prev) => (prev ? { ...prev, author: e.target.value } : null))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="editPublisher">Publisher</Label>
-              <Input
-                id="editPublisher"
-                value={editDetailsForm?.publisher || ''}
-                onChange={(e) =>
-                  setEditDetailsForm((prev) =>
-                    prev ? { ...prev, publisher: e.target.value } : null
-                  )
-                }
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDetailsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleEditDetailsConfirm}
-              disabled={updateDetailsMutation.isPending || !editDetailsForm?.title.trim()}
-            >
-              {updateDetailsMutation.isPending ? (
-                <>
-                  <Spinner className="size-4 mr-2" />
-                  Updating...
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EditBookDialog
+        book={editDetailsBook}
+        open={editDetailsDialogOpen}
+        onOpenChange={setEditDetailsDialogOpen}
+      />
     </>
   )
 }

@@ -2,6 +2,11 @@ import { prisma } from '../lib/prisma'
 import { Loan } from '../../../generated/prisma/client'
 import { getSettings } from '../lib/settings'
 import { sendTransactionEmail } from '../lib/auth'
+import {
+  generateRentalEmailBody,
+  generateReturnEmailBody,
+  generateExtensionEmailBody
+} from '../lib/emailTemplates'
 
 export const loansController = {
   getAllActive: async () => {
@@ -77,11 +82,20 @@ export const loansController = {
     }
 
     const settings = getSettings()
-    if (settings.enableEmails && data.userEmail) {
-      const bookTitles = createdLoans.length > 1 ? `${createdLoans.length} books` : `a book`
-      const dueDateStr = data.dueDate ? ` by ${new Date(data.dueDate).toLocaleDateString()}` : ''
-      const subject = `Library Rental Confirmation: ${bookTitles}`
-      const body = `Hello ${data.userName || ''},\n\nYou have successfully rented ${bookTitles} from the library. Please ensure they are returned${dueDateStr}.\n\nThank you,\nKalpavriksha Book Library`
+    if (settings.enableEmails && data.userEmail && createdLoans.length > 0) {
+      const subject = `Library Rental Confirmation: ${createdLoans.length > 1 ? `${createdLoans.length} books` : 'a book'}`
+
+      // Need to fetch book info to pass to the template
+      const loansWithBooks = await prisma.loan.findMany({
+        where: { id: { in: createdLoans.map((l) => l.id) } },
+        include: { book: true }
+      })
+      const bookData = loansWithBooks.map((l) => ({
+        title: l.book?.title || l.bookIsbn,
+        isbn: l.bookIsbn
+      }))
+
+      const body = generateRentalEmailBody(data.userName || '', bookData, data.dueDate)
 
       // Fire and forget
       sendTransactionEmail(data.userEmail, subject, body).catch(console.error)
@@ -100,7 +114,8 @@ export const loansController = {
     const settings = getSettings()
     if (settings.enableEmails && loan.userEmail) {
       const subject = `Library Book Returned: ${loan.book?.title || loan.bookIsbn}`
-      const body = `Hello ${loan.borrower?.name || ''},\n\nWe have successfully received your returned book: "${loan.book?.title || loan.bookIsbn}".\n\nThank you,\nKalpavriksha Book Library`
+      const bookData = [{ title: loan.book?.title || loan.bookIsbn, isbn: loan.bookIsbn }]
+      const body = generateReturnEmailBody(loan.borrower?.name || '', bookData)
       sendTransactionEmail(loan.userEmail, subject, body).catch(console.error)
     }
 
@@ -117,7 +132,8 @@ export const loansController = {
     const settings = getSettings()
     if (settings.enableEmails && loan.userEmail) {
       const subject = `Library Book Extension: ${loan.book?.title || loan.bookIsbn}`
-      const body = `Hello ${loan.borrower?.name || ''},\n\nYour rental for "${loan.book?.title || loan.bookIsbn}" has been extended. The new due date is ${new Date(dueDate).toLocaleDateString()}.\n\nThank you,\nKalpavriksha Book Library`
+      const bookData = [{ title: loan.book?.title || loan.bookIsbn, isbn: loan.bookIsbn }]
+      const body = generateExtensionEmailBody(loan.borrower?.name || '', bookData, dueDate)
       sendTransactionEmail(loan.userEmail, subject, body).catch(console.error)
     }
 
@@ -125,17 +141,83 @@ export const loansController = {
   },
 
   bulkReturnBooks: async (loanIds: number[]) => {
-    return await prisma.loan.updateMany({
+    // Fetch loans with relations before update to get user info and book info
+    const loansToReturn = await prisma.loan.findMany({
+      where: { id: { in: loanIds } },
+      include: { book: true, borrower: true }
+    })
+
+    const result = await prisma.loan.updateMany({
       where: { id: { in: loanIds } },
       data: { returnedAt: new Date() }
     })
+
+    const settings = getSettings()
+    if (settings.enableEmails) {
+      // Group loans by userEmail
+      const loansByUser = loansToReturn.reduce(
+        (acc, loan) => {
+          if (!loan.userEmail) return acc
+          if (!acc[loan.userEmail]) {
+            acc[loan.userEmail] = { name: loan.borrower?.name || '', books: [] }
+          }
+          acc[loan.userEmail].books.push({
+            title: loan.book?.title || loan.bookIsbn,
+            isbn: loan.bookIsbn
+          })
+          return acc
+        },
+        {} as Record<string, { name: string; books: { title: string; isbn: string }[] }>
+      )
+
+      for (const [email, userLoans] of Object.entries(loansByUser)) {
+        const subject = `Library Books Returned`
+        const body = generateReturnEmailBody(userLoans.name, userLoans.books)
+        sendTransactionEmail(email, subject, body).catch(console.error)
+      }
+    }
+
+    return result
   },
 
   bulkExtendLoans: async (loanIds: number[], dueDate: Date) => {
-    return await prisma.loan.updateMany({
+    // Fetch loans with relations before update to get user info and book info
+    const loansToExtend = await prisma.loan.findMany({
+      where: { id: { in: loanIds } },
+      include: { book: true, borrower: true }
+    })
+
+    const result = await prisma.loan.updateMany({
       where: { id: { in: loanIds } },
       data: { dueDate }
     })
+
+    const settings = getSettings()
+    if (settings.enableEmails) {
+      // Group loans by userEmail
+      const loansByUser = loansToExtend.reduce(
+        (acc, loan) => {
+          if (!loan.userEmail) return acc
+          if (!acc[loan.userEmail]) {
+            acc[loan.userEmail] = { name: loan.borrower?.name || '', books: [] }
+          }
+          acc[loan.userEmail].books.push({
+            title: loan.book?.title || loan.bookIsbn,
+            isbn: loan.bookIsbn
+          })
+          return acc
+        },
+        {} as Record<string, { name: string; books: { title: string; isbn: string }[] }>
+      )
+
+      for (const [email, userLoans] of Object.entries(loansByUser)) {
+        const subject = `Library Books Extended`
+        const body = generateExtensionEmailBody(userLoans.name, userLoans.books, dueDate)
+        sendTransactionEmail(email, subject, body).catch(console.error)
+      }
+    }
+
+    return result
   }
 }
 

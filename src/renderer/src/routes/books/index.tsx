@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger
 } from '@renderer/components/ui/dropdown-menu'
 import { Filter } from 'lucide-react'
+import { EditBookDialog } from '@renderer/components/EditBookDialog'
 
 export const Route = createFileRoute('/books/')({
   component: ManageBooks
@@ -48,6 +49,8 @@ function ManageBooks() {
     title: string
     currentStock: number
   } | null>(null)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editDetailsBook, setEditDetailsBook] = useState<Book | null>(null)
   const [stockToAdd, setStockToAdd] = useState(1)
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
   const [selectedTagFilters, setSelectedTagFilters] = useState<number[]>([])
@@ -293,11 +296,17 @@ function ManageBooks() {
     )
   }
 
+  const handleEditDetails = (book: Book): void => {
+    setEditDetailsBook(book)
+    setEditDialogOpen(true)
+  }
+
   const columns = getBooksColumns({
     onDelete: handleDelete,
     isDeleting: deleteBookMutation.isPending,
     onAddStock: handleAddStock,
     onChangeTags: handleChangeTags,
+    onEditDetails: handleEditDetails,
     onTitleClick: (isbn) => {
       navigate({ to: '/books/$isbn', params: { isbn } })
     }
@@ -592,6 +601,12 @@ function ManageBooks() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EditBookDialog
+        book={editDetailsBook}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+      />
     </div>
   )
 }

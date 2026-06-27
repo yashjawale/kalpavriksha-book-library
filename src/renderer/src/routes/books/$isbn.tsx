@@ -6,6 +6,8 @@ import { Pencil, ArrowLeft } from 'lucide-react'
 import { format } from 'date-fns'
 import PageTitle from '@renderer/components/ui/page-title'
 import { TagBadge } from '@renderer/components/TagBadge'
+import { EditBookDialog } from '@renderer/components/EditBookDialog'
+import { useState } from 'react'
 
 export const Route = createFileRoute('/books/$isbn')({
   component: SingleBook
@@ -14,6 +16,7 @@ export const Route = createFileRoute('/books/$isbn')({
 function SingleBook() {
   const { isbn } = Route.useParams()
   const queryClient = useQueryClient()
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
 
   const { data: book, isLoading } = useQuery({
     queryKey: ['book', isbn],
@@ -96,13 +99,11 @@ function SingleBook() {
         <div className="space-y-4">
           <div className="flex items-center gap-4">
             <PageTitle title={book.title} />
-            {/* The wireframe asks for an edit dialog for all fields. For now, we'll just have the button.
-                Actually implementing the full edit dialog might require a new component, we can add it later or a placeholder. */}
             <Button
               variant="ghost"
               size="icon"
               className="text-muted-foreground hover:text-foreground"
-              onClick={() => alert('Edit dialog not yet implemented')}
+              onClick={() => setEditDialogOpen(true)}
             >
               <Pencil className="size-5" />
             </Button>
@@ -236,6 +237,8 @@ function SingleBook() {
           </table>
         </div>
       </div>
+
+      <EditBookDialog book={book} open={editDialogOpen} onOpenChange={setEditDialogOpen} />
     </div>
   )
 }

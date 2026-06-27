@@ -112,8 +112,23 @@ export const booksController = {
 
   updateDetails: async (
     isbn: string,
-    details: { title: string; author?: string; publisher?: string }
+    details: { title: string; author?: string; publisher?: string; tagIds?: number[] }
   ) => {
+    // If tagIds are provided, we do a transaction or just update them
+    if (details.tagIds !== undefined) {
+      // First remove existing tags for this book
+      await prisma.bookTag.deleteMany({
+        where: { bookIsbn: isbn }
+      })
+
+      // Add new tags
+      if (details.tagIds.length > 0) {
+        await prisma.bookTag.createMany({
+          data: details.tagIds.map((tagId) => ({ bookIsbn: isbn, tagId }))
+        })
+      }
+    }
+
     return await prisma.book.update({
       where: { isbn },
       data: {
