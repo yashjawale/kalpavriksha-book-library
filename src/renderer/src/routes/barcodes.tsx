@@ -145,13 +145,16 @@ function BarcodesPage() {
     }
   }
 
-  const handleDownloadPDF = async (): Promise<void> => {
+  const handleDownloadPDF = async (booksToPrint: Book[] = []): Promise<void> => {
     if (isGenerating) return
 
     try {
       setIsGenerating(true)
-      const selectedISBNs = Object.keys(rowSelection).filter((key) => rowSelection[key])
-      const booksToPrint = filteredBooks.filter((b) => selectedISBNs.includes(b.isbn))
+
+      if (booksToPrint.length === 0) {
+        const selectedISBNs = Object.keys(rowSelection).filter((key) => rowSelection[key])
+        booksToPrint = filteredBooks.filter((b) => selectedISBNs.includes(b.isbn))
+      }
 
       if (booksToPrint.length === 0) {
         alert('Please select at least one book to generate barcodes.')
@@ -266,7 +269,22 @@ function BarcodesPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          <Button onClick={handleDownloadPDF} disabled={selectedBooks.size === 0 || isGenerating}>
+          <Button
+            variant="secondary"
+            onClick={() => handleDownloadPDF(filteredBooks)}
+            disabled={filteredBooks.length === 0 || isGenerating}
+          >
+            {isGenerating ? (
+              <Spinner className="size-4 mr-2" />
+            ) : (
+              <Download className="size-4 mr-2" />
+            )}
+            Download All PDF ({filteredBooks.length})
+          </Button>
+          <Button
+            onClick={() => handleDownloadPDF()}
+            disabled={selectedBooks.size === 0 || isGenerating}
+          >
             {isGenerating ? (
               <>
                 <Spinner className="size-4 mr-2" />
