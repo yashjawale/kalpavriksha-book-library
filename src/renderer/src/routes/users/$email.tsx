@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
+import { LoginOverlay } from '@renderer/components/LoginOverlay'
 import {
   Table,
   TableBody,
@@ -48,6 +49,13 @@ type User = {
 }
 
 function UserDetailsPage() {
+  const [authStatus, setAuthStatus] = useState<{
+    loggedIn: boolean
+    user?: { name?: string; email?: string } | null
+  }>({
+    loggedIn: false
+  })
+
   const { email } = Route.useParams()
   const [user, setUser] = useState<User | null>(null)
   const [orgUnit, setOrgUnit] = useState<string | null>(null)
@@ -69,11 +77,18 @@ function UserDetailsPage() {
 
   useEffect(() => {
     let mounted = true
-    window.api.users.getByEmail(email).then((data) => {
-      if (mounted) setUser(data as unknown as User)
-    })
-    window.api.auth.getUserDetails(email).then((googleData) => {
-      if (mounted && googleData) setOrgUnit(googleData.orgUnitPath)
+    window.api.auth.getStatus().then((status) => {
+      if (mounted) {
+        setAuthStatus(status)
+        if (status.loggedIn) {
+          window.api.users.getByEmail(email).then((data) => {
+            if (mounted) setUser(data as unknown as User)
+          })
+          window.api.auth.getUserDetails(email).then((googleData) => {
+            if (mounted && googleData) setOrgUnit(googleData.orgUnitPath)
+          })
+        }
+      }
     })
     return () => {
       mounted = false
@@ -137,6 +152,10 @@ function UserDetailsPage() {
     setIsBulkExtend(true)
     setNewDueDate(format(addWeeks(new Date(), 1), 'yyyy-MM-dd'))
     setExtensionDialogOpen(true)
+  }
+
+  if (!authStatus.loggedIn) {
+    return <LoginOverlay description="You must be logged in to view user details." />
   }
 
   if (!user) return <div className="p-4">Loading user details...</div>

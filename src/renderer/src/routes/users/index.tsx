@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
+import { LoginOverlay } from '@renderer/components/LoginOverlay'
 import {
   Table,
   TableBody,
@@ -26,6 +27,13 @@ type User = {
 }
 
 function UsersPage() {
+  const [authStatus, setAuthStatus] = useState<{
+    loggedIn: boolean
+    user?: { name?: string; email?: string } | null
+  }>({
+    loggedIn: false
+  })
+
   const [users, setUsers] = useState<User[]>([])
   const [totalUsers, setTotalUsers] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
@@ -52,11 +60,18 @@ function UsersPage() {
 
   useEffect(() => {
     let mounted = true
-    window.api.users.getAll(page, perPage, searchQuery).then((data) => {
+    window.api.auth.getStatus().then((status) => {
       if (mounted) {
-        const res = data as { users: User[]; total: number }
-        setUsers(res.users)
-        setTotalUsers(res.total)
+        setAuthStatus(status)
+        if (status.loggedIn) {
+          window.api.users.getAll(page, perPage, searchQuery).then((data) => {
+            if (mounted) {
+              const res = data as { users: User[]; total: number }
+              setUsers(res.users)
+              setTotalUsers(res.total)
+            }
+          })
+        }
       }
     })
     return () => {
@@ -65,6 +80,10 @@ function UsersPage() {
   }, [page, searchQuery]) // searchQuery change handled by debouncedSearch
 
   const totalPages = Math.ceil(totalUsers / perPage)
+
+  if (!authStatus.loggedIn) {
+    return <LoginOverlay description="You must be logged in to view users." />
+  }
 
   return (
     <div className="flex flex-col gap-6 p-4">

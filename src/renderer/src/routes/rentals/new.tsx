@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/u
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
-import { Lock, X, Info } from 'lucide-react'
+import { X, Info } from 'lucide-react'
+import { LoginOverlay } from '@renderer/components/LoginOverlay'
 import { Combobox } from '@renderer/components/ui/combobox'
 import { useDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 import { addWeeks, format } from 'date-fns'
@@ -212,16 +213,7 @@ function NewRentalPage() {
   }
 
   if (!authStatus.loggedIn) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[70vh] gap-4">
-        <Lock className="w-16 h-16 text-muted-foreground" />
-        <h2 className="text-2xl font-bold tracking-tight">Authentication Required</h2>
-        <p className="text-muted-foreground">You must be logged in to create rentals.</p>
-        <Button onClick={() => window.api.auth.login().then(() => window.location.reload())}>
-          Login with Google
-        </Button>
-      </div>
-    )
+    return <LoginOverlay description="You must be logged in to create rentals." />
   }
 
   // Render Combobox custom option

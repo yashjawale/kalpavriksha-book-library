@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
+import { LoginOverlay } from '@renderer/components/LoginOverlay'
 import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/ui/card'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
@@ -28,6 +29,13 @@ export const Route = createFileRoute('/rentals/')({
 })
 
 function RentalsPage() {
+  const [authStatus, setAuthStatus] = useState<{
+    loggedIn: boolean
+    user?: { name?: string; email?: string } | null
+  }>({
+    loggedIn: false
+  })
+
   // Active rentals
   const [activeLoans, setActiveLoans] = useState<
     Awaited<ReturnType<typeof window.api.loans.getAllActive>>
@@ -41,7 +49,12 @@ function RentalsPage() {
   const [returnLoanId, setReturnLoanId] = useState<number | null>(null)
 
   useEffect(() => {
-    loadActiveLoans()
+    window.api.auth.getStatus().then((status) => {
+      setAuthStatus(status)
+      if (status.loggedIn) {
+        loadActiveLoans()
+      }
+    })
   }, [])
 
   async function loadActiveLoans() {
@@ -78,6 +91,10 @@ function RentalsPage() {
     const userEmail = (loan.userEmail || '').toLowerCase()
     return bookTitle.includes(s) || userName.includes(s) || userEmail.includes(s)
   })
+
+  if (!authStatus.loggedIn) {
+    return <LoginOverlay description="You must be logged in to view rentals." />
+  }
 
   return (
     <div className="w-full">
