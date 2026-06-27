@@ -84,6 +84,7 @@ const api = {
   },
   loans: {
     getAllActive: () => ipcRenderer.invoke('loans:getAllActive'),
+    getUpcomingReturns: () => ipcRenderer.invoke('loans:getUpcomingReturns'),
     create: (data: {
       bookIsbns: string[]
       userEmail: string

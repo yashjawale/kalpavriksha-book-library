@@ -20,7 +20,7 @@ function UpcomingReturns() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['upcoming-returns'],
-    queryFn: async () => await window.api.loans.getUpcomingReturns(1, Number.MAX_SAFE_INTEGER)
+    queryFn: async () => await window.api.loans.getUpcomingReturns()
   })
 
   const returnBookMutation = useMutation({

@@ -1,5 +1,5 @@
 import { prisma } from '../lib/prisma'
-import { Prisma, Loan } from '../../../generated/prisma/client'
+import { Loan } from '../../../generated/prisma/client'
 import { getSettings } from '../lib/settings'
 import { sendTransactionEmail } from '../lib/auth'
 
@@ -15,30 +15,14 @@ export const loansController = {
     })
   },
 
-  getUpcomingReturns: async (page: number = 1, perPage: number = 25, searchQuery?: string) => {
-    const skip = (page - 1) * perPage
-    const whereClause: Prisma.LoanWhereInput = { returnedAt: null }
+  getUpcomingReturns: async () => {
+    const loans = await prisma.loan.findMany({
+      where: { returnedAt: null },
+      include: { book: true, borrower: true },
+      orderBy: { dueDate: 'asc' }
+    })
 
-    if (searchQuery) {
-      whereClause.OR = [
-        { book: { title: { contains: searchQuery } } },
-        { borrower: { name: { contains: searchQuery } } },
-        { borrower: { email: { contains: searchQuery } } }
-      ]
-    }
-
-    const [loans, total] = await Promise.all([
-      prisma.loan.findMany({
-        where: whereClause,
-        include: { book: true, borrower: true },
-        orderBy: { dueDate: 'asc' },
-        skip,
-        take: perPage
-      }),
-      prisma.loan.count({ where: whereClause })
-    ])
-
-    return { loans, total }
+    return { loans, total: loans.length }
   },
 
   create: async (data: {

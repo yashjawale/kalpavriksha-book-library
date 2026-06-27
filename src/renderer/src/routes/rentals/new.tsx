@@ -43,7 +43,8 @@ function NewRentalPage() {
 
   const [bookSearchResults, setBookSearchResults] = useState<Book[]>([])
   const [searchingBooks, setSearchingBooks] = useState(false)
-  const [selectedBooks, setSelectedBooks] = useState<Book[]>([])
+  type SelectedBook = { book: Book; quantity: number }
+  const [selectedBooks, setSelectedBooks] = useState<SelectedBook[]>([])
 
   const [loading, setLoading] = useState(false)
 
@@ -57,16 +58,22 @@ function NewRentalPage() {
         const book = await window.api.books.getById(isbn)
         if (book) {
           const openStock = book.totalStock - (book.loans?.length || 0)
-          if (openStock <= 0) {
+          const existing = selectedBooks.find((b) => b.book.isbn === book.isbn)
+          const currentQty = existing ? existing.quantity : 0
+
+          if (openStock - currentQty <= 0) {
             toast.error(`Book "${book.title || isbn}" is out of stock.`)
             return
           }
-          if (!selectedBooks.find((b) => b.isbn === book.isbn)) {
-            setSelectedBooks((prev) => [...prev, book])
-            toast.success(`Added ${book.title}`)
+
+          if (existing) {
+            setSelectedBooks((prev) =>
+              prev.map((b) => (b.book.isbn === book.isbn ? { ...b, quantity: b.quantity + 1 } : b))
+            )
           } else {
-            toast.info(`Book already in list.`)
+            setSelectedBooks((prev) => [...prev, { book, quantity: 1 }])
           }
+          toast.success(`Added ${book.title}`)
         } else {
           toast.error(`Book with ISBN ${isbn} not found.`)
         }
@@ -102,7 +109,7 @@ function NewRentalPage() {
         clearTimeout(barcodeTimeout)
         barcodeTimeout = setTimeout(() => {
           barcodeBuffer = ''
-        }, 50)
+        }, 500)
       }
     }
 
@@ -173,14 +180,21 @@ function NewRentalPage() {
         .replace(/\./g, ' ')
         .replace(/\b\w/g, (l) => l.toUpperCase())
 
+      const bookIsbns: string[] = []
+      selectedBooks.forEach((item) => {
+        for (let i = 0; i < item.quantity; i++) {
+          bookIsbns.push(item.book.isbn)
+        }
+      })
+
       await window.api.loans.create({
-        bookIsbns: selectedBooks.map((b) => b.isbn),
+        bookIsbns,
         userEmail: email,
         userName: selectedUser?.name || fallbackName,
         dueDate: dueDate ? new Date(dueDate) : null
       })
 
-      toast.success(`Successfully rented ${selectedBooks.length} book(s)`)
+      toast.success(`Successfully rented ${bookIsbns.length} book(s)`)
 
       // Navigate back on success
       setTimeout(() => {
@@ -275,12 +289,22 @@ function NewRentalPage() {
                   const selected = bookSearchResults.find((b) => b.isbn === val)
                   if (selected) {
                     const openStock = selected.totalStock - (selected.loans?.length || 0)
-                    if (openStock <= 0) {
+                    const existing = selectedBooks.find((b) => b.book.isbn === selected.isbn)
+                    const currentQty = existing ? existing.quantity : 0
+
+                    if (openStock - currentQty <= 0) {
                       toast.error(`Book is out of stock.`)
                       return
                     }
-                    if (!selectedBooks.find((b) => b.isbn === selected.isbn)) {
-                      setSelectedBooks((prev) => [...prev, selected])
+
+                    if (existing) {
+                      setSelectedBooks((prev) =>
+                        prev.map((b) =>
+                          b.book.isbn === selected.isbn ? { ...b, quantity: b.quantity + 1 } : b
+                        )
+                      )
+                    } else {
+                      setSelectedBooks((prev) => [...prev, { book: selected, quantity: 1 }])
                     }
                   }
                 }}
@@ -306,6 +330,7 @@ function NewRentalPage() {
                     <TableRow>
                       <TableHead>Title</TableHead>
                       <TableHead>Code (ISBN)</TableHead>
+                      <TableHead className="w-24">Qty</TableHead>
                       <TableHead>Tags</TableHead>
                       <TableHead className="w-12.5"></TableHead>
                     </TableRow>
@@ -313,18 +338,67 @@ function NewRentalPage() {
                   <TableBody>
                     {selectedBooks.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
                           No books added yet.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      selectedBooks.map((book) => (
-                        <TableRow key={book.isbn}>
-                          <TableCell className="font-medium">{book.title}</TableCell>
-                          <TableCell className="text-muted-foreground">{book.isbn}</TableCell>
+                      selectedBooks.map((item) => (
+                        <TableRow key={item.book.isbn}>
+                          <TableCell className="font-medium">{item.book.title}</TableCell>
+                          <TableCell className="text-muted-foreground">{item.book.isbn}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={() => {
+                                  if (item.quantity > 1) {
+                                    setSelectedBooks((prev) =>
+                                      prev.map((b) =>
+                                        b.book.isbn === item.book.isbn
+                                          ? { ...b, quantity: b.quantity - 1 }
+                                          : b
+                                      )
+                                    )
+                                  } else {
+                                    setSelectedBooks((prev) =>
+                                      prev.filter((b) => b.book.isbn !== item.book.isbn)
+                                    )
+                                  }
+                                }}
+                              >
+                                -
+                              </Button>
+                              <span className="text-sm w-4 text-center">{item.quantity}</span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={() => {
+                                  const openStock =
+                                    item.book.totalStock - (item.book.loans?.length || 0)
+                                  if (openStock - item.quantity > 0) {
+                                    setSelectedBooks((prev) =>
+                                      prev.map((b) =>
+                                        b.book.isbn === item.book.isbn
+                                          ? { ...b, quantity: b.quantity + 1 }
+                                          : b
+                                      )
+                                    )
+                                  } else {
+                                    toast.error('Not enough stock')
+                                  }
+                                }}
+                              >
+                                +
+                              </Button>
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <div className="flex gap-1 flex-wrap">
-                              {book.bookTags?.map((tag) => (
+                              {item.book.bookTags?.map((tag) => (
                                 <TagBadge key={tag.tag.id} tag={tag.tag} className="text-[10px]" />
                               ))}
                             </div>
@@ -334,7 +408,9 @@ function NewRentalPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() =>
-                                setSelectedBooks((prev) => prev.filter((b) => b.isbn !== book.isbn))
+                                setSelectedBooks((prev) =>
+                                  prev.filter((b) => b.book.isbn !== item.book.isbn)
+                                )
                               }
                             >
                               <X className="w-4 h-4 text-red-500" />
