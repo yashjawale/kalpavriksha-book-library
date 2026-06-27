@@ -3,7 +3,7 @@ export interface Tag {
   name: string
   description?: string | null
   color?: string | null
-  createdAt: Date
+  createdAt?: Date
 }
 
 export interface Book {

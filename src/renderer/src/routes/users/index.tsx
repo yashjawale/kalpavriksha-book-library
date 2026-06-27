@@ -84,7 +84,7 @@ function UsersPage() {
         </div>
       </div>
 
-      <Card className="rounded-xl border-border bg-card">
+      <Card className="rounded-xl border-border bg-card p-0">
         <CardContent className="p-0">
           <Table>
             <TableHeader>

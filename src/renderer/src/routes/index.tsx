@@ -2,8 +2,10 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import PageTitle from '@renderer/components/ui/page-title'
 import { Spinner } from '@renderer/components/ui/spinner'
-import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/ui/card'
 import { format } from 'date-fns'
+import { DashboardCard } from '@renderer/components/DashboardCard'
+import { Button } from '@renderer/components/ui/button'
+import { ArrowRight } from 'lucide-react'
 
 export const Route = createFileRoute('/')({
   component: Dashboard
@@ -27,48 +29,22 @@ function Dashboard() {
     <div className="w-full space-y-6">
       <PageTitle title="Dashboard" />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">books</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <div className="text-4xl font-bold">{stats?.totalBooks || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">users</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <div className="text-4xl font-bold">{stats?.totalUsers || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">active rentals</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <div className="text-4xl font-bold">{stats?.activeRentals || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-center space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">returns today</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <div className="text-4xl font-bold">{stats?.returnsToday || 0}</div>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-12">
+        <DashboardCard value={(stats?.totalBooks || 0).toString()} label="Books" />
+        <DashboardCard value={(stats?.totalUsers || 0).toString()} label="Users" />
+        <DashboardCard value={(stats?.activeRentals || 0).toString()} label="Active Rentals" />
+        <DashboardCard value={(stats?.returnsToday || 0).toString()} label="Returns Today" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold tracking-tight">Upcoming returns</h3>
-            <Link to="/returns" className="text-sm text-muted-foreground hover:underline">
-              View all -&gt;
-            </Link>
+            <h2 className="text-xl font-semibold tracking-tight">Upcoming returns</h2>
+            <Button asChild>
+              <Link to="/returns">
+                View all <ArrowRight />
+              </Link>
+            </Button>
           </div>
           <div className="rounded-md border">
             <table className="w-full text-sm">
@@ -112,10 +88,12 @@ function Dashboard() {
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold tracking-tight">Recent rentals</h3>
-            <Link to="/rentals" className="text-sm text-muted-foreground hover:underline">
-              View all -&gt;
-            </Link>
+            <h2 className="text-xl font-semibold tracking-tight">Recent rentals</h2>
+            <Button asChild>
+              <Link to="/rentals">
+                View all <ArrowRight />
+              </Link>
+            </Button>
           </div>
           <div className="rounded-md border">
             <table className="w-full text-sm">

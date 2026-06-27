@@ -21,7 +21,8 @@ import {
   DialogFooter
 } from '@renderer/components/ui/dialog'
 import { addWeeks, format } from 'date-fns'
-import { Badge } from '@renderer/components/ui/badge'
+import PageTitle from '@renderer/components/ui/page-title'
+import { TagBadge } from '@renderer/components/TagBadge'
 
 export const Route = createFileRoute('/users/$email')({
   component: UserDetailsPage
@@ -149,26 +150,21 @@ function UserDetailsPage() {
     return (
       <div className="flex flex-wrap gap-1">
         {tags.map((t) => (
-          <Badge variant="secondary" key={t.id} className="text-xs font-normal">
-            {t.name}
-          </Badge>
+          <TagBadge tag={t} key={t.id} />
         ))}
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-10 p-6 max-w-5xl mx-auto">
-      <div className="flex flex-col gap-4">
-        <Link
-          to="/users"
-          className="w-fit text-muted-foreground hover:text-foreground flex items-center gap-2"
-        >
+    <div className="w-full">
+      <div className="flex flex-col gap-4 my-8">
+        <Link to="/users" className="w-fit text-primary flex items-center gap-2">
           <ArrowLeft className="w-4 h-4" /> All Users
         </Link>
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-bold tracking-tight">{user.name || 'Unknown User'}</h1>
+            <PageTitle title={user.name || 'Unknown User'} />
             <Button
               variant="ghost"
               size="icon"
@@ -181,18 +177,18 @@ function UserDetailsPage() {
             </Button>
           </div>
           {orgUnit && (
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-primary py-1 px-2 rounded-full border border-primary w-fit text-sm">
               {orgUnit.startsWith('/') ? orgUnit.slice(1) : orgUnit}
             </p>
           )}
         </div>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 mb-8">
         <div className="flex justify-between items-end mb-2">
-          <h2 className="text-2xl font-semibold tracking-tight">Current rentals</h2>
+          <h2 className="text-xl font-semibold tracking-tight">Current rentals</h2>
         </div>
-        <Card className="rounded-xl border-border bg-card">
+        <Card className="rounded-xl border-border bg-card p-0">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
@@ -207,16 +203,16 @@ function UserDetailsPage() {
                         <Button
                           size="sm"
                           variant="outline"
+                          className="border-primary text-primary"
                           onClick={handleBulkReturn}
-                          className="h-7 text-xs"
                         >
                           Mark all as returned
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
+                          className="border-primary text-primary"
                           onClick={handleBulkExtend}
-                          className="h-7 text-xs"
                         >
                           Extend all
                         </Button>
@@ -272,8 +268,8 @@ function UserDetailsPage() {
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-2xl font-semibold tracking-tight mb-2">Past rentals</h2>
-        <Card className="rounded-xl border-border bg-card">
+        <h2 className="text-xl font-semibold tracking-tight mb-2">Past rentals</h2>
+        <Card className="rounded-xl border-border bg-card p-0">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
