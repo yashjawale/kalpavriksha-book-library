@@ -98,7 +98,7 @@ function RentalsPage() {
 
   return (
     <div className="w-full">
-      <PageTitle title="Book Rentals" />
+      <PageTitle title="Active Rentals" />
       <div className="flex justify-between items-center">
         <div>
           <p className="text-muted-foreground">Manage active book rentals.</p>

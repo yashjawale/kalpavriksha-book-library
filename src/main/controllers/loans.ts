@@ -30,6 +30,36 @@ export const loansController = {
     return { loans, total: loans.length }
   },
 
+  getPastLoans: async (page: number, limit: number, query: string) => {
+    const skip = (page - 1) * limit
+    const where = {
+      returnedAt: { not: null },
+      ...(query
+        ? {
+            OR: [
+              { book: { title: { contains: query } } },
+              { borrower: { name: { contains: query } } },
+              { userEmail: { contains: query } },
+              { bookIsbn: { contains: query } }
+            ]
+          }
+        : {})
+    }
+
+    const [loans, total] = await Promise.all([
+      prisma.loan.findMany({
+        where,
+        include: { book: true, borrower: true },
+        orderBy: { returnedAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.loan.count({ where })
+    ])
+
+    return { loans, total }
+  },
+
   create: async (data: {
     bookIsbns: string[]
     userEmail: string

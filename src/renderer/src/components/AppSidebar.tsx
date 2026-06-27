@@ -24,7 +24,8 @@ import {
   ListChecks,
   ScanLine,
   TagIcon,
-  Settings
+  Settings,
+  History
 } from 'lucide-react'
 import { AboutDialog } from './AboutDialog'
 import { useState, useEffect } from 'react'
@@ -69,7 +70,8 @@ export function AppSidebar() {
   const links = [
     { to: '/', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/books', label: 'Manage Books', icon: BookOpen },
-    { to: '/rentals', label: 'Rentals', icon: ArrowRightLeft },
+    { to: '/rentals', label: 'Active Rentals', icon: ArrowRightLeft },
+    { to: '/rentals/past', label: 'Past Rentals', icon: History },
     { to: '/users', label: 'Users', icon: Users },
     { to: '/quickcapture', label: 'Quick Capture', icon: ScanLine },
     { to: '/reviewqueue', label: 'Review Queue', icon: ListChecks },

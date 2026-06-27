@@ -21,6 +21,7 @@ import { Route as UsersIndexRouteImport } from './routes/users/index'
 import { Route as RentalsIndexRouteImport } from './routes/rentals/index'
 import { Route as BooksIndexRouteImport } from './routes/books/index'
 import { Route as UsersEmailRouteImport } from './routes/users/$email'
+import { Route as RentalsPastRouteImport } from './routes/rentals/past'
 import { Route as RentalsNewRouteImport } from './routes/rentals/new'
 import { Route as BooksIsbnRouteImport } from './routes/books/$isbn'
 
@@ -84,6 +85,11 @@ const UsersEmailRoute = UsersEmailRouteImport.update({
   path: '/users/$email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RentalsPastRoute = RentalsPastRouteImport.update({
+  id: '/rentals/past',
+  path: '/rentals/past',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RentalsNewRoute = RentalsNewRouteImport.update({
   id: '/rentals/new',
   path: '/rentals/new',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/tags': typeof TagsRoute
   '/books/$isbn': typeof BooksIsbnRoute
   '/rentals/new': typeof RentalsNewRoute
+  '/rentals/past': typeof RentalsPastRoute
   '/users/$email': typeof UsersEmailRoute
   '/books/': typeof BooksIndexRoute
   '/rentals/': typeof RentalsIndexRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/tags': typeof TagsRoute
   '/books/$isbn': typeof BooksIsbnRoute
   '/rentals/new': typeof RentalsNewRoute
+  '/rentals/past': typeof RentalsPastRoute
   '/users/$email': typeof UsersEmailRoute
   '/books': typeof BooksIndexRoute
   '/rentals': typeof RentalsIndexRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/tags': typeof TagsRoute
   '/books/$isbn': typeof BooksIsbnRoute
   '/rentals/new': typeof RentalsNewRoute
+  '/rentals/past': typeof RentalsPastRoute
   '/users/$email': typeof UsersEmailRoute
   '/books/': typeof BooksIndexRoute
   '/rentals/': typeof RentalsIndexRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/tags'
     | '/books/$isbn'
     | '/rentals/new'
+    | '/rentals/past'
     | '/users/$email'
     | '/books/'
     | '/rentals/'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/tags'
     | '/books/$isbn'
     | '/rentals/new'
+    | '/rentals/past'
     | '/users/$email'
     | '/books'
     | '/rentals'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/tags'
     | '/books/$isbn'
     | '/rentals/new'
+    | '/rentals/past'
     | '/users/$email'
     | '/books/'
     | '/rentals/'
@@ -206,6 +218,7 @@ export interface RootRouteChildren {
   TagsRoute: typeof TagsRoute
   BooksIsbnRoute: typeof BooksIsbnRoute
   RentalsNewRoute: typeof RentalsNewRoute
+  RentalsPastRoute: typeof RentalsPastRoute
   UsersEmailRoute: typeof UsersEmailRoute
   BooksIndexRoute: typeof BooksIndexRoute
   RentalsIndexRoute: typeof RentalsIndexRoute
@@ -298,6 +311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsersEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rentals/past': {
+      id: '/rentals/past'
+      path: '/rentals/past'
+      fullPath: '/rentals/past'
+      preLoaderRoute: typeof RentalsPastRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rentals/new': {
       id: '/rentals/new'
       path: '/rentals/new'
@@ -326,6 +346,7 @@ const rootRouteChildren: RootRouteChildren = {
   TagsRoute: TagsRoute,
   BooksIsbnRoute: BooksIsbnRoute,
   RentalsNewRoute: RentalsNewRoute,
+  RentalsPastRoute: RentalsPastRoute,
   UsersEmailRoute: UsersEmailRoute,
   BooksIndexRoute: BooksIndexRoute,
   RentalsIndexRoute: RentalsIndexRoute,

@@ -29,11 +29,15 @@ function Dashboard() {
     <div className="w-full space-y-6">
       <PageTitle title="Dashboard" />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-12">
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5 mb-12">
         <DashboardCard value={(stats?.totalBooks || 0).toString()} label="Books" />
         <DashboardCard value={(stats?.totalUsers || 0).toString()} label="Users" />
         <DashboardCard value={(stats?.activeRentals || 0).toString()} label="Active Rentals" />
-        <DashboardCard value={(stats?.returnsToday || 0).toString()} label="Returns Today" />
+        <DashboardCard value={(stats?.rentalsToday || 0).toString()} label="Rented Today" />
+        <DashboardCard
+          value={`${stats?.dueTodayRemaining || 0}/${stats?.dueTodayTotal || 0}`}
+          label="Today's Returns"
+        />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
