@@ -369,7 +369,7 @@ function StockCheckPage() {
   const totalRemainingPages = Math.ceil(filteredRemaining.length / itemsPerPage) || 1
 
   return (
-    <div className="flex flex-col h-full overflow-hidden p-6 gap-6">
+    <div className="flex flex-col overflow-hidden p-6 gap-6">
       <div className="flex justify-between items-center shrink-0">
         <PageTitle title="Stock check" />
         <div className="flex gap-2">
@@ -435,7 +435,7 @@ function StockCheckPage() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div
-                                className="font-medium truncate cursor-pointer w-fit hover:underline"
+                                className="font-medium truncate cursor-pointer w-fit max-w-full hover:underline"
                                 onClick={() =>
                                   navigate({ to: '/books/$isbn', params: { isbn: book.isbn } })
                                 }
@@ -561,7 +561,7 @@ function StockCheckPage() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div
-                                className="font-medium truncate cursor-pointer w-fit hover:underline"
+                                className="font-medium truncate cursor-pointer w-fit max-w-full hover:underline"
                                 onClick={() =>
                                   navigate({ to: '/books/$isbn', params: { isbn: book.isbn } })
                                 }
