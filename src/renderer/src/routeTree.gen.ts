@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TagsRouteImport } from './routes/tags'
+import { Route as StockCheckRouteImport } from './routes/stock-check'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReviewqueueRouteImport } from './routes/reviewqueue'
 import { Route as ReturnsTodayRouteImport } from './routes/returns-today'
@@ -29,6 +30,11 @@ import { Route as BooksIsbnRouteImport } from './routes/books/$isbn'
 const TagsRoute = TagsRouteImport.update({
   id: '/tags',
   path: '/tags',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StockCheckRoute = StockCheckRouteImport.update({
+  id: '/stock-check',
+  path: '/stock-check',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/returns-today': typeof ReturnsTodayRoute
   '/reviewqueue': typeof ReviewqueueRoute
   '/settings': typeof SettingsRoute
+  '/stock-check': typeof StockCheckRoute
   '/tags': typeof TagsRoute
   '/books/$isbn': typeof BooksIsbnRoute
   '/rentals/new': typeof RentalsNewRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByTo {
   '/returns-today': typeof ReturnsTodayRoute
   '/reviewqueue': typeof ReviewqueueRoute
   '/settings': typeof SettingsRoute
+  '/stock-check': typeof StockCheckRoute
   '/tags': typeof TagsRoute
   '/books/$isbn': typeof BooksIsbnRoute
   '/rentals/new': typeof RentalsNewRoute
@@ -153,6 +161,7 @@ export interface FileRoutesById {
   '/returns-today': typeof ReturnsTodayRoute
   '/reviewqueue': typeof ReviewqueueRoute
   '/settings': typeof SettingsRoute
+  '/stock-check': typeof StockCheckRoute
   '/tags': typeof TagsRoute
   '/books/$isbn': typeof BooksIsbnRoute
   '/rentals/new': typeof RentalsNewRoute
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/returns-today'
     | '/reviewqueue'
     | '/settings'
+    | '/stock-check'
     | '/tags'
     | '/books/$isbn'
     | '/rentals/new'
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/returns-today'
     | '/reviewqueue'
     | '/settings'
+    | '/stock-check'
     | '/tags'
     | '/books/$isbn'
     | '/rentals/new'
@@ -209,6 +220,7 @@ export interface FileRouteTypes {
     | '/returns-today'
     | '/reviewqueue'
     | '/settings'
+    | '/stock-check'
     | '/tags'
     | '/books/$isbn'
     | '/rentals/new'
@@ -228,6 +240,7 @@ export interface RootRouteChildren {
   ReturnsTodayRoute: typeof ReturnsTodayRoute
   ReviewqueueRoute: typeof ReviewqueueRoute
   SettingsRoute: typeof SettingsRoute
+  StockCheckRoute: typeof StockCheckRoute
   TagsRoute: typeof TagsRoute
   BooksIsbnRoute: typeof BooksIsbnRoute
   RentalsNewRoute: typeof RentalsNewRoute
@@ -245,6 +258,13 @@ declare module '@tanstack/react-router' {
       path: '/tags'
       fullPath: '/tags'
       preLoaderRoute: typeof TagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stock-check': {
+      id: '/stock-check'
+      path: '/stock-check'
+      fullPath: '/stock-check'
+      preLoaderRoute: typeof StockCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -364,6 +384,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReturnsTodayRoute: ReturnsTodayRoute,
   ReviewqueueRoute: ReviewqueueRoute,
   SettingsRoute: SettingsRoute,
+  StockCheckRoute: StockCheckRoute,
   TagsRoute: TagsRoute,
   BooksIsbnRoute: BooksIsbnRoute,
   RentalsNewRoute: RentalsNewRoute,

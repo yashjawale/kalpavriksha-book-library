@@ -27,7 +27,7 @@ const RootLayout = () => {
       console.log(currentPath)
 
       // Ignore on bulk add page
-      if (['/bulkadd', '/rentals/new'].includes(currentPath)) {
+      if (['/bulkadd', '/rentals/new', '/stock-check'].includes(currentPath)) {
         return
       }
 
