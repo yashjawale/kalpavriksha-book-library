@@ -141,8 +141,18 @@ function RentalsPage() {
                 <TableBody>
                   {filteredLoans.map((loan) => {
                     const isOverdue = loan.dueDate && new Date(loan.dueDate) < new Date()
+                    const isDueToday =
+                      loan.dueDate &&
+                      new Date(loan.dueDate).toDateString() === new Date().toDateString()
                     return (
-                      <TableRow key={loan.id}>
+                      <TableRow
+                        key={loan.id}
+                        className={
+                          isDueToday
+                            ? 'bg-yellow-50 hover:bg-yellow-100/50 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30'
+                            : ''
+                        }
+                      >
                         <TableCell className="font-medium">
                           <div className="flex flex-col">
                             <span>{loan.borrower?.name || 'Unknown'}</span>

@@ -167,7 +167,15 @@ function SingleBook() {
               ) : (
                 activeLoans.map((loan) => (
                   <tr key={loan.id} className="border-b last:border-0 hover:bg-muted/50">
-                    <td className="p-4 align-middle font-medium">{loan.borrower.name || '-'}</td>
+                    <td className="p-4 align-middle font-medium">
+                      <Link
+                        to="/users/$email"
+                        params={{ email: loan.borrower.email }}
+                        className="hover:underline"
+                      >
+                        {loan.borrower.name || '-'}
+                      </Link>
+                    </td>
                     <td className="p-4 align-middle text-muted-foreground">
                       {loan.borrower.email}
                     </td>
@@ -223,7 +231,15 @@ function SingleBook() {
               ) : (
                 pastLoans.map((loan) => (
                   <tr key={loan.id} className="border-b last:border-0 hover:bg-muted/50">
-                    <td className="p-4 align-middle font-medium">{loan.borrower.name || '-'}</td>
+                    <td className="p-4 align-middle font-medium">
+                      <Link
+                        to="/users/$email"
+                        params={{ email: loan.borrower.email }}
+                        className="hover:underline"
+                      >
+                        {loan.borrower.name || '-'}
+                      </Link>
+                    </td>
                     <td className="p-4 align-middle text-muted-foreground">
                       {loan.borrower.email}
                     </td>

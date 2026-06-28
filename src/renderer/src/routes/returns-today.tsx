@@ -1,12 +1,11 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
 import { Spinner } from '@renderer/components/ui/spinner'
 import PageTitle from '@renderer/components/ui/page-title'
 import { DataTable } from '@renderer/components/ui/data-table'
 import { Button } from '@renderer/components/ui/button'
-import { format, isToday } from 'date-fns'
-import { ColumnDef, Row } from '@tanstack/react-table'
+import { ColumnDef } from '@tanstack/react-table'
 import { LoginOverlay } from '@renderer/components/LoginOverlay'
 import {
   Dialog,
@@ -17,16 +16,15 @@ import {
   DialogTitle
 } from '@renderer/components/ui/dialog'
 import { toast } from 'sonner'
+import { CheckCircle2, Circle } from 'lucide-react'
 
-type LoanWithDetails = Awaited<
-  ReturnType<typeof window.api.loans.getUpcomingReturns>
->['loans'][number]
+type LoanWithDetails = Awaited<ReturnType<typeof window.api.loans.getReturnsToday>>['loans'][number]
 
-export const Route = createFileRoute('/returns')({
-  component: UpcomingReturns
+export const Route = createFileRoute('/returns-today')({
+  component: ReturnsToday
 })
 
-function UpcomingReturns() {
+function ReturnsToday() {
   const queryClient = useQueryClient()
 
   const [authStatus, setAuthStatus] = useState<{
@@ -45,8 +43,8 @@ function UpcomingReturns() {
   const [returnLoanId, setReturnLoanId] = useState<number | null>(null)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['upcoming-returns'],
-    queryFn: async () => await window.api.loans.getUpcomingReturns(),
+    queryKey: ['returns-today'],
+    queryFn: async () => await window.api.loans.getReturnsToday(),
     enabled: authStatus.loggedIn
   })
 
@@ -55,17 +53,7 @@ function UpcomingReturns() {
       return await window.api.loans.returnBook(loanId)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['upcoming-returns'] })
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
-    }
-  })
-
-  const extendLoanMutation = useMutation({
-    mutationFn: async ({ loanId, dueDate }: { loanId: number; dueDate: Date }) => {
-      return await window.api.loans.extendLoan(loanId, dueDate)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['upcoming-returns'] })
+      queryClient.invalidateQueries({ queryKey: ['returns-today'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
     }
   })
@@ -83,20 +71,6 @@ function UpcomingReturns() {
     }
   }
 
-  const handleExtend = async (loanId: number, currentDueDate: Date | null) => {
-    // Extend by 14 days from current due date or today
-    const baseDate = currentDueDate ? new Date(currentDueDate) : new Date()
-    const newDueDate = new Date(baseDate)
-    newDueDate.setDate(newDueDate.getDate() + 14)
-
-    try {
-      await extendLoanMutation.mutateAsync({ loanId, dueDate: newDueDate })
-    } catch (error) {
-      console.error('Failed to extend loan:', error)
-      alert('Failed to extend loan. Please try again.')
-    }
-  }
-
   const columns: ColumnDef<LoanWithDetails>[] = [
     {
       accessorKey: 'borrower',
@@ -105,7 +79,13 @@ function UpcomingReturns() {
         const borrower = row.original.borrower
         return (
           <div className="flex flex-col">
-            <span>{borrower.name || 'Unknown User'}</span>
+            <Link
+              to="/users/$email"
+              params={{ email: borrower.email }}
+              className="hover:underline text-primary font-medium"
+            >
+              {borrower.name || 'Unknown User'}
+            </Link>
             <span className="text-xs text-muted-foreground">{borrower.email}</span>
           </div>
         )
@@ -118,29 +98,38 @@ function UpcomingReturns() {
         const book = row.original.book
         return (
           <div className="flex flex-col">
-            <span className="font-medium line-clamp-1" title={book.title}>
-              {book.title}
-            </span>
-            <span className="text-xs text-muted-foreground font-mono">{book.isbn}</span>
+            <Link
+              to="/books/$isbn"
+              params={{ isbn: row.original.bookIsbn }}
+              className="font-medium line-clamp-1 hover:underline text-primary"
+              title={book?.title}
+            >
+              {book?.title || 'Unknown Book'}
+            </Link>
+            <span className="text-xs text-muted-foreground font-mono">{row.original.bookIsbn}</span>
           </div>
         )
       }
     },
     {
-      accessorKey: 'dueDate',
-      header: 'Expected return date',
+      accessorKey: 'status',
+      header: 'Status',
       cell: ({ row }) => {
-        const dueDate = row.original.dueDate
-        if (!dueDate) return <span className="text-muted-foreground">None</span>
-
-        const date = new Date(dueDate)
-        const isPastDue = date < new Date() && date.toDateString() !== new Date().toDateString()
-
+        const isReturned = !!row.original.returnedAt
         return (
-          <span className={isPastDue ? 'text-destructive font-medium' : ''}>
-            {format(date, 'MMM d, yyyy')}
-            {isPastDue && ' (Overdue)'}
-          </span>
+          <div className="flex items-center gap-2">
+            {isReturned ? (
+              <>
+                <CheckCircle2 className="size-4 text-green-500" />
+                <span className="text-green-600 font-medium">Returned</span>
+              </>
+            ) : (
+              <>
+                <Circle className="size-4 text-yellow-500" />
+                <span className="text-yellow-600 font-medium">Pending</span>
+              </>
+            )}
+          </div>
         )
       }
     },
@@ -148,6 +137,10 @@ function UpcomingReturns() {
       id: 'actions',
       cell: ({ row }) => {
         const loan = row.original
+        const isReturned = !!loan.returnedAt
+
+        if (isReturned) return null
+
         return (
           <div className="flex items-center gap-2 justify-end">
             <Button
@@ -157,14 +150,6 @@ function UpcomingReturns() {
               disabled={returnBookMutation.isPending}
             >
               Mark as returned
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExtend(loan.id, loan.dueDate)}
-              disabled={extendLoanMutation.isPending}
-            >
-              Extend
             </Button>
           </div>
         )
@@ -177,12 +162,12 @@ function UpcomingReturns() {
     const matchesUser =
       loan.borrower.name?.toLowerCase().includes(searchLower) ||
       loan.borrower.email?.toLowerCase().includes(searchLower)
-    const matchesBook = loan.book.title.toLowerCase().includes(searchLower)
-    return matchesUser || matchesBook
+    const matchesBook = loan.book?.title.toLowerCase().includes(searchLower)
+    return matchesUser || !!matchesBook
   }
 
   if (!authStatus.loggedIn) {
-    return <LoginOverlay description="You must be logged in to view upcoming returns." />
+    return <LoginOverlay description="You must be logged in to view today's returns." />
   }
 
   if (isLoading && !data) {
@@ -193,18 +178,9 @@ function UpcomingReturns() {
     )
   }
 
-  // Add row highlighting for today's due date
-  const rowClassName = (row: Row<LoanWithDetails>) => {
-    const dueDate = row.original.dueDate
-    if (dueDate && isToday(new Date(dueDate))) {
-      return 'bg-yellow-50 hover:bg-yellow-100/50 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30'
-    }
-    return ''
-  }
-
   return (
     <div className="w-full">
-      <PageTitle title="Upcoming returns" />
+      <PageTitle title="Today's returns" />
 
       <DataTable
         columns={columns}
@@ -212,7 +188,6 @@ function UpcomingReturns() {
         pageSize={25}
         searchPlaceholder="Search by name, book or email"
         globalFilterFn={globalFilterFn}
-        rowClassName={rowClassName}
       />
 
       <Dialog open={!!returnLoanId} onOpenChange={(open) => !open && setReturnLoanId(null)}>

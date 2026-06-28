@@ -67,6 +67,9 @@ function UserDetailsPage() {
   const [loanToExtend, setLoanToExtend] = useState<Loan | null>(null)
   const [newDueDate, setNewDueDate] = useState<string>('')
 
+  const [returnDialogOpen, setReturnDialogOpen] = useState(false)
+  const [loanToReturn, setLoanToReturn] = useState<number | null>(null)
+
   // For bulk extend
   const [isBulkExtend, setIsBulkExtend] = useState(false)
 
@@ -95,8 +98,11 @@ function UserDetailsPage() {
     }
   }, [email])
 
-  const handleReturn = async (loanId: number) => {
-    await window.api.loans.returnBook(loanId)
+  const handleReturn = async () => {
+    if (loanToReturn === null) return
+    await window.api.loans.returnBook(loanToReturn)
+    setReturnDialogOpen(false)
+    setLoanToReturn(null)
     loadUser()
   }
 
@@ -244,7 +250,13 @@ function UserDetailsPage() {
                 {currentLoans.map((loan: Loan) => (
                   <TableRow key={loan.id}>
                     <TableCell className="font-medium">
-                      {loan.book?.title || 'Unknown Book'}
+                      <Link
+                        to="/books/$isbn"
+                        params={{ isbn: loan.bookIsbn }}
+                        className="hover:underline"
+                      >
+                        {loan.book?.title || 'Unknown Book'}
+                      </Link>
                     </TableCell>
                     <TableCell className="text-muted-foreground font-mono text-xs">
                       {loan.bookIsbn}
@@ -257,7 +269,10 @@ function UserDetailsPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleReturn(loan.id)}
+                        onClick={() => {
+                          setLoanToReturn(loan.id)
+                          setReturnDialogOpen(true)
+                        }}
                         className="h-8"
                       >
                         Mark as returned
@@ -303,7 +318,13 @@ function UserDetailsPage() {
                 {pastLoans.map((loan: Loan) => (
                   <TableRow key={loan.id}>
                     <TableCell className="font-medium">
-                      {loan.book?.title || 'Unknown Book'}
+                      <Link
+                        to="/books/$isbn"
+                        params={{ isbn: loan.bookIsbn }}
+                        className="hover:underline"
+                      >
+                        {loan.book?.title || 'Unknown Book'}
+                      </Link>
                     </TableCell>
                     <TableCell className="text-muted-foreground font-mono text-xs">
                       {loan.bookIsbn}
@@ -369,6 +390,24 @@ function UserDetailsPage() {
               Cancel
             </Button>
             <Button onClick={handleUpdateName}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Return Dialog */}
+      <Dialog open={returnDialogOpen} onOpenChange={(open) => !open && setReturnDialogOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark book as returned?</DialogTitle>
+            <DialogDescription>
+              This will close the active rental and return the book to the available stock.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReturnDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleReturn}>Confirm Return</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

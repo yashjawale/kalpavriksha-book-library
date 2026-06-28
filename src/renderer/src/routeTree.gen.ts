@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TagsRouteImport } from './routes/tags'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReviewqueueRouteImport } from './routes/reviewqueue'
+import { Route as ReturnsTodayRouteImport } from './routes/returns-today'
 import { Route as ReturnsRouteImport } from './routes/returns'
 import { Route as QuickcaptureRouteImport } from './routes/quickcapture'
 import { Route as BulkaddRouteImport } from './routes/bulkadd'
@@ -38,6 +39,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const ReviewqueueRoute = ReviewqueueRouteImport.update({
   id: '/reviewqueue',
   path: '/reviewqueue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReturnsTodayRoute = ReturnsTodayRouteImport.update({
+  id: '/returns-today',
+  path: '/returns-today',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReturnsRoute = ReturnsRouteImport.update({
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/bulkadd': typeof BulkaddRoute
   '/quickcapture': typeof QuickcaptureRoute
   '/returns': typeof ReturnsRoute
+  '/returns-today': typeof ReturnsTodayRoute
   '/reviewqueue': typeof ReviewqueueRoute
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/bulkadd': typeof BulkaddRoute
   '/quickcapture': typeof QuickcaptureRoute
   '/returns': typeof ReturnsRoute
+  '/returns-today': typeof ReturnsTodayRoute
   '/reviewqueue': typeof ReviewqueueRoute
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/bulkadd': typeof BulkaddRoute
   '/quickcapture': typeof QuickcaptureRoute
   '/returns': typeof ReturnsRoute
+  '/returns-today': typeof ReturnsTodayRoute
   '/reviewqueue': typeof ReviewqueueRoute
   '/settings': typeof SettingsRoute
   '/tags': typeof TagsRoute
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/bulkadd'
     | '/quickcapture'
     | '/returns'
+    | '/returns-today'
     | '/reviewqueue'
     | '/settings'
     | '/tags'
@@ -178,6 +188,7 @@ export interface FileRouteTypes {
     | '/bulkadd'
     | '/quickcapture'
     | '/returns'
+    | '/returns-today'
     | '/reviewqueue'
     | '/settings'
     | '/tags'
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/bulkadd'
     | '/quickcapture'
     | '/returns'
+    | '/returns-today'
     | '/reviewqueue'
     | '/settings'
     | '/tags'
@@ -213,6 +225,7 @@ export interface RootRouteChildren {
   BulkaddRoute: typeof BulkaddRoute
   QuickcaptureRoute: typeof QuickcaptureRoute
   ReturnsRoute: typeof ReturnsRoute
+  ReturnsTodayRoute: typeof ReturnsTodayRoute
   ReviewqueueRoute: typeof ReviewqueueRoute
   SettingsRoute: typeof SettingsRoute
   TagsRoute: typeof TagsRoute
@@ -246,6 +259,13 @@ declare module '@tanstack/react-router' {
       path: '/reviewqueue'
       fullPath: '/reviewqueue'
       preLoaderRoute: typeof ReviewqueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/returns-today': {
+      id: '/returns-today'
+      path: '/returns-today'
+      fullPath: '/returns-today'
+      preLoaderRoute: typeof ReturnsTodayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/returns': {
@@ -341,6 +361,7 @@ const rootRouteChildren: RootRouteChildren = {
   BulkaddRoute: BulkaddRoute,
   QuickcaptureRoute: QuickcaptureRoute,
   ReturnsRoute: ReturnsRoute,
+  ReturnsTodayRoute: ReturnsTodayRoute,
   ReviewqueueRoute: ReviewqueueRoute,
   SettingsRoute: SettingsRoute,
   TagsRoute: TagsRoute,

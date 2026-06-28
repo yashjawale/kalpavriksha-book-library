@@ -8,7 +8,8 @@ import {
   type ColumnDef,
   type ColumnFiltersState,
   type SortingState,
-  type VisibilityState
+  type VisibilityState,
+  type Row
 } from '@tanstack/react-table'
 import { useState } from 'react'
 import { Button } from '@renderer/components/ui/button'
@@ -35,6 +36,7 @@ interface DataTableProps<TData, TValue> {
   onRowSelectionChange?: (selectedRows: Record<string, boolean>) => void
   rowSelection?: Record<string, boolean>
   getRowId?: (row: TData) => string
+  rowClassName?: (row: Row<TData>) => string
 }
 
 export function DataTable<TData, TValue>({
@@ -48,7 +50,8 @@ export function DataTable<TData, TValue>({
   enableRowSelection = false,
   onRowSelectionChange,
   rowSelection: externalRowSelection,
-  getRowId
+  getRowId,
+  rowClassName
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -139,7 +142,11 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                <TableRow 
+                  key={row.id} 
+                  data-state={row.getIsSelected() && 'selected'}
+                  className={rowClassName ? rowClassName(row) : undefined}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} title={cell.renderValue()?.toString() ?? ''}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

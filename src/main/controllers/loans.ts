@@ -30,6 +30,26 @@ export const loansController = {
     return { loans, total: loans.length }
   },
 
+  getReturnsToday: async () => {
+    const startOfDay = new Date()
+    startOfDay.setHours(0, 0, 0, 0)
+    const endOfDay = new Date()
+    endOfDay.setHours(23, 59, 59, 999)
+
+    const loans = await prisma.loan.findMany({
+      where: {
+        dueDate: {
+          gte: startOfDay,
+          lte: endOfDay
+        }
+      },
+      include: { book: true, borrower: true },
+      orderBy: { returnedAt: 'asc' } // active first (null returnedAt), then by returned date
+    })
+
+    return { loans, total: loans.length }
+  },
+
   getPastLoans: async (page: number, limit: number, query: string) => {
     const skip = (page - 1) * limit
     const where = {
