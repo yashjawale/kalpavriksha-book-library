@@ -3,6 +3,15 @@ import Database from 'better-sqlite3'
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import { PrismaClient } from '../generated/prisma/client'
 
+function generateKVBId(): string {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const milliseconds = String(now.getMilliseconds()).padStart(3, '0')
+  return `KVB-${year}${month}${day}${milliseconds}`
+}
+
 function resolveDatabaseUrl(): string {
   let connectionString = process.env.DATABASE_URL || 'file:./dev.db'
   if (connectionString.startsWith('file:./') || connectionString.startsWith('file:../')) {
@@ -29,10 +38,7 @@ async function run() {
   console.log(`Merging DB from: ${otherDbPath}`)
 
   const connectionString = resolveDatabaseUrl()
-  const dbPath = connectionString.replace('file:', '')
-  const db = new Database(dbPath)
-  // @ts-expect-error - Prisma adapter types might be mismatched
-  const adapter = new PrismaBetterSqlite3(db)
+  const adapter = new PrismaBetterSqlite3({ url: connectionString })
   const prisma = new PrismaClient({ adapter })
 
   const otherDb = new Database(otherDbPath, { readonly: true })
@@ -83,18 +89,62 @@ async function run() {
     updatedAt: string
   }[]
 
+  const isbnMap = new Map<string, string>() // old ISBN -> new ISBN (when conflict)
+
   for (const otherBook of otherBooks) {
     const existingBook = await prisma.book.findUnique({
       where: { isbn: otherBook.isbn }
     })
 
     if (existingBook) {
-      await prisma.book.update({
-        where: { isbn: otherBook.isbn },
-        data: {
-          totalStock: existingBook.totalStock + otherBook.totalStock
+      const isKvb = otherBook.isbn.startsWith('KVB-')
+
+      if (!isKvb) {
+        // Real ISBN — merge stock as before
+        await prisma.book.update({
+          where: { isbn: otherBook.isbn },
+          data: {
+            totalStock: existingBook.totalStock + otherBook.totalStock
+          }
+        })
+      } else {
+        // KVB ID — check if metadata matches
+        const titleMatch = (otherBook.title ?? '') === (existingBook.title ?? '')
+        const authorMatch = (otherBook.author ?? '') === (existingBook.author ?? '')
+        const publisherMatch = (otherBook.publisher ?? '') === (existingBook.publisher ?? '')
+
+        if (titleMatch && authorMatch && publisherMatch) {
+          // Same book — merge stock
+          await prisma.book.update({
+            where: { isbn: otherBook.isbn },
+            data: {
+              totalStock: existingBook.totalStock + otherBook.totalStock
+            }
+          })
+        } else {
+          // Different book — generate a new KVB ID
+          let newIsbn: string
+          do {
+            newIsbn = generateKVBId()
+          } while (await prisma.book.findUnique({ where: { isbn: newIsbn } }))
+
+          isbnMap.set(otherBook.isbn, newIsbn)
+          console.log(`  KVB conflict: "${otherBook.isbn}" -> reassigned as "${newIsbn}"`)
+
+          await prisma.book.create({
+            data: {
+              isbn: newIsbn,
+              title: otherBook.title,
+              author: otherBook.author,
+              publisher: otherBook.publisher,
+              totalStock: otherBook.totalStock,
+              needsBarcodeSticker: otherBook.needsBarcodeSticker === 1,
+              createdAt: new Date(otherBook.createdAt),
+              updatedAt: new Date(otherBook.updatedAt)
+            }
+          })
         }
-      })
+      }
     } else {
       await prisma.book.create({
         data: {
@@ -124,10 +174,12 @@ async function run() {
     const targetTagId = tagIdMap.get(otherBookTag.tagId)
     if (!targetTagId) continue
 
+    const bookIsbn = isbnMap.get(otherBookTag.bookIsbn) ?? otherBookTag.bookIsbn
+
     const existingLink = await prisma.bookTag.findUnique({
       where: {
         bookIsbn_tagId: {
-          bookIsbn: otherBookTag.bookIsbn,
+          bookIsbn,
           tagId: targetTagId
         }
       }
@@ -137,14 +189,14 @@ async function run() {
       try {
         await prisma.bookTag.create({
           data: {
-            bookIsbn: otherBookTag.bookIsbn,
+            bookIsbn,
             tagId: targetTagId,
             createdAt: new Date(otherBookTag.createdAt)
           }
         })
       } catch (e) {
         // Book might have been skipped or something
-        console.error(`Failed to link book ${otherBookTag.bookIsbn} with tag ${targetTagId}`, e)
+        console.error(`Failed to link book ${bookIsbn} with tag ${targetTagId}`, e)
       }
     }
   }
