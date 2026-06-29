@@ -1,5 +1,5 @@
 appId: com.kalpavrikshaacademy.library
-productName: kalpavriksha-library
+productName: Kalpavriksha Library
 directories:
   buildResources: build
 files:
@@ -29,6 +29,7 @@ msi:
   artifactName: ${name}-${version}.${ext}
 mac:
   icon: resources/icon.icns
+  executableName: kalpavriksha-library
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
@@ -40,6 +41,16 @@ dmg:
   artifactName: ${name}-${version}.${ext}
 linux:
   icon: resources/icon.png
+  executableName: kalpavriksha-library
+  desktop:
+    entry:
+      Name: ${productName}
+      Comment: A custom application designed to help keep track of library assets.
+      Categories: Office;Productivity
+      Keywords: productivity;notes;organizer
+      StartupWMClass: kalpavriksha-library
+      Terminal: false
+      Type: Application
   target:
     - AppImage
     - deb

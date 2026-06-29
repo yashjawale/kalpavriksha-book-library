@@ -5,6 +5,7 @@
   "main": "./out/main/index.js",
   "author": "yashjawale.in",
   "homepage": "https://kalpavrikshaacademy.com",
+  "desktopName": "com.kalpavrikshaacademy.library.desktop",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
