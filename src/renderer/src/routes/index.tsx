@@ -117,11 +117,15 @@ function Dashboard() {
                       borrower: { name: string | null; email: string }
                       dueDate: Date | null
                     }) => {
-                      const dueToday = loan.dueDate && isToday(new Date(loan.dueDate))
+                      const startOfToday = new Date()
+                      startOfToday.setHours(0, 0, 0, 0)
+                      const dueDateObj = loan.dueDate ? new Date(loan.dueDate) : null
+                      const dueToday = dueDateObj && isToday(dueDateObj)
+                      const isOverdue = dueDateObj && dueDateObj < startOfToday
                       return (
                         <tr
                           key={loan.id}
-                          className={`border-b last:border-0 hover:bg-muted/50 ${dueToday ? 'bg-yellow-50 hover:bg-yellow-100/50 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30' : ''}`}
+                          className={`border-b last:border-0 hover:bg-muted/50 ${isOverdue ? 'bg-red-50 hover:bg-red-100/50 dark:bg-red-900/20 dark:hover:bg-red-900/30' : dueToday ? 'bg-yellow-50 hover:bg-yellow-100/50 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30' : ''}`}
                         >
                           <td className="p-4 align-middle">
                             <Link

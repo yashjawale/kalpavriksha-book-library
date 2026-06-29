@@ -5,7 +5,7 @@ import { Spinner } from '@renderer/components/ui/spinner'
 import PageTitle from '@renderer/components/ui/page-title'
 import { DataTable } from '@renderer/components/ui/data-table'
 import { Button } from '@renderer/components/ui/button'
-import { ColumnDef } from '@tanstack/react-table'
+import { ColumnDef, Row } from '@tanstack/react-table'
 import { LoginOverlay } from '@renderer/components/LoginOverlay'
 import {
   Dialog,
@@ -17,6 +17,7 @@ import {
 } from '@renderer/components/ui/dialog'
 import { toast } from 'sonner'
 import { CheckCircle2, Circle } from 'lucide-react'
+import { isToday } from 'date-fns'
 
 type LoanWithDetails = Awaited<ReturnType<typeof window.api.loans.getReturnsToday>>['loans'][number]
 
@@ -82,7 +83,7 @@ function ReturnsToday() {
             <Link
               to="/users/$email"
               params={{ email: borrower.email }}
-              className="hover:underline text-primary font-medium"
+              className="hover:underline font-medium"
             >
               {borrower.name || 'Unknown User'}
             </Link>
@@ -101,7 +102,7 @@ function ReturnsToday() {
             <Link
               to="/books/$isbn"
               params={{ isbn: row.original.bookIsbn }}
-              className="font-medium line-clamp-1 hover:underline text-primary"
+              className="font-medium line-clamp-1 hover:underline"
               title={book?.title}
             >
               {book?.title || 'Unknown Book'}
@@ -166,6 +167,22 @@ function ReturnsToday() {
     return matchesUser || !!matchesBook
   }
 
+  const rowClassName = (row: Row<LoanWithDetails>) => {
+    if (row.original.returnedAt) return ''
+    const dueDate = row.original.dueDate
+    if (!dueDate) return ''
+    const date = new Date(dueDate)
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+    if (date < startOfToday) {
+      return 'bg-red-50 hover:bg-red-100/50 dark:bg-red-900/20 dark:hover:bg-red-900/30'
+    }
+    if (isToday(date)) {
+      return 'bg-yellow-50 hover:bg-yellow-100/50 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30'
+    }
+    return ''
+  }
+
   if (!authStatus.loggedIn) {
     return <LoginOverlay description="You must be logged in to view today's returns." />
   }
@@ -188,6 +205,7 @@ function ReturnsToday() {
         pageSize={25}
         searchPlaceholder="Search by name, book or email"
         globalFilterFn={globalFilterFn}
+        rowClassName={rowClassName}
       />
 
       <Dialog open={!!returnLoanId} onOpenChange={(open) => !open && setReturnLoanId(null)}>

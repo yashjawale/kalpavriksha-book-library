@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
 import { Spinner } from '@renderer/components/ui/spinner'
@@ -105,7 +105,13 @@ function UpcomingReturns() {
         const borrower = row.original.borrower
         return (
           <div className="flex flex-col">
-            <span>{borrower.name || 'Unknown User'}</span>
+            <Link
+              to="/users/$email"
+              params={{ email: borrower.email }}
+              className="hover:underline text-primary font-medium"
+            >
+              {borrower.name || 'Unknown User'}
+            </Link>
             <span className="text-xs text-muted-foreground">{borrower.email}</span>
           </div>
         )
@@ -118,9 +124,14 @@ function UpcomingReturns() {
         const book = row.original.book
         return (
           <div className="flex flex-col">
-            <span className="font-medium line-clamp-1" title={book.title}>
+            <Link
+              to="/books/$isbn"
+              params={{ isbn: row.original.bookIsbn }}
+              className="font-medium line-clamp-1 hover:underline text-primary"
+              title={book.title}
+            >
               {book.title}
-            </span>
+            </Link>
             <span className="text-xs text-muted-foreground font-mono">{book.isbn}</span>
           </div>
         )
@@ -193,10 +204,16 @@ function UpcomingReturns() {
     )
   }
 
-  // Add row highlighting for today's due date
   const rowClassName = (row: Row<LoanWithDetails>) => {
     const dueDate = row.original.dueDate
-    if (dueDate && isToday(new Date(dueDate))) {
+    if (!dueDate) return ''
+    const date = new Date(dueDate)
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+    if (date < startOfToday) {
+      return 'bg-red-50 hover:bg-red-100/50 dark:bg-red-900/20 dark:hover:bg-red-900/30'
+    }
+    if (isToday(date)) {
       return 'bg-yellow-50 hover:bg-yellow-100/50 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30'
     }
     return ''

@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import {
   Table,
@@ -131,11 +131,25 @@ function PastRentalsPage() {
                 <TableRow key={loan.id}>
                   <TableCell className="font-medium">
                     <div className="flex flex-col">
-                      <span>{loan.borrower?.name || 'Unknown'}</span>
+                      <Link
+                        to="/users/$email"
+                        params={{ email: loan.userEmail }}
+                        className="hover:underline text-primary"
+                      >
+                        {loan.borrower?.name || 'Unknown'}
+                      </Link>
                       <span className="text-xs text-muted-foreground">{loan.userEmail}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{loan.book?.title || loan.bookIsbn}</TableCell>
+                  <TableCell>
+                    <Link
+                      to="/books/$isbn"
+                      params={{ isbn: loan.bookIsbn }}
+                      className="hover:underline text-primary"
+                    >
+                      {loan.book?.title || loan.bookIsbn}
+                    </Link>
+                  </TableCell>
                   <TableCell>{new Date(loan.borrowedAt).toLocaleDateString()}</TableCell>
                   <TableCell>
                     {loan.returnedAt ? new Date(loan.returnedAt).toLocaleDateString() : 'N/A'}

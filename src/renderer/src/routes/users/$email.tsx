@@ -21,7 +21,7 @@ import {
   DialogDescription,
   DialogFooter
 } from '@renderer/components/ui/dialog'
-import { addWeeks, format } from 'date-fns'
+import { addWeeks, format, isToday } from 'date-fns'
 import PageTitle from '@renderer/components/ui/page-title'
 import { TagBadge } from '@renderer/components/TagBadge'
 
@@ -247,47 +247,63 @@ function UserDetailsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentLoans.map((loan: Loan) => (
-                  <TableRow key={loan.id}>
-                    <TableCell className="font-medium">
-                      <Link
-                        to="/books/$isbn"
-                        params={{ isbn: loan.bookIsbn }}
-                        className="hover:underline"
-                      >
-                        {loan.book?.title || 'Unknown Book'}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground font-mono text-xs">
-                      {loan.bookIsbn}
-                    </TableCell>
-                    <TableCell>{renderTags(loan)}</TableCell>
-                    <TableCell>
-                      {loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : 'Not Set'}
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setLoanToReturn(loan.id)
-                          setReturnDialogOpen(true)
-                        }}
-                        className="h-8"
-                      >
-                        Mark as returned
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleOpenExtendDialog(loan)}
-                        className="h-8"
-                      >
-                        Extend
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {currentLoans.map((loan: Loan) => {
+                  const dueDateObj = loan.dueDate ? new Date(loan.dueDate) : null
+                  const startOfToday = new Date()
+                  startOfToday.setHours(0, 0, 0, 0)
+                  const isOverdue = dueDateObj && dueDateObj < startOfToday
+                  const dueToday = dueDateObj && isToday(dueDateObj)
+                  return (
+                    <TableRow
+                      key={loan.id}
+                      className={
+                        isOverdue
+                          ? 'bg-red-50 hover:bg-red-100/50 dark:bg-red-900/20 dark:hover:bg-red-900/30'
+                          : dueToday
+                            ? 'bg-yellow-50 hover:bg-yellow-100/50 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30'
+                            : ''
+                      }
+                    >
+                      <TableCell className="font-medium">
+                        <Link
+                          to="/books/$isbn"
+                          params={{ isbn: loan.bookIsbn }}
+                          className="hover:underline"
+                        >
+                          {loan.book?.title || 'Unknown Book'}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground font-mono text-xs">
+                        {loan.bookIsbn}
+                      </TableCell>
+                      <TableCell>{renderTags(loan)}</TableCell>
+                      <TableCell>
+                        {loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : 'Not Set'}
+                      </TableCell>
+                      <TableCell className="text-right space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setLoanToReturn(loan.id)
+                            setReturnDialogOpen(true)
+                          }}
+                          className="h-8"
+                        >
+                          Mark as returned
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenExtendDialog(loan)}
+                          className="h-8"
+                        >
+                          Extend
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
                 {currentLoans.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">

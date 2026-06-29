@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Spinner } from '@renderer/components/ui/spinner'
 import { Button } from '@renderer/components/ui/button'
 import { Pencil, ArrowLeft } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, isToday } from 'date-fns'
 import PageTitle from '@renderer/components/ui/page-title'
 import { TagBadge } from '@renderer/components/TagBadge'
 import { EditBookDialog } from '@renderer/components/EditBookDialog'
@@ -165,45 +165,55 @@ function SingleBook() {
                   </td>
                 </tr>
               ) : (
-                activeLoans.map((loan) => (
-                  <tr key={loan.id} className="border-b last:border-0 hover:bg-muted/50">
-                    <td className="p-4 align-middle font-medium">
-                      <Link
-                        to="/users/$email"
-                        params={{ email: loan.borrower.email }}
-                        className="hover:underline"
-                      >
-                        {loan.borrower.name || '-'}
-                      </Link>
-                    </td>
-                    <td className="p-4 align-middle text-muted-foreground">
-                      {loan.borrower.email}
-                    </td>
-                    <td className="p-4 align-middle">
-                      {loan.dueDate ? format(new Date(loan.dueDate), 'MMM d, yyyy') : 'None'}
-                    </td>
-                    <td className="p-4 align-middle text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleReturn(loan.id)}
-                          disabled={returnBookMutation.isPending}
+                activeLoans.map((loan) => {
+                  const dueDateObj = loan.dueDate ? new Date(loan.dueDate) : null
+                  const startOfToday = new Date()
+                  startOfToday.setHours(0, 0, 0, 0)
+                  const isOverdue = dueDateObj && dueDateObj < startOfToday
+                  const dueToday = dueDateObj && isToday(dueDateObj)
+                  return (
+                    <tr
+                      key={loan.id}
+                      className={`border-b last:border-0 hover:bg-muted/50 ${isOverdue ? 'bg-red-50 hover:bg-red-100/50 dark:bg-red-900/20 dark:hover:bg-red-900/30' : dueToday ? 'bg-yellow-50 hover:bg-yellow-100/50 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30' : ''}`}
+                    >
+                      <td className="p-4 align-middle font-medium">
+                        <Link
+                          to="/users/$email"
+                          params={{ email: loan.borrower.email }}
+                          className="hover:underline"
                         >
-                          Mark as returned
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleExtend(loan.id, loan.dueDate)}
-                          disabled={extendLoanMutation.isPending}
-                        >
-                          Extend
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          {loan.borrower.name || '-'}
+                        </Link>
+                      </td>
+                      <td className="p-4 align-middle text-muted-foreground">
+                        {loan.borrower.email}
+                      </td>
+                      <td className="p-4 align-middle">
+                        {loan.dueDate ? format(new Date(loan.dueDate), 'MMM d, yyyy') : 'None'}
+                      </td>
+                      <td className="p-4 align-middle text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleReturn(loan.id)}
+                            disabled={returnBookMutation.isPending}
+                          >
+                            Mark as returned
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleExtend(loan.id, loan.dueDate)}
+                            disabled={extendLoanMutation.isPending}
+                          >
+                            Extend
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>

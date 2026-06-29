@@ -132,26 +132,44 @@ function RentalsPage() {
             </TableHeader>
             <TableBody>
               {filteredLoans.map((loan) => {
-                const isOverdue = loan.dueDate && new Date(loan.dueDate) < new Date()
+                const dueDateObj = loan.dueDate ? new Date(loan.dueDate) : null
+                const startOfToday = new Date()
+                startOfToday.setHours(0, 0, 0, 0)
+                const isOverdue = dueDateObj && dueDateObj < startOfToday
                 const isDueToday =
-                  loan.dueDate &&
-                  new Date(loan.dueDate).toDateString() === new Date().toDateString()
+                  dueDateObj && dueDateObj.toDateString() === new Date().toDateString()
                 return (
                   <TableRow
                     key={loan.id}
                     className={
-                      isDueToday
-                        ? 'bg-yellow-50 hover:bg-yellow-100/50 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30'
-                        : ''
+                      isOverdue
+                        ? 'bg-red-50 hover:bg-red-100/50 dark:bg-red-900/20 dark:hover:bg-red-900/30'
+                        : isDueToday
+                          ? 'bg-yellow-50 hover:bg-yellow-100/50 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30'
+                          : ''
                     }
                   >
                     <TableCell className="font-medium">
                       <div className="flex flex-col">
-                        <span>{loan.borrower?.name || 'Unknown'}</span>
+                        <Link
+                          to="/users/$email"
+                          params={{ email: loan.userEmail }}
+                          className="hover:underline text-primary"
+                        >
+                          {loan.borrower?.name || 'Unknown'}
+                        </Link>
                         <span className="text-xs text-muted-foreground">{loan.userEmail}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{loan.book?.title || loan.bookIsbn}</TableCell>
+                    <TableCell>
+                      <Link
+                        to="/books/$isbn"
+                        params={{ isbn: loan.bookIsbn }}
+                        className="hover:underline text-primary"
+                      >
+                        {loan.book?.title || loan.bookIsbn}
+                      </Link>
+                    </TableCell>
                     <TableCell>
                       {isOverdue ? (
                         <span className="text-red-600 font-medium text-xs bg-red-50 px-2 py-1 rounded">
