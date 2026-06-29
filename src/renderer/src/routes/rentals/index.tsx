@@ -92,12 +92,12 @@ function RentalsPage() {
   })
 
   if (!authStatus.loggedIn) {
-    return <LoginOverlay description="You must be logged in to view rentals." />
+    return <LoginOverlay description="You must be logged in to view loans." />
   }
 
   return (
     <div className="w-full">
-      <PageTitle title="Active Rentals" />
+      <PageTitle title="Active Loans" />
 
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-8">
         <div className="relative w-full sm:w-80">
@@ -111,7 +111,7 @@ function RentalsPage() {
         </div>
         <Button asChild>
           <Link to="/rentals/new">
-            <PlusIcon /> New Rental
+            <PlusIcon /> Issue Book
           </Link>
         </Button>
       </div>

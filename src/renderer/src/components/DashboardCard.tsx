@@ -9,7 +9,7 @@ export function DashboardCard({ value, label }: DashboardCardProps) {
   return (
     <Card className="bg-primary/5 h-full">
       <CardHeader>
-        <CardTitle>{label}</CardTitle>
+        <CardTitle className="font-normal text-md">{label}</CardTitle>
       </CardHeader>
       <CardContent>
         <p className="text-5xl">{value ?? '-'}</p>

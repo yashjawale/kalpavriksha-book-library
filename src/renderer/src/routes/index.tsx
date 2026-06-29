@@ -59,7 +59,7 @@ function Dashboard() {
         <PageTitle title="Dashboard" />
         <Button asChild>
           <Link to="/rentals/new">
-            <Plus className="mr-2 size-4" /> New Rental
+            <Plus className="size-4" /> Issue Book
           </Link>
         </Button>
       </div>
@@ -72,15 +72,15 @@ function Dashboard() {
           <DashboardCard value={(stats?.totalUsers || 0).toString()} label="Users" />
         </Link>
         <Link to="/rentals" className="hover:opacity-80 transition-opacity">
-          <DashboardCard value={(stats?.activeRentals || 0).toString()} label="Active Rentals" />
+          <DashboardCard value={(stats?.activeRentals || 0).toString()} label="Active Loans" />
         </Link>
         <Link to="/rentals" className="hover:opacity-80 transition-opacity">
-          <DashboardCard value={(stats?.rentalsToday || 0).toString()} label="Rented Today" />
+          <DashboardCard value={(stats?.rentalsToday || 0).toString()} label="Issued Today" />
         </Link>
         <Link to="/returns-today" className="hover:opacity-80 transition-opacity">
           <DashboardCard
             value={`${stats?.dueTodayRemaining || 0}/${stats?.dueTodayTotal || 0}`}
-            label="Today's Returns"
+            label="Returns Today"
           />
         </Link>
       </div>
@@ -88,7 +88,7 @@ function Dashboard() {
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold tracking-tight">Upcoming returns</h2>
+            <h2 className="text-xl font-semibold tracking-tight">Upcoming Returns</h2>
             <Button asChild>
               <Link to="/returns">
                 View all <ArrowRight />
@@ -149,7 +149,7 @@ function Dashboard() {
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold tracking-tight">Recent rentals</h2>
+            <h2 className="text-xl font-semibold tracking-tight">Recently Issued</h2>
             <Button asChild>
               <Link to="/rentals">
                 View all <ArrowRight />

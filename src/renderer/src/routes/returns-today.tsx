@@ -195,7 +195,7 @@ function ReturnsToday() {
           <DialogHeader>
             <DialogTitle>Mark book as returned?</DialogTitle>
             <DialogDescription>
-              This will close the active rental and return the book to the available stock.
+              This will close the active loans and return the book to the available stock.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

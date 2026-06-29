@@ -148,7 +148,7 @@ function UserDetailsPage() {
     if (!user) return
     const activeLoanIds = user.loans.filter((l) => !l.returnedAt).map((l) => l.id)
     if (activeLoanIds.length === 0) return
-    if (confirm(`Are you sure you want to mark all ${activeLoanIds.length} rentals as returned?`)) {
+    if (confirm(`Are you sure you want to mark all ${activeLoanIds.length} loans as returned?`)) {
       await window.api.loans.bulkReturnBooks(activeLoanIds)
       loadUser()
     }
@@ -211,7 +211,7 @@ function UserDetailsPage() {
 
       <div className="flex flex-col gap-4 mb-8">
         <div className="flex justify-between items-end mb-2">
-          <h2 className="text-xl font-semibold tracking-tight">Current rentals</h2>
+          <h2 className="text-xl font-semibold tracking-tight">Currently Issued</h2>
         </div>
         <Card className="rounded-xl border-border bg-card p-0">
           <CardContent className="p-0">
@@ -291,7 +291,7 @@ function UserDetailsPage() {
                 {currentLoans.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                      No active rentals.
+                      No active loans.
                     </TableCell>
                   </TableRow>
                 )}
@@ -302,7 +302,7 @@ function UserDetailsPage() {
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-semibold tracking-tight mb-2">Past rentals</h2>
+        <h2 className="text-xl font-semibold tracking-tight mb-2">Past loans</h2>
         <Card className="rounded-xl border-border bg-card p-0">
           <CardContent className="p-0">
             <Table>
@@ -336,7 +336,7 @@ function UserDetailsPage() {
                 {pastLoans.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
-                      No past rentals.
+                      No past loans.
                     </TableCell>
                   </TableRow>
                 )}
@@ -355,7 +355,7 @@ function UserDetailsPage() {
             </DialogTitle>
             <DialogDescription>
               {isBulkExtend
-                ? 'Set a new due date for all currently active rentals.'
+                ? 'Set a new due date for all currently active loans.'
                 : `Set a new due date for ${loanToExtend?.book?.title || 'this book'}.`}
             </DialogDescription>
           </DialogHeader>

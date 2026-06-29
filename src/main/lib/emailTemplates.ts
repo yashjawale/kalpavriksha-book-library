@@ -10,12 +10,12 @@ export function generateRentalEmailBody(
 
   return `Hello ${userName || ''},
 
-You have successfully rented the following book(s) from the library:
+You have successfully issued the following book(s) from the library:
 
 ${booksList}${dueDateStr}
 
 Thank you,
-Kalpavriksha Book Library`
+Kalpavriksha Library`
 }
 
 export function generateReturnEmailBody(
@@ -31,7 +31,7 @@ We have successfully received your returned book(s):
 ${booksList}
 
 Thank you,
-Kalpavriksha Book Library`
+Kalpavriksha Library`
 }
 
 export function generateExtensionEmailBody(
@@ -43,12 +43,12 @@ export function generateExtensionEmailBody(
 
   return `Hello ${userName || ''},
 
-Your rental for the following book(s) has been extended:
+Your issuance for the following book(s) has been extended:
 
 ${booksList}
 
 The new due date is ${new Date(dueDate).toLocaleDateString()}.
 
 Thank you,
-Kalpavriksha Book Library`
+Kalpavriksha Library`
 }

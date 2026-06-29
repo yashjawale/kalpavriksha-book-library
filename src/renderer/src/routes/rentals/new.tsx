@@ -213,7 +213,7 @@ function NewRentalPage() {
   }
 
   if (!authStatus.loggedIn) {
-    return <LoginOverlay description="You must be logged in to create rentals." />
+    return <LoginOverlay description="You must be logged in to issue books." />
   }
 
   // Render Combobox custom option

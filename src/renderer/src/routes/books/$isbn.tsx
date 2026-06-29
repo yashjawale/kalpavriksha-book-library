@@ -146,7 +146,7 @@ function SingleBook() {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-2xl font-semibold tracking-tight">Active rentals</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">Currently Issued</h2>
         <div className="rounded-md border">
           <table className="w-full text-sm">
             <thead>
@@ -161,7 +161,7 @@ function SingleBook() {
               {activeLoans.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="p-4 text-center text-muted-foreground">
-                    No active rentals.
+                    No active loans.
                   </td>
                 </tr>
               ) : (
@@ -211,7 +211,7 @@ function SingleBook() {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-2xl font-semibold tracking-tight">Past rentals</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">Past loans</h2>
         <div className="rounded-md border">
           <table className="w-full text-sm">
             <thead>
@@ -225,7 +225,7 @@ function SingleBook() {
               {pastLoans.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="p-4 text-center text-muted-foreground">
-                    No past rentals.
+                    No past loans.
                   </td>
                 </tr>
               ) : (
