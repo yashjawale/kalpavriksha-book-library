@@ -1,7 +1,9 @@
 export interface Tag {
   id: number
   name: string
-  createdAt: Date
+  description?: string | null
+  color?: string | null
+  createdAt?: Date
 }
 
 export interface Book {
@@ -14,6 +16,7 @@ export interface Book {
   createdAt: Date
   updatedAt: Date
   bookTags?: { tag: Tag }[]
+  loans?: { id: number }[]
 }
 
 export interface CreateBookData {

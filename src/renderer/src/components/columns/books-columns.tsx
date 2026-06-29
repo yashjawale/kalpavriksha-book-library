@@ -17,6 +17,7 @@ interface BooksColumnsProps {
   isDeleting?: boolean
   onAddStock?: (isbn: string, title: string, currentStock: number) => void
   onChangeTags?: (isbn: string, title: string) => void
+  onTitleClick?: (isbn: string) => void
   onEditDetails?: (book: Book) => void
 }
 
@@ -25,6 +26,7 @@ export function getBooksColumns({
   isDeleting,
   onAddStock,
   onChangeTags,
+  onTitleClick,
   onEditDetails
 }: BooksColumnsProps = {}): ColumnDef<Book>[] {
   return [
@@ -64,6 +66,22 @@ export function getBooksColumns({
       },
       cell: ({ row }) => {
         const title = row.getValue('title') as string | null
+        const isbn = row.original.isbn
+
+        if (onTitleClick) {
+          return (
+            <span
+              onClick={(e) => {
+                e.stopPropagation()
+                onTitleClick(isbn)
+              }}
+              className="font-medium truncate max-w-64 block hover:underline hover:text-primary transition-colors cursor-pointer"
+            >
+              {title || '-'}
+            </span>
+          )
+        }
+
         return (
           <div className="font-medium truncate max-w-64" title={title || undefined}>
             {title || '-'}

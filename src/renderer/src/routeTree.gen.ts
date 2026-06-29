@@ -9,26 +9,57 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TagsRouteImport } from './routes/tags'
+import { Route as StockCheckRouteImport } from './routes/stock-check'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReviewqueueRouteImport } from './routes/reviewqueue'
+import { Route as ReturnsTodayRouteImport } from './routes/returns-today'
+import { Route as ReturnsRouteImport } from './routes/returns'
 import { Route as QuickcaptureRouteImport } from './routes/quickcapture'
-import { Route as ManagedataRouteImport } from './routes/managedata'
 import { Route as BulkaddRouteImport } from './routes/bulkadd'
 import { Route as BarcodesRouteImport } from './routes/barcodes'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as UsersIndexRouteImport } from './routes/users/index'
+import { Route as RentalsIndexRouteImport } from './routes/rentals/index'
+import { Route as BooksIndexRouteImport } from './routes/books/index'
+import { Route as UsersEmailRouteImport } from './routes/users/$email'
+import { Route as RentalsPastRouteImport } from './routes/rentals/past'
+import { Route as RentalsNewRouteImport } from './routes/rentals/new'
+import { Route as BooksIsbnRouteImport } from './routes/books/$isbn'
 
+const TagsRoute = TagsRouteImport.update({
+  id: '/tags',
+  path: '/tags',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StockCheckRoute = StockCheckRouteImport.update({
+  id: '/stock-check',
+  path: '/stock-check',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReviewqueueRoute = ReviewqueueRouteImport.update({
   id: '/reviewqueue',
   path: '/reviewqueue',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReturnsTodayRoute = ReturnsTodayRouteImport.update({
+  id: '/returns-today',
+  path: '/returns-today',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReturnsRoute = ReturnsRouteImport.update({
+  id: '/returns',
+  path: '/returns',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QuickcaptureRoute = QuickcaptureRouteImport.update({
   id: '/quickcapture',
   path: '/quickcapture',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ManagedataRoute = ManagedataRouteImport.update({
-  id: '/managedata',
-  path: '/managedata',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BulkaddRoute = BulkaddRouteImport.update({
@@ -46,31 +77,99 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UsersIndexRoute = UsersIndexRouteImport.update({
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RentalsIndexRoute = RentalsIndexRouteImport.update({
+  id: '/rentals/',
+  path: '/rentals/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BooksIndexRoute = BooksIndexRouteImport.update({
+  id: '/books/',
+  path: '/books/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UsersEmailRoute = UsersEmailRouteImport.update({
+  id: '/users/$email',
+  path: '/users/$email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RentalsPastRoute = RentalsPastRouteImport.update({
+  id: '/rentals/past',
+  path: '/rentals/past',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RentalsNewRoute = RentalsNewRouteImport.update({
+  id: '/rentals/new',
+  path: '/rentals/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BooksIsbnRoute = BooksIsbnRouteImport.update({
+  id: '/books/$isbn',
+  path: '/books/$isbn',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/barcodes': typeof BarcodesRoute
   '/bulkadd': typeof BulkaddRoute
-  '/managedata': typeof ManagedataRoute
   '/quickcapture': typeof QuickcaptureRoute
+  '/returns': typeof ReturnsRoute
+  '/returns-today': typeof ReturnsTodayRoute
   '/reviewqueue': typeof ReviewqueueRoute
+  '/settings': typeof SettingsRoute
+  '/stock-check': typeof StockCheckRoute
+  '/tags': typeof TagsRoute
+  '/books/$isbn': typeof BooksIsbnRoute
+  '/rentals/new': typeof RentalsNewRoute
+  '/rentals/past': typeof RentalsPastRoute
+  '/users/$email': typeof UsersEmailRoute
+  '/books/': typeof BooksIndexRoute
+  '/rentals/': typeof RentalsIndexRoute
+  '/users/': typeof UsersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/barcodes': typeof BarcodesRoute
   '/bulkadd': typeof BulkaddRoute
-  '/managedata': typeof ManagedataRoute
   '/quickcapture': typeof QuickcaptureRoute
+  '/returns': typeof ReturnsRoute
+  '/returns-today': typeof ReturnsTodayRoute
   '/reviewqueue': typeof ReviewqueueRoute
+  '/settings': typeof SettingsRoute
+  '/stock-check': typeof StockCheckRoute
+  '/tags': typeof TagsRoute
+  '/books/$isbn': typeof BooksIsbnRoute
+  '/rentals/new': typeof RentalsNewRoute
+  '/rentals/past': typeof RentalsPastRoute
+  '/users/$email': typeof UsersEmailRoute
+  '/books': typeof BooksIndexRoute
+  '/rentals': typeof RentalsIndexRoute
+  '/users': typeof UsersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/barcodes': typeof BarcodesRoute
   '/bulkadd': typeof BulkaddRoute
-  '/managedata': typeof ManagedataRoute
   '/quickcapture': typeof QuickcaptureRoute
+  '/returns': typeof ReturnsRoute
+  '/returns-today': typeof ReturnsTodayRoute
   '/reviewqueue': typeof ReviewqueueRoute
+  '/settings': typeof SettingsRoute
+  '/stock-check': typeof StockCheckRoute
+  '/tags': typeof TagsRoute
+  '/books/$isbn': typeof BooksIsbnRoute
+  '/rentals/new': typeof RentalsNewRoute
+  '/rentals/past': typeof RentalsPastRoute
+  '/users/$email': typeof UsersEmailRoute
+  '/books/': typeof BooksIndexRoute
+  '/rentals/': typeof RentalsIndexRoute
+  '/users/': typeof UsersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -78,38 +177,103 @@ export interface FileRouteTypes {
     | '/'
     | '/barcodes'
     | '/bulkadd'
-    | '/managedata'
     | '/quickcapture'
+    | '/returns'
+    | '/returns-today'
     | '/reviewqueue'
+    | '/settings'
+    | '/stock-check'
+    | '/tags'
+    | '/books/$isbn'
+    | '/rentals/new'
+    | '/rentals/past'
+    | '/users/$email'
+    | '/books/'
+    | '/rentals/'
+    | '/users/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/barcodes'
     | '/bulkadd'
-    | '/managedata'
     | '/quickcapture'
+    | '/returns'
+    | '/returns-today'
     | '/reviewqueue'
+    | '/settings'
+    | '/stock-check'
+    | '/tags'
+    | '/books/$isbn'
+    | '/rentals/new'
+    | '/rentals/past'
+    | '/users/$email'
+    | '/books'
+    | '/rentals'
+    | '/users'
   id:
     | '__root__'
     | '/'
     | '/barcodes'
     | '/bulkadd'
-    | '/managedata'
     | '/quickcapture'
+    | '/returns'
+    | '/returns-today'
     | '/reviewqueue'
+    | '/settings'
+    | '/stock-check'
+    | '/tags'
+    | '/books/$isbn'
+    | '/rentals/new'
+    | '/rentals/past'
+    | '/users/$email'
+    | '/books/'
+    | '/rentals/'
+    | '/users/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BarcodesRoute: typeof BarcodesRoute
   BulkaddRoute: typeof BulkaddRoute
-  ManagedataRoute: typeof ManagedataRoute
   QuickcaptureRoute: typeof QuickcaptureRoute
+  ReturnsRoute: typeof ReturnsRoute
+  ReturnsTodayRoute: typeof ReturnsTodayRoute
   ReviewqueueRoute: typeof ReviewqueueRoute
+  SettingsRoute: typeof SettingsRoute
+  StockCheckRoute: typeof StockCheckRoute
+  TagsRoute: typeof TagsRoute
+  BooksIsbnRoute: typeof BooksIsbnRoute
+  RentalsNewRoute: typeof RentalsNewRoute
+  RentalsPastRoute: typeof RentalsPastRoute
+  UsersEmailRoute: typeof UsersEmailRoute
+  BooksIndexRoute: typeof BooksIndexRoute
+  RentalsIndexRoute: typeof RentalsIndexRoute
+  UsersIndexRoute: typeof UsersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tags': {
+      id: '/tags'
+      path: '/tags'
+      fullPath: '/tags'
+      preLoaderRoute: typeof TagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stock-check': {
+      id: '/stock-check'
+      path: '/stock-check'
+      fullPath: '/stock-check'
+      preLoaderRoute: typeof StockCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reviewqueue': {
       id: '/reviewqueue'
       path: '/reviewqueue'
@@ -117,18 +281,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewqueueRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/returns-today': {
+      id: '/returns-today'
+      path: '/returns-today'
+      fullPath: '/returns-today'
+      preLoaderRoute: typeof ReturnsTodayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/returns': {
+      id: '/returns'
+      path: '/returns'
+      fullPath: '/returns'
+      preLoaderRoute: typeof ReturnsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/quickcapture': {
       id: '/quickcapture'
       path: '/quickcapture'
       fullPath: '/quickcapture'
       preLoaderRoute: typeof QuickcaptureRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/managedata': {
-      id: '/managedata'
-      path: '/managedata'
-      fullPath: '/managedata'
-      preLoaderRoute: typeof ManagedataRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bulkadd': {
@@ -152,6 +323,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/users/': {
+      id: '/users/'
+      path: '/users'
+      fullPath: '/users/'
+      preLoaderRoute: typeof UsersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rentals/': {
+      id: '/rentals/'
+      path: '/rentals'
+      fullPath: '/rentals/'
+      preLoaderRoute: typeof RentalsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/books/': {
+      id: '/books/'
+      path: '/books'
+      fullPath: '/books/'
+      preLoaderRoute: typeof BooksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/users/$email': {
+      id: '/users/$email'
+      path: '/users/$email'
+      fullPath: '/users/$email'
+      preLoaderRoute: typeof UsersEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rentals/past': {
+      id: '/rentals/past'
+      path: '/rentals/past'
+      fullPath: '/rentals/past'
+      preLoaderRoute: typeof RentalsPastRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rentals/new': {
+      id: '/rentals/new'
+      path: '/rentals/new'
+      fullPath: '/rentals/new'
+      preLoaderRoute: typeof RentalsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/books/$isbn': {
+      id: '/books/$isbn'
+      path: '/books/$isbn'
+      fullPath: '/books/$isbn'
+      preLoaderRoute: typeof BooksIsbnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -159,9 +379,20 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BarcodesRoute: BarcodesRoute,
   BulkaddRoute: BulkaddRoute,
-  ManagedataRoute: ManagedataRoute,
   QuickcaptureRoute: QuickcaptureRoute,
+  ReturnsRoute: ReturnsRoute,
+  ReturnsTodayRoute: ReturnsTodayRoute,
   ReviewqueueRoute: ReviewqueueRoute,
+  SettingsRoute: SettingsRoute,
+  StockCheckRoute: StockCheckRoute,
+  TagsRoute: TagsRoute,
+  BooksIsbnRoute: BooksIsbnRoute,
+  RentalsNewRoute: RentalsNewRoute,
+  RentalsPastRoute: RentalsPastRoute,
+  UsersEmailRoute: UsersEmailRoute,
+  BooksIndexRoute: BooksIndexRoute,
+  RentalsIndexRoute: RentalsIndexRoute,
+  UsersIndexRoute: UsersIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

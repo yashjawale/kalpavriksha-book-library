@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma'
+import { Prisma } from '../../../generated/prisma/client'
 
 export const booksController = {
   getAll: async (
@@ -6,15 +7,15 @@ export const booksController = {
     perPage: number = 25,
     orderBy: string = 'updatedAt',
     order: 'asc' | 'desc' = 'desc',
-    isbnPrefix?: string,
+    searchQuery?: string,
     needsBarcodeSticker?: boolean
   ) => {
     const skip = (page - 1) * perPage
     const orderByClause = orderBy ? { [orderBy]: order } : {}
-    const whereClause: { isbn?: { startsWith: string }; needsBarcodeSticker?: boolean } = {}
+    const whereClause: Prisma.BookWhereInput = {}
 
-    if (isbnPrefix) {
-      whereClause.isbn = { startsWith: isbnPrefix }
+    if (searchQuery) {
+      whereClause.OR = [{ isbn: { contains: searchQuery } }, { title: { contains: searchQuery } }]
     }
 
     if (needsBarcodeSticker !== undefined) {
@@ -31,6 +32,10 @@ export const booksController = {
           include: {
             tag: true
           }
+        },
+        loans: {
+          where: { returnedAt: null },
+          select: { id: true }
         }
       }
     })
@@ -44,6 +49,27 @@ export const booksController = {
           include: {
             tag: true
           }
+        },
+        loans: {
+          where: { returnedAt: null },
+          select: { id: true }
+        }
+      }
+    })
+  },
+
+  getBookDetails: async (isbn: string) => {
+    return await prisma.book.findUnique({
+      where: { isbn },
+      include: {
+        bookTags: {
+          include: {
+            tag: true
+          }
+        },
+        loans: {
+          include: { borrower: true },
+          orderBy: { borrowedAt: 'desc' }
         }
       }
     })
@@ -86,8 +112,23 @@ export const booksController = {
 
   updateDetails: async (
     isbn: string,
-    details: { title: string; author?: string; publisher?: string }
+    details: { title: string; author?: string; publisher?: string; tagIds?: number[] }
   ) => {
+    // If tagIds are provided, we do a transaction or just update them
+    if (details.tagIds !== undefined) {
+      // First remove existing tags for this book
+      await prisma.bookTag.deleteMany({
+        where: { bookIsbn: isbn }
+      })
+
+      // Add new tags
+      if (details.tagIds.length > 0) {
+        await prisma.bookTag.createMany({
+          data: details.tagIds.map((tagId) => ({ bookIsbn: isbn, tagId }))
+        })
+      }
+    }
+
     return await prisma.book.update({
       where: { isbn },
       data: {

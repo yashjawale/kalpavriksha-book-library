@@ -11,29 +11,31 @@ datasource db {
 }
 
 model Book {
-  isbn               String   @id
-  title              String
-  author             String?
-  publisher          String?
-  totalStock         Int      @default(1)
+  isbn                String   @id
+  title               String
+  author              String?
+  publisher           String?
+  totalStock          Int      @default(1)
   needsBarcodeSticker Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   // Relations
-  loans              Loan[]
-  bookTags           BookTag[]
+  loans    Loan[]
+  bookTags BookTag[]
 
   @@map("books")
 }
 
 model Tag {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique
-  createdAt DateTime  @default(now())
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  color       String?
+  createdAt   DateTime @default(now())
 
   // Relations
-  bookTags  BookTag[]
+  bookTags BookTag[]
 
   @@map("tags")
 }
@@ -44,8 +46,8 @@ model BookTag {
   createdAt DateTime @default(now())
 
   // Relations
-  book      Book     @relation(fields: [bookIsbn], references: [isbn], onDelete: Cascade)
-  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookIsbn], references: [isbn], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([bookIsbn, tagId])
   @@index([bookIsbn])
@@ -55,9 +57,9 @@ model BookTag {
 
 model User {
   // Use email as the primary key
-  email String @id 
+  email String  @id
   name  String?
-  
+
   // Relations
   loans Loan[]
 
@@ -70,13 +72,17 @@ model Loan {
   userEmail  String
   borrowedAt DateTime  @default(now())
   returnedAt DateTime?
+  dueDate    DateTime?
 
   // Relations - linked via email string directly
-  book       Book      @relation(fields: [bookIsbn], references: [isbn])
-  borrower   User      @relation(fields: [userEmail], references: [email])
+  book     Book @relation(fields: [bookIsbn], references: [isbn])
+  borrower User @relation(fields: [userEmail], references: [email])
 
   @@index([bookIsbn])
   @@index([userEmail])
+  @@index([returnedAt])
+  @@index([dueDate])
+  @@index([borrowedAt])
   @@map("loans")
 }
 

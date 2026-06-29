@@ -7,9 +7,14 @@ import { tagsController } from './controllers/tags'
 import { captureController } from './controllers/capture'
 import { startCaptureProcessor } from './lib/captureProcessor'
 import { getBookInfoGoogleBooks, getBookInfoIndian, getBookInfoOpenLibrary } from './lib/bookApi'
-import { dbFilePath } from './lib/prisma'
+import { prisma, dbFilePath } from './lib/prisma'
+import { initializeDatabase } from './lib/initDatabase'
 import * as fs from 'fs'
-
+import { usersController } from './controllers/users'
+import { loansController } from './controllers/loans'
+import { authController } from './lib/auth'
+import { settingsController } from './controllers/settings'
+import { dashboardController } from './controllers/dashboard'
 // Helper to automatically register IPC handlers for a controller
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic controller registration requires accepting any function signature
 function registerController<T extends Record<string, (...args: any[]) => any>>(
@@ -32,6 +37,7 @@ function createWindow(): void {
     show: false,
     // minWidth: 1085,
     autoHideMenuBar: true,
+    icon: join(__dirname, '../../resources/icon.png'),
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -60,103 +66,150 @@ function createWindow(): void {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
-  // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+const gotTheLock = app.requestSingleInstanceLock()
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
-  })
-
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
-
-  // App version handler
-  ipcMain.handle('app:getVersion', () => {
-    return app.getVersion()
-  })
-
-  // Auto-register controllers
-  registerController('books', booksController)
-  registerController('tags', tagsController)
-  registerController('capture', captureController)
-
-  // Register book API handlers
-  ipcMain.handle('bookApi:getGoogleBooksInfo', async (_, isbn: string) => {
-    return await getBookInfoGoogleBooks(isbn)
-  })
-
-  ipcMain.handle('bookApi:getOpenLibraryInfo', async (_, isbn: string) => {
-    return await getBookInfoOpenLibrary(isbn)
-  })
-
-  ipcMain.handle('bookApi:getIndianBooksInfo', async (_, isbn: string) => {
-    return await getBookInfoIndian(isbn)
-  })
-
-  // Database backup/restore handlers
-  ipcMain.handle('database:export', async () => {
-    try {
-      const { filePath } = await dialog.showSaveDialog({
-        title: 'Export Database Backup',
-        defaultPath: `library-backup-${new Date().toISOString().split('T')[0]}.db`,
-        filters: [{ name: 'Database', extensions: ['db'] }]
-      })
-
-      if (!filePath) {
-        return { success: false, error: 'No file selected' }
-      }
-
-      // Check if database exists
-      if (!fs.existsSync(dbFilePath)) {
-        return { success: false, error: `Database not found at: ${dbFilePath}` }
-      }
-
-      fs.copyFileSync(dbFilePath, filePath)
-
-      return { success: true }
-    } catch (error) {
-      console.error('Error exporting database:', error)
-      return { success: false, error: (error as Error).message }
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    // Someone tried to run a second instance, we should focus our window.
+    const mainWindow = BrowserWindow.getAllWindows()[0]
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
     }
   })
 
-  ipcMain.handle('database:import', async (_, data: Uint8Array) => {
-    try {
-      const backupPath = `${dbFilePath}.backup`
+  app.whenReady().then(() => {
+    // Set app user model id for windows
+    electronApp.setAppUserModelId('com.electron')
 
-      // Create backup of current database
-      if (fs.existsSync(dbFilePath)) {
-        fs.copyFileSync(dbFilePath, backupPath)
+    // Default open or close DevTools by F12 in development
+    // and ignore CommandOrControl + R in production.
+    // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
+    app.on('browser-window-created', (_, window) => {
+      optimizer.watchWindowShortcuts(window)
+    })
+
+    // IPC test
+    ipcMain.on('ping', () => console.log('pong'))
+
+    // App version handler
+    ipcMain.handle('app:getVersion', () => {
+      return app.getVersion()
+    })
+
+    // Auto-register controllers
+    registerController('books', booksController)
+    registerController('tags', tagsController)
+    registerController('users', usersController)
+    registerController('loans', loansController)
+    registerController('auth', authController)
+    registerController('settings', settingsController)
+    registerController('dashboard', dashboardController)
+    registerController('capture', captureController)
+
+    // Register book API handlers
+    ipcMain.handle('bookApi:getGoogleBooksInfo', async (_, isbn: string) => {
+      return await getBookInfoGoogleBooks(isbn)
+    })
+
+    ipcMain.handle('bookApi:getOpenLibraryInfo', async (_, isbn: string) => {
+      return await getBookInfoOpenLibrary(isbn)
+    })
+
+    ipcMain.handle('bookApi:getIndianBooksInfo', async (_, isbn: string) => {
+      return await getBookInfoIndian(isbn)
+    })
+
+    // Database backup/restore handlers
+    ipcMain.handle('database:export', async () => {
+      try {
+        const { filePath } = await dialog.showSaveDialog({
+          title: 'Export Database Backup',
+          defaultPath: `library-backup-${new Date().toISOString().split('T')[0]}.db`,
+          filters: [{ name: 'Database', extensions: ['db'] }]
+        })
+
+        if (!filePath) {
+          return { success: false, error: 'No file selected' }
+        }
+
+        // Check if database exists
+        if (!fs.existsSync(dbFilePath)) {
+          return { success: false, error: `Database not found at: ${dbFilePath}` }
+        }
+
+        fs.copyFileSync(dbFilePath, filePath)
+
+        return { success: true }
+      } catch (error) {
+        console.error('Error exporting database:', error)
+        return { success: false, error: (error as Error).message }
       }
+    })
 
-      // Convert Uint8Array to Buffer for Node.js file operations
-      const buffer = Buffer.from(data)
+    ipcMain.handle('database:import', async (_, data: Uint8Array) => {
+      try {
+        const backupPath = `${dbFilePath}.backup`
 
-      // Write new database
-      fs.writeFileSync(dbFilePath, buffer)
+        // Create backup of current database
+        if (fs.existsSync(dbFilePath)) {
+          fs.copyFileSync(dbFilePath, backupPath)
+        }
 
-      return { success: true }
-    } catch (error) {
-      console.error('Error importing database:', error)
-      return { success: false, error: (error as Error).message }
-    }
+        // Convert Uint8Array to Buffer for Node.js file operations
+        const buffer = Buffer.from(data)
+
+        // Write new database
+        fs.writeFileSync(dbFilePath, buffer)
+
+        return { success: true }
+      } catch (error) {
+        console.error('Error importing database:', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    ipcMain.handle('database:clear', async () => {
+      try {
+        // Disconnect prisma to release file lock
+        await prisma.$disconnect()
+
+        // Delete database file
+        if (fs.existsSync(dbFilePath)) {
+          fs.unlinkSync(dbFilePath)
+        }
+
+        // Delete backup file if you want to completely reset?
+        // The prompt says "clear out database, which resets everything"
+        // We'll just reset the active database, the user can use export/import for backups.
+
+        // Re-initialize (runs migrations to create tables)
+        initializeDatabase(dbFilePath)
+
+        // Reconnect prisma
+        await prisma.$connect()
+
+        return { success: true }
+      } catch (error) {
+        console.error('Error clearing database:', error)
+        return { success: false, error: (error as Error).message }
+      }
+    })
+
+    // Start the background capture processor
+    startCaptureProcessor()
+
+    createWindow()
+
+    app.on('activate', function () {
+      // On macOS it's common to re-create a window in the app when the
+      // dock icon is clicked and there are no other windows open.
+      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    })
   })
-
-  // Start the background capture processor
-  startCaptureProcessor()
-
-  createWindow()
-
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-})
+}
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

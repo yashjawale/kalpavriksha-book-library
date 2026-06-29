@@ -19,6 +19,13 @@ export const tagsController = {
     })
   },
 
+  update: async (id: number, data: { name?: string; description?: string; color?: string }) => {
+    return await prisma.tag.update({
+      where: { id },
+      data
+    })
+  },
+
   createMany: async (names: string[]) => {
     // Create tags one by one, catching duplicate errors
     for (const name of names) {

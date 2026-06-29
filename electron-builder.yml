@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: kalpavriksha-book-library
+appId: com.kalpavrikshaacademy.library
+productName: Kalpavriksha Library
 directories:
   buildResources: build
 files:
@@ -15,7 +15,8 @@ extraResources:
 asarUnpack:
   - resources/**
 win:
-  executableName: kalpavriksha-book-library
+  icon: resources/icon.ico
+  executableName: kalpavriksha-library
   target:
     - nsis
     - msi
@@ -27,6 +28,7 @@ nsis:
 msi:
   artifactName: ${name}-${version}.${ext}
 mac:
+  icon: resources/icon.icns
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
@@ -37,11 +39,12 @@ mac:
 dmg:
   artifactName: ${name}-${version}.${ext}
 linux:
+  icon: resources/icon.png
   target:
     - AppImage
     - deb
     - rpm
-  maintainer: electronjs.org
+  maintainer: yashjawale.in
   category: Utility
 appImage:
   artifactName: ${name}-${version}.${ext}

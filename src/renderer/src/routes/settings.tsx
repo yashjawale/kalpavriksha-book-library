@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@renderer/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@renderer/components/ui/card'
+import { Input } from '@renderer/components/ui/input'
+import { Label } from '@renderer/components/ui/label'
 import { createFileRoute } from '@tanstack/react-router'
 import { Spinner } from '@renderer/components/ui/spinner'
-import { Download, Upload } from 'lucide-react'
+import { Download, Upload, AlertTriangle, Settings as SettingsIcon } from 'lucide-react'
 import { pdf } from '@react-pdf/renderer'
 import { BookCatalogPDF } from '@renderer/components/BookCatalogPDF'
 import type { Book } from '@renderer/types/book'
@@ -12,12 +14,44 @@ import Logo from '../assets/images/logo.svg'
 import Papa from 'papaparse'
 import PageTitle from '@renderer/components/ui/page-title'
 
-export const Route = createFileRoute('/managedata')({
-  component: ManageData
+export const Route = createFileRoute('/settings')({
+  component: Settings
 })
 
-export default function ManageData() {
+function Settings() {
   const [isExporting, setIsExporting] = useState(false)
+  const [googleClientId, setGoogleClientId] = useState('')
+  const [googleClientSecret, setGoogleClientSecret] = useState('')
+  const [enableEmails, setEnableEmails] = useState(false)
+  const [isSavingSettings, setIsSavingSettings] = useState(false)
+
+  // Fetch settings on mount
+  useEffect(() => {
+    let mounted = true
+    window.api.settings.get().then((settings) => {
+      if (mounted) {
+        setGoogleClientId(settings.googleClientId || '')
+        setGoogleClientSecret(settings.googleClientSecret || '')
+        setEnableEmails(settings.enableEmails || false)
+      }
+    })
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const handleSaveSettings = async () => {
+    setIsSavingSettings(true)
+    try {
+      await window.api.settings.update({ googleClientId, googleClientSecret, enableEmails })
+      alert('Settings saved successfully!')
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      alert('Failed to save settings.')
+    } finally {
+      setIsSavingSettings(false)
+    }
+  }
 
   const { data: books = [], isLoading } = useQuery<Book[]>({
     queryKey: ['books'],
@@ -156,6 +190,26 @@ export default function ManageData() {
     }
   }
 
+  const handleClearDatabase = async () => {
+    const confirmed = confirm(
+      'Are you absolutely sure you want to clear the entire database?\n\nThis will permanently delete all books, tags, loans, and users. This action CANNOT be undone. Please ensure you have exported a backup first.'
+    )
+    if (!confirmed) return
+
+    try {
+      const result = await window.electron.ipcRenderer.invoke('database:clear')
+      if (result.success) {
+        alert('Database cleared successfully! The application will now reload.')
+        window.location.reload()
+      } else {
+        alert(`Failed to clear database: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('Error clearing database:', error)
+      alert('Failed to clear database. Please try again.')
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -165,7 +219,72 @@ export default function ManageData() {
   }
   return (
     <>
-      <PageTitle title="Data & Reports" />
+      <PageTitle title="Settings" />
+
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <SettingsIcon className="size-5 mr-2" />
+            Google OAuth Configuration
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground mb-4">
+            Configure your Google OAuth credentials to enable Google Sign-In for users.
+          </p>
+          <div className="flex flex-col gap-4 max-w-xl">
+            <div className="grid gap-2">
+              <Label htmlFor="clientId">Client ID</Label>
+              <Input
+                id="clientId"
+                type="text"
+                placeholder="Enter Google Client ID"
+                value={googleClientId}
+                onChange={(e) => setGoogleClientId(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="clientSecret">Client Secret</Label>
+              <Input
+                id="clientSecret"
+                type="password"
+                placeholder="Enter Google Client Secret"
+                value={googleClientSecret}
+                onChange={(e) => setGoogleClientSecret(e.target.value)}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2 pt-2 pb-2">
+              <input
+                type="checkbox"
+                id="enableEmails"
+                className="w-4 h-4 rounded border-gray-300"
+                checked={enableEmails}
+                onChange={(e) => setEnableEmails(e.target.checked)}
+              />
+              <Label htmlFor="enableEmails" className="cursor-pointer">
+                Enable Transactional Emails
+              </Label>
+            </div>
+            <p className="text-sm text-muted-foreground -mt-2">
+              Automatically send emails for new rentals, extensions, and returns from the logged-in
+              Google account.
+            </p>
+
+            <Button onClick={handleSaveSettings} disabled={isSavingSettings} className="w-fit mt-2">
+              {isSavingSettings ? (
+                <>
+                  <Spinner className="size-4 mr-2" />
+                  Saving...
+                </>
+              ) : (
+                'Save Configuration'
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="mb-4">
         <CardHeader>
           <CardTitle>Data & Reports</CardTitle>
@@ -218,6 +337,24 @@ export default function ManageData() {
               Restore a backup file
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4 border-destructive/50">
+        <CardHeader>
+          <CardTitle className="text-destructive flex items-center">
+            <AlertTriangle className="size-5 mr-2" />
+            Danger Zone
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            Permanently delete all data from the database. This action cannot be undone.
+          </p>
+          <Button variant="destructive" className="mt-4" onClick={handleClearDatabase}>
+            <AlertTriangle className="size-4 mr-2" />
+            Clear Database
+          </Button>
         </CardContent>
       </Card>
     </>

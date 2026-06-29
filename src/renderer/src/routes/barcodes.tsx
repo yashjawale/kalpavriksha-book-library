@@ -26,7 +26,7 @@ export const Route = createFileRoute('/barcodes')({
   component: BarcodesPage
 })
 
-export default function BarcodesPage() {
+function BarcodesPage() {
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
   const [isGenerating, setIsGenerating] = useState(false)
   const [printCounts, setPrintCounts] = useState<Record<string, number>>({})
@@ -81,6 +81,7 @@ export default function BarcodesPage() {
     filteredBooks.forEach((book) => {
       counts[book.isbn] = book.totalStock
     })
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPrintCounts(counts)
   }, [filteredBooks])
 
@@ -144,13 +145,16 @@ export default function BarcodesPage() {
     }
   }
 
-  const handleDownloadPDF = async (): Promise<void> => {
+  const handleDownloadPDF = async (booksToPrint: Book[] = []): Promise<void> => {
     if (isGenerating) return
 
     try {
       setIsGenerating(true)
-      const selectedISBNs = Object.keys(rowSelection).filter((key) => rowSelection[key])
-      const booksToPrint = filteredBooks.filter((b) => selectedISBNs.includes(b.isbn))
+
+      if (booksToPrint.length === 0) {
+        const selectedISBNs = Object.keys(rowSelection).filter((key) => rowSelection[key])
+        booksToPrint = filteredBooks.filter((b) => selectedISBNs.includes(b.isbn))
+      }
 
       if (booksToPrint.length === 0) {
         alert('Please select at least one book to generate barcodes.')
@@ -265,7 +269,22 @@ export default function BarcodesPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          <Button onClick={handleDownloadPDF} disabled={selectedBooks.size === 0 || isGenerating}>
+          <Button
+            variant="secondary"
+            onClick={() => handleDownloadPDF(filteredBooks)}
+            disabled={filteredBooks.length === 0 || isGenerating}
+          >
+            {isGenerating ? (
+              <Spinner className="size-4 mr-2" />
+            ) : (
+              <Download className="size-4 mr-2" />
+            )}
+            Download All PDF ({filteredBooks.length})
+          </Button>
+          <Button
+            onClick={() => handleDownloadPDF()}
+            disabled={selectedBooks.size === 0 || isGenerating}
+          >
             {isGenerating ? (
               <>
                 <Spinner className="size-4 mr-2" />

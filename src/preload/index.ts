@@ -25,6 +25,7 @@ const api = {
         needsBarcodeSticker
       ),
     getById: (isbn: string) => ipcRenderer.invoke('books:getById', isbn),
+    getBookDetails: (isbn: string) => ipcRenderer.invoke('books:getBookDetails', isbn),
     create: (data: {
       isbn: string
       title: string
@@ -36,7 +37,7 @@ const api = {
     }) => ipcRenderer.invoke('books:create', data),
     updateDetails: (
       isbn: string,
-      details: { title: string; author?: string; publisher?: string }
+      details: { title: string; author?: string; publisher?: string; tagIds?: number[] }
     ) => ipcRenderer.invoke('books:updateDetails', isbn, details),
     updateStock: (isbn: string, stockCount: number) =>
       ipcRenderer.invoke('books:updateStock', isbn, stockCount),
@@ -55,12 +56,53 @@ const api = {
     getAll: () => ipcRenderer.invoke('tags:getAll'),
     getById: (id: number) => ipcRenderer.invoke('tags:getById', id),
     create: (name: string) => ipcRenderer.invoke('tags:create', name),
+    update: (id: number, data: { name?: string; description?: string; color?: string }) =>
+      ipcRenderer.invoke('tags:update', id, data),
     createMany: (names: string[]) => ipcRenderer.invoke('tags:createMany', names),
     delete: (id: number) => ipcRenderer.invoke('tags:delete', id),
     addTagsToBook: (isbn: string, tagIds: number[]) =>
       ipcRenderer.invoke('tags:addTagsToBook', isbn, tagIds),
     removeTagFromBook: (isbn: string, tagId: number) =>
       ipcRenderer.invoke('tags:removeTagFromBook', isbn, tagId)
+  },
+  auth: {
+    login: () => ipcRenderer.invoke('auth:login'),
+    logout: () => ipcRenderer.invoke('auth:logout'),
+    getStatus: () => ipcRenderer.invoke('auth:getStatus'),
+    searchUsers: (query: string) => ipcRenderer.invoke('auth:searchUsers', query),
+    getUserDetails: (email: string) => ipcRenderer.invoke('auth:getUserDetails', email)
+  },
+  settings: {
+    get: () => ipcRenderer.invoke('settings:get'),
+    update: (settings: Record<string, unknown>) => ipcRenderer.invoke('settings:update', settings)
+  },
+  users: {
+    getAll: (page?: number, perPage?: number, searchQuery?: string) =>
+      ipcRenderer.invoke('users:getAll', page, perPage, searchQuery),
+    getByEmail: (email: string) => ipcRenderer.invoke('users:getByEmail', email),
+    updateName: (email: string, name: string) => ipcRenderer.invoke('users:updateName', email, name)
+  },
+  loans: {
+    getAllActive: () => ipcRenderer.invoke('loans:getAllActive'),
+    getUpcomingReturns: () => ipcRenderer.invoke('loans:getUpcomingReturns'),
+    getReturnsToday: () => ipcRenderer.invoke('loans:getReturnsToday'),
+    getPastLoans: (page: number, limit: number, query: string) =>
+      ipcRenderer.invoke('loans:getPastLoans', page, limit, query),
+    create: (data: {
+      bookIsbns: string[]
+      userEmail: string
+      userName?: string
+      dueDate?: Date | null
+    }) => ipcRenderer.invoke('loans:create', data),
+    returnBook: (loanId: number) => ipcRenderer.invoke('loans:returnBook', loanId),
+    extendLoan: (loanId: number, dueDate: Date) =>
+      ipcRenderer.invoke('loans:extendLoan', loanId, dueDate),
+    bulkReturnBooks: (loanIds: number[]) => ipcRenderer.invoke('loans:bulkReturnBooks', loanIds),
+    bulkExtendLoans: (loanIds: number[], dueDate: Date) =>
+      ipcRenderer.invoke('loans:bulkExtendLoans', loanIds, dueDate)
+  },
+  dashboard: {
+    getStats: () => ipcRenderer.invoke('dashboard:getStats')
   }
 }
 
