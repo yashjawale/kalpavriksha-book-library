@@ -1,6 +1,6 @@
 {
   "name": "kalpavriksha-library",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A custom application designed to help keep track of library assets.",
   "main": "./out/main/index.js",
   "author": "yashjawale.in",
