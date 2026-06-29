@@ -15,7 +15,16 @@ export function LoginOverlay({
       <Lock className="w-16 h-16 text-muted-foreground" />
       <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
       <p className="text-muted-foreground">{description}</p>
-      <Button onClick={() => window.api.auth.login().then(() => window.location.reload())}>
+      <Button
+        onClick={async () => {
+          const result = await window.api.auth.login()
+          if (result && !result.success) {
+            alert(`Login failed: ${result.error}`)
+          } else {
+            window.location.reload()
+          }
+        }}
+      >
         Login with Google
       </Button>
     </div>

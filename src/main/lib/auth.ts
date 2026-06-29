@@ -27,7 +27,7 @@ export const authController = {
         if (!googleClientId || !googleClientSecret) {
           resolve({
             success: false,
-            error: 'Missing Google OAuth configuration. Please set it in the Manage Data page.'
+            error: 'Missing Google OAuth configuration. Please set it in the Settings page.'
           })
           return
         }
