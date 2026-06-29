@@ -37,6 +37,7 @@ function createWindow(): void {
     show: false,
     // minWidth: 1085,
     autoHideMenuBar: true,
+    icon: join(__dirname, '../../resources/icon.png'),
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

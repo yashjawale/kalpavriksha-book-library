@@ -201,7 +201,7 @@ function UserDetailsPage() {
               <Pencil className="w-4 h-4" />
             </Button>
           </div>
-          {orgUnit && (
+          {orgUnit && orgUnit !== '/' && (
             <p className="text-primary py-1 px-2 rounded-full border border-primary w-fit text-sm">
               {orgUnit.startsWith('/') ? orgUnit.slice(1) : orgUnit}
             </p>

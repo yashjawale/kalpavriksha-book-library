@@ -1,10 +1,10 @@
 {
-  "name": "kalpavriksha-book-library",
+  "name": "Kalpavriksha Library",
   "version": "0.1.9",
-  "description": "An Electron application with React and TypeScript",
+  "description": "A custom application designed to help keep track of library assets.",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "yashjawale.in",
+  "homepage": "https://kalpavrikshaacademy.com",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",

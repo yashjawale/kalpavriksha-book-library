@@ -7,7 +7,7 @@ interface DashboardCardProps {
 
 export function DashboardCard({ value, label }: DashboardCardProps) {
   return (
-    <Card className="bg-primary/5">
+    <Card className="bg-primary/5 h-full">
       <CardHeader>
         <CardTitle>{label}</CardTitle>
       </CardHeader>

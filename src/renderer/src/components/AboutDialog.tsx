@@ -39,7 +39,7 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
           <div className="flex items-center gap-4 mb-4">
             <img src={Logo} alt="Logo" width={64} />
             <div>
-              <DialogTitle className="text-2xl">Kalpavriksha Book Library</DialogTitle>
+              <DialogTitle className="text-2xl">Kalpavriksha Library</DialogTitle>
               <DialogDescription>Version {version}</DialogDescription>
             </div>
           </div>
@@ -47,12 +47,12 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
         <div className="space-y-4">
           <div>
             <p className="text-sm text-muted-foreground">
-              A powerful library management system built with Electron, React, and TypeScript.
+              A custom application designed to help keep track of library assets.
             </p>
           </div>
           <div className="pt-4 border-t">
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} Kalpavriksha Book Library. All rights reserved.
+              © {new Date().getFullYear()} Kalpavriksha Academy. All rights reserved.
             </p>
           </div>
         </div>
