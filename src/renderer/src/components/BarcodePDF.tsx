@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
   },
   barcodeItem: {
     width: '25%',
-    padding: 7,
+    padding: 6.7,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -41,7 +41,8 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap'
+    whiteSpace: 'nowrap',
+    maxLines: 1
   },
   barcodeImage: {
     width: 120,
