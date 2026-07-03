@@ -3,7 +3,7 @@ export function generateRentalEmailBody(
   books: { title: string; isbn: string }[],
   dueDate?: Date | null
 ): string {
-  const booksList = books.map((b) => `- ${b.title} (ISBN: ${b.isbn})`).join('\n')
+  const booksList = books.map((b) => `- ${b.title}`).join('\n')
   const dueDateStr = dueDate
     ? `\n\nPlease ensure they are returned by ${new Date(dueDate).toLocaleDateString()}.`
     : ''
@@ -22,7 +22,7 @@ export function generateReturnEmailBody(
   userName: string,
   books: { title: string; isbn: string }[]
 ): string {
-  const booksList = books.map((b) => `- ${b.title} (ISBN: ${b.isbn})`).join('\n')
+  const booksList = books.map((b) => `- ${b.title}`).join('\n')
 
   return `Hello ${userName || ''},
 
@@ -39,7 +39,7 @@ export function generateExtensionEmailBody(
   books: { title: string; isbn: string }[],
   dueDate: Date
 ): string {
-  const booksList = books.map((b) => `- ${b.title} (ISBN: ${b.isbn})`).join('\n')
+  const booksList = books.map((b) => `- ${b.title}`).join('\n')
 
   return `Hello ${userName || ''},
 
