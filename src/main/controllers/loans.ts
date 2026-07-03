@@ -130,7 +130,7 @@ export const loansController = {
 
     const settings = getSettings()
     if (settings.enableEmails && data.userEmail && createdLoans.length > 0) {
-      const subject = `Library Rental Confirmation: ${createdLoans.length > 1 ? `${createdLoans.length} books` : 'a book'}`
+      const subject = `[Library] Issuance Confirmation: ${createdLoans.length > 1 ? `${createdLoans.length} books` : 'a book'}`
 
       // Need to fetch book info to pass to the template
       const loansWithBooks = await prisma.loan.findMany({
@@ -160,7 +160,7 @@ export const loansController = {
 
     const settings = getSettings()
     if (settings.enableEmails && loan.userEmail) {
-      const subject = `Library Book Returned: ${loan.book?.title || loan.bookIsbn}`
+      const subject = `[Library] Book Returned: ${loan.book?.title || loan.bookIsbn}`
       const bookData = [{ title: loan.book?.title || loan.bookIsbn, isbn: loan.bookIsbn }]
       const body = generateReturnEmailBody(loan.borrower?.name || '', bookData)
       sendTransactionEmail(loan.userEmail, subject, body).catch(console.error)
@@ -178,7 +178,7 @@ export const loansController = {
 
     const settings = getSettings()
     if (settings.enableEmails && loan.userEmail) {
-      const subject = `Library Book Extension: ${loan.book?.title || loan.bookIsbn}`
+      const subject = `[Library] Book Extension: ${loan.book?.title || loan.bookIsbn}`
       const bookData = [{ title: loan.book?.title || loan.bookIsbn, isbn: loan.bookIsbn }]
       const body = generateExtensionEmailBody(loan.borrower?.name || '', bookData, dueDate)
       sendTransactionEmail(loan.userEmail, subject, body).catch(console.error)
@@ -218,7 +218,7 @@ export const loansController = {
       )
 
       for (const [email, userLoans] of Object.entries(loansByUser)) {
-        const subject = `Library Books Returned`
+        const subject = `[Library] Books Returned`
         const body = generateReturnEmailBody(userLoans.name, userLoans.books)
         sendTransactionEmail(email, subject, body).catch(console.error)
       }
@@ -258,7 +258,7 @@ export const loansController = {
       )
 
       for (const [email, userLoans] of Object.entries(loansByUser)) {
-        const subject = `Library Books Extended`
+        const subject = `[Library] Books Extended`
         const body = generateExtensionEmailBody(userLoans.name, userLoans.books, dueDate)
         sendTransactionEmail(email, subject, body).catch(console.error)
       }
