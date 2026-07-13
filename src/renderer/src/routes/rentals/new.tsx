@@ -250,8 +250,8 @@ function NewRentalPage() {
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
         <div>
-          <PageTitle title="New Rental" />
-          <p className="text-muted-foreground">Rent books to a student.</p>
+          <PageTitle title="New Issue" />
+          <p className="text-muted-foreground">Issue books to a library member.</p>
         </div>
         <Button variant="ghost" asChild>
           <Link to="/rentals">Cancel</Link>
