@@ -39,7 +39,7 @@ function ManageBooks() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
-  const [addStockDialogOpen, setAddStockDialogOpen] = useState(false)
+  const [editStockDialogOpen, setEditStockDialogOpen] = useState(false)
   const [changeTagsDialogOpen, setChangeTagsDialogOpen] = useState(false)
   const [bulkChangeTagsDialogOpen, setBulkChangeTagsDialogOpen] = useState(false)
   const [bulkAddTagDialogOpen, setBulkAddTagDialogOpen] = useState(false)
@@ -48,10 +48,11 @@ function ManageBooks() {
     isbn: string
     title: string
     currentStock: number
+    activeRentals: number
   } | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editDetailsBook, setEditDetailsBook] = useState<Book | null>(null)
-  const [stockToAdd, setStockToAdd] = useState(1)
+  const [newStockValue, setNewStockValue] = useState(1)
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
   const [selectedTagFilters, setSelectedTagFilters] = useState<number[]>([])
   const [selectedAddTagIds, setSelectedAddTagIds] = useState<number[]>([])
@@ -193,21 +194,32 @@ function ManageBooks() {
     }
   }
 
-  const handleAddStock = (isbn: string, title: string, currentStock: number): void => {
-    setSelectedBook({ isbn, title, currentStock })
-    setStockToAdd(1)
-    setAddStockDialogOpen(true)
+  const handleEditStock = (
+    isbn: string,
+    title: string,
+    currentStock: number,
+    activeRentals: number
+  ): void => {
+    setSelectedBook({ isbn, title, currentStock, activeRentals })
+    setNewStockValue(currentStock)
+    setEditStockDialogOpen(true)
   }
 
-  const handleAddStockConfirm = async (): Promise<void> => {
+  const handleEditStockConfirm = async (): Promise<void> => {
     if (!selectedBook) return
 
+    if (newStockValue < selectedBook.activeRentals) {
+      alert(
+        `Cannot set stock lower than active rentals (${selectedBook.activeRentals} book(s) currently issued).`
+      )
+      return
+    }
+
     try {
-      const newStock = selectedBook.currentStock + stockToAdd
-      await updateStockMutation.mutateAsync({ isbn: selectedBook.isbn, newStock })
-      setAddStockDialogOpen(false)
+      await updateStockMutation.mutateAsync({ isbn: selectedBook.isbn, newStock: newStockValue })
+      setEditStockDialogOpen(false)
       setSelectedBook(null)
-      setStockToAdd(1)
+      setNewStockValue(1)
     } catch (error) {
       console.error('Error updating stock:', error)
       alert('Failed to update stock. Please try again.')
@@ -216,7 +228,7 @@ function ManageBooks() {
 
   const handleChangeTags = (isbn: string, title: string): void => {
     const book = allBooks.find((b) => b.isbn === isbn)
-    setSelectedBook({ isbn, title, currentStock: 0 })
+    setSelectedBook({ isbn, title, currentStock: 0, activeRentals: 0 })
     setSelectedTagIds(book?.bookTags?.map((bt) => bt.tag.id) || [])
     setChangeTagsDialogOpen(true)
   }
@@ -304,7 +316,7 @@ function ManageBooks() {
   const columns = getBooksColumns({
     onDelete: handleDelete,
     isDeleting: deleteBookMutation.isPending,
-    onAddStock: handleAddStock,
+    onEditStock: handleEditStock,
     onChangeTags: handleChangeTags,
     onEditDetails: handleEditDetails,
     onTitleClick: (isbn) => {
@@ -427,37 +439,45 @@ function ManageBooks() {
         getRowId={(book) => book.isbn}
       />
 
-      {/* Add Stock Dialog */}
-      <Dialog open={addStockDialogOpen} onOpenChange={setAddStockDialogOpen}>
+      {/* Edit Stock Dialog */}
+      <Dialog open={editStockDialogOpen} onOpenChange={setEditStockDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Stock</DialogTitle>
+            <DialogTitle>Edit Stock</DialogTitle>
             <DialogDescription>
-              Add stock to: {selectedBook?.title}
+              Edit stock for: {selectedBook?.title}
               <br />
-              Current stock: {selectedBook?.currentStock}
+              Current stock: {selectedBook?.currentStock} | Active rentals:{' '}
+              {selectedBook?.activeRentals}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="stockToAdd">Stock to Add</Label>
+              <Label htmlFor="newStockValue">New Stock</Label>
               <Input
-                id="stockToAdd"
+                id="newStockValue"
                 type="number"
-                min="1"
-                value={stockToAdd}
-                onChange={(e) => setStockToAdd(Math.max(1, parseInt(e.target.value) || 1))}
+                min={selectedBook?.activeRentals || 0}
+                value={newStockValue}
+                onChange={(e) => setNewStockValue(Math.max(0, parseInt(e.target.value) || 0))}
               />
             </div>
-            <div className="text-sm text-muted-foreground">
-              New stock will be: {(selectedBook?.currentStock || 0) + stockToAdd}
-            </div>
+            {newStockValue < (selectedBook?.activeRentals || 0) && (
+              <div className="text-sm text-destructive">
+                New stock cannot be lower than active rentals ({selectedBook?.activeRentals}).
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddStockDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setEditStockDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddStockConfirm} disabled={updateStockMutation.isPending}>
+            <Button
+              onClick={handleEditStockConfirm}
+              disabled={
+                updateStockMutation.isPending || newStockValue < (selectedBook?.activeRentals || 0)
+              }
+            >
               {updateStockMutation.isPending ? (
                 <>
                   <Spinner className="size-4 mr-2" />

@@ -278,7 +278,7 @@ function UserDetailsPage() {
                       </TableCell>
                       <TableCell>{renderTags(loan)}</TableCell>
                       <TableCell>
-                        {loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : 'Not Set'}
+                        {loan.dueDate ? format(new Date(loan.dueDate), 'dd/MM/yy') : 'Not Set'}
                       </TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button
@@ -346,7 +346,7 @@ function UserDetailsPage() {
                       {loan.bookIsbn}
                     </TableCell>
                     <TableCell>{renderTags(loan)}</TableCell>
-                    <TableCell>{new Date(loan.returnedAt!).toLocaleDateString()}</TableCell>
+                    <TableCell>{format(new Date(loan.returnedAt!), 'dd/MM/yy')}</TableCell>
                   </TableRow>
                 ))}
                 {pastLoans.length === 0 && (

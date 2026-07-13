@@ -13,6 +13,7 @@ import type { Book } from '@renderer/types/book'
 import Logo from '../assets/images/logo.svg'
 import Papa from 'papaparse'
 import PageTitle from '@renderer/components/ui/page-title'
+import { format } from 'date-fns'
 
 export const Route = createFileRoute('/settings')({
   component: Settings
@@ -65,7 +66,7 @@ function Settings() {
         Title: book.title,
         ISBN: book.isbn,
         Stock: book.totalStock,
-        'Date Added': new Date(book.createdAt).toLocaleDateString('en-IN')
+        'Date Added': format(new Date(book.createdAt), 'dd/MM/yy')
       }))
 
       // Generate CSV using papaparse
