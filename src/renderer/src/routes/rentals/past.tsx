@@ -13,6 +13,7 @@ import { Button } from '@renderer/components/ui/button'
 import { useSimpleDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import PageTitle from '@renderer/components/ui/page-title'
+import { format } from 'date-fns'
 
 export const Route = createFileRoute('/rentals/past')({
   component: PastRentalsPage
@@ -150,9 +151,9 @@ function PastRentalsPage() {
                       {loan.book?.title || loan.bookIsbn}
                     </Link>
                   </TableCell>
-                  <TableCell>{new Date(loan.borrowedAt).toLocaleDateString()}</TableCell>
+                  <TableCell>{format(new Date(loan.borrowedAt), 'dd/MM/yy')}</TableCell>
                   <TableCell>
-                    {loan.returnedAt ? new Date(loan.returnedAt).toLocaleDateString() : 'N/A'}
+                    {loan.returnedAt ? format(new Date(loan.returnedAt), 'dd/MM/yy') : 'N/A'}
                   </TableCell>
                 </TableRow>
               ))

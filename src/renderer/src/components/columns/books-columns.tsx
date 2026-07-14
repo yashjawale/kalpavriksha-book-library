@@ -1,7 +1,8 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { Book } from '@renderer/types/book'
 import { Button } from '@renderer/components/ui/button'
-import { ArrowUpDown, MoreVertical, Plus, Tag, Pencil } from 'lucide-react'
+import { ArrowUpDown, MoreVertical, Tag, Pencil } from 'lucide-react'
+import { format } from 'date-fns'
 import { TagBadge } from '@renderer/components/TagBadge'
 import { Checkbox } from '@renderer/components/ui/checkbox'
 import {
@@ -15,7 +16,7 @@ import {
 interface BooksColumnsProps {
   onDelete?: (isbn: string, title: string) => Promise<void>
   isDeleting?: boolean
-  onAddStock?: (isbn: string, title: string, currentStock: number) => void
+  onEditStock?: (isbn: string, title: string, currentStock: number, activeRentals: number) => void
   onChangeTags?: (isbn: string, title: string) => void
   onTitleClick?: (isbn: string) => void
   onEditDetails?: (book: Book) => void
@@ -24,7 +25,7 @@ interface BooksColumnsProps {
 export function getBooksColumns({
   onDelete,
   isDeleting,
-  onAddStock,
+  onEditStock,
   onChangeTags,
   onTitleClick,
   onEditDetails
@@ -197,13 +198,11 @@ export function getBooksColumns({
       cell: ({ row }) => {
         const date = row.getValue('createdAt') as Date
         return (
-          <div className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString('en-IN')}
-          </div>
+          <div className="text-muted-foreground text-sm">{format(new Date(date), 'dd/MM/yy')}</div>
         )
       }
     },
-    ...(onDelete || onAddStock || onChangeTags || onEditDetails
+    ...(onDelete || onEditStock || onChangeTags || onEditDetails
       ? [
           {
             id: 'actions',
@@ -224,14 +223,19 @@ export function getBooksColumns({
                         Edit Details
                       </DropdownMenuItem>
                     )}
-                    {onAddStock && (
+                    {onEditStock && (
                       <DropdownMenuItem
                         onClick={() =>
-                          onAddStock(row.original.isbn, row.original.title, row.original.totalStock)
+                          onEditStock(
+                            row.original.isbn,
+                            row.original.title,
+                            row.original.totalStock,
+                            row.original.loans?.length || 0
+                          )
                         }
                       >
-                        <Plus className="mr-2 size-4" />
-                        Add Stock
+                        <Pencil className="mr-2 size-4" />
+                        Edit Stock
                       </DropdownMenuItem>
                     )}
                     {onChangeTags && (
@@ -242,7 +246,7 @@ export function getBooksColumns({
                         Change Tags
                       </DropdownMenuItem>
                     )}
-                    {(onAddStock || onChangeTags || onEditDetails) && onDelete && (
+                    {(onEditStock || onChangeTags || onEditDetails) && onDelete && (
                       <DropdownMenuSeparator />
                     )}
                     {onDelete && (

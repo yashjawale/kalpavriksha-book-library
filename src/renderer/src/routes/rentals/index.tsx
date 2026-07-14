@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@renderer/components/ui/dialog'
+import { format } from 'date-fns'
 import PageTitle from '@renderer/components/ui/page-title'
 
 export const Route = createFileRoute('/rentals/')({
@@ -182,7 +183,7 @@ function RentalsPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : 'Not Set'}
+                      {loan.dueDate ? format(new Date(loan.dueDate), 'dd/MM/yy') : 'Not Set'}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

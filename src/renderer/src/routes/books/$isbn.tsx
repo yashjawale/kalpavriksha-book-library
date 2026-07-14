@@ -8,6 +8,16 @@ import PageTitle from '@renderer/components/ui/page-title'
 import { TagBadge } from '@renderer/components/TagBadge'
 import { EditBookDialog } from '@renderer/components/EditBookDialog'
 import { useState } from 'react'
+import { Label } from '@renderer/components/ui/label'
+import { Input } from '@renderer/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@renderer/components/ui/dialog'
 
 export const Route = createFileRoute('/books/$isbn')({
   component: SingleBook
@@ -17,6 +27,8 @@ function SingleBook() {
   const { isbn } = Route.useParams()
   const queryClient = useQueryClient()
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editStockDialogOpen, setEditStockDialogOpen] = useState(false)
+  const [newStockValue, setNewStockValue] = useState(1)
 
   const { data: book, isLoading } = useQuery({
     queryKey: ['book', isbn],
@@ -35,6 +47,15 @@ function SingleBook() {
   const extendLoanMutation = useMutation({
     mutationFn: async ({ loanId, dueDate }: { loanId: number; dueDate: Date }) => {
       return await window.api.loans.extendLoan(loanId, dueDate)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['book', isbn] })
+    }
+  })
+
+  const updateStockMutation = useMutation({
+    mutationFn: async (newStock: number) => {
+      return await window.api.books.updateStock(isbn, newStock)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['book', isbn] })
@@ -60,6 +81,26 @@ function SingleBook() {
     } catch (error) {
       console.error('Failed to extend loan:', error)
       alert('Failed to extend loan. Please try again.')
+    }
+  }
+
+  const handleEditStockConfirm = async (): Promise<void> => {
+    if (!book) return
+
+    const activeLoansCount = book.loans.filter((loan) => !loan.returnedAt).length
+    if (newStockValue < activeLoansCount) {
+      alert(
+        `Cannot set stock lower than active rentals (${activeLoansCount} book(s) currently issued).`
+      )
+      return
+    }
+
+    try {
+      await updateStockMutation.mutateAsync(newStockValue)
+      setEditStockDialogOpen(false)
+    } catch (error) {
+      console.error('Error updating stock:', error)
+      alert('Failed to update stock. Please try again.')
     }
   }
 
@@ -138,7 +179,20 @@ function SingleBook() {
         </div>
 
         <div className="text-right flex flex-col items-end">
-          <div className="text-sm font-medium text-muted-foreground mb-1">Stock</div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="text-sm font-medium text-muted-foreground">Stock</div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-6 text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                setNewStockValue(book.totalStock)
+                setEditStockDialogOpen(true)
+              }}
+            >
+              <Pencil className="size-3" />
+            </Button>
+          </div>
           <div className="text-3xl font-bold">
             {availableStock}/{book.totalStock}
           </div>
@@ -265,6 +319,54 @@ function SingleBook() {
       </div>
 
       <EditBookDialog book={book} open={editDialogOpen} onOpenChange={setEditDialogOpen} />
+
+      <Dialog open={editStockDialogOpen} onOpenChange={setEditStockDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Stock</DialogTitle>
+            <DialogDescription>
+              Edit stock for: {book.title}
+              <br />
+              Current stock: {book.totalStock} | Active rentals: {activeLoans.length}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="newStockValue">New Stock</Label>
+              <Input
+                id="newStockValue"
+                type="number"
+                min={activeLoans.length}
+                value={newStockValue}
+                onChange={(e) => setNewStockValue(Math.max(0, parseInt(e.target.value) || 0))}
+              />
+            </div>
+            {newStockValue < activeLoans.length && (
+              <div className="text-sm text-destructive">
+                New stock cannot be lower than active rentals ({activeLoans.length}).
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditStockDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEditStockConfirm}
+              disabled={updateStockMutation.isPending || newStockValue < activeLoans.length}
+            >
+              {updateStockMutation.isPending ? (
+                <>
+                  <Spinner className="size-4 mr-2" />
+                  Updating...
+                </>
+              ) : (
+                'Confirm'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -34,6 +34,12 @@ export const TAG_COLOR_MAP: Record<string, TagColorClasses> = {
     hover: 'hover:bg-purple-200',
     border: 'border-purple-300'
   },
+  darkPurple: {
+    bg: 'bg-purple-900',
+    text: 'text-purple-100',
+    hover: 'hover:bg-purple-800',
+    border: 'border-purple-700'
+  },
   pink: {
     bg: 'bg-pink-100',
     text: 'text-pink-800',

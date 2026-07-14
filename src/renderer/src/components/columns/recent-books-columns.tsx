@@ -3,6 +3,7 @@ import type { Book } from '@renderer/types/book'
 import { Button } from '@renderer/components/ui/button'
 import { Pencil, Trash2 } from 'lucide-react'
 import { StockInput } from './StockInput'
+import { format } from 'date-fns'
 import { TagBadge } from '@renderer/components/TagBadge'
 
 interface RecentBooksColumnsProps {
@@ -88,9 +89,7 @@ export function getRecentBooksColumns({
       cell: ({ row }) => {
         const date = row.getValue('createdAt') as Date
         return (
-          <div className="text-muted-foreground text-sm">
-            {new Date(date).toLocaleDateString('en-IN')}
-          </div>
+          <div className="text-muted-foreground text-sm">{format(new Date(date), 'dd/MM/yy')}</div>
         )
       }
     },

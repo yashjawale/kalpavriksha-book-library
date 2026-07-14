@@ -15,6 +15,7 @@ import { Spinner } from '@renderer/components/ui/spinner'
 import PageTitle from '@renderer/components/ui/page-title'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@renderer/components/ui/dialog'
 import { pdf } from '@react-pdf/renderer'
+import { format } from 'date-fns'
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import {
   Search,
@@ -173,7 +174,7 @@ const ReportPDF = ({
                     bookLoans.map((l) => (
                       <Text key={l.id} style={styles.bookSub}>
                         • {l.borrower?.name || l.userEmail}
-                        {l.dueDate ? ` (Due: ${new Date(l.dueDate).toLocaleDateString()})` : ''}
+                        {l.dueDate ? ` (Due: ${format(new Date(l.dueDate), 'dd/MM/yy')})` : ''}
                       </Text>
                     ))
                   ) : (

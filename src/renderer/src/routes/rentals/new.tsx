@@ -8,7 +8,7 @@ import { X, Info } from 'lucide-react'
 import { LoginOverlay } from '@renderer/components/LoginOverlay'
 import { Combobox } from '@renderer/components/ui/combobox'
 import { useDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
-import { addWeeks, format } from 'date-fns'
+import { addWeeks, addMonths, format } from 'date-fns'
 import type { Book } from '@renderer/types/book'
 import { TagBadge } from '@renderer/components/TagBadge'
 import { toast } from 'sonner'
@@ -250,8 +250,8 @@ function NewRentalPage() {
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
         <div>
-          <PageTitle title="New Rental" />
-          <p className="text-muted-foreground">Rent books to a student.</p>
+          <PageTitle title="New Issue" />
+          <p className="text-muted-foreground">Issue books to a library member.</p>
         </div>
         <Button variant="ghost" asChild>
           <Link to="/rentals">Cancel</Link>
@@ -437,7 +437,20 @@ function NewRentalPage() {
                   }))
                 ]}
                 value={email}
-                onChange={(val) => setEmail(val)}
+                onChange={(val) => {
+                  setEmail(val)
+                  window.api.auth
+                    .getUserDetails(val)
+                    .then((details) => {
+                      if (details?.orgUnitPath?.includes('Teachers')) {
+                        setDueDate(format(addMonths(new Date(), 1), 'yyyy-MM-dd'))
+                        toast.success('Return date set to 1 month for Teacher')
+                      } else {
+                        setDueDate(format(addWeeks(new Date(), 1), 'yyyy-MM-dd'))
+                      }
+                    })
+                    .catch(console.error)
+                }}
                 onInputChange={handleUserSearchInput}
                 placeholder="Student Email..."
                 searchPlaceholder="Search name or email..."
