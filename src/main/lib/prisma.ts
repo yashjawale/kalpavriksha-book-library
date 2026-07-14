@@ -1,34 +1,29 @@
 import 'dotenv/config'
-import { app } from 'electron'
-import { is } from '@electron-toolkit/utils'
-import path from 'path'
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
-import { PrismaClient } from '../../../generated/prisma/client'
-import { initializeDatabase } from './initDatabase'
+import { createRequire } from 'module'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { getSettings } from './settings.js'
 
-// Get database path from environment or use default
-let connectionString = process.env.DATABASE_URL || 'file:./dev.db'
-let dbFilePath: string
+const require = createRequire(import.meta.url)
+const { PrismaClient } = require('../../generated/prisma/index.js')
 
-// If it's a relative path, resolve it properly for dev vs production
-if (connectionString.startsWith('file:./') || connectionString.startsWith('file:../')) {
-  const dbPath = connectionString.replace('file:', '')
-  dbFilePath = is.dev
-    ? path.join(process.cwd(), dbPath)
-    : path.join(app.getPath('userData'), dbPath)
-  connectionString = `file:${dbFilePath}`
-} else if (connectionString.startsWith('file:')) {
-  dbFilePath = connectionString.replace('file:', '')
+const settings = getSettings()
+const connectionString = process.env.DATABASE_URL || settings.databaseUrl || ''
+process.env.DATABASE_URL = connectionString
+
+let prisma
+if (connectionString) {
+  const adapter = new PrismaPg({ connectionString })
+  prisma = new PrismaClient({ adapter })
 } else {
-  // Fallback
-  dbFilePath = path.join(app.getPath('userData'), 'dev.db')
-  connectionString = `file:${dbFilePath}`
+  prisma = new Proxy(
+    {},
+    {
+      get: function (target, prop) {
+        if (prop === '$disconnect') return async () => {}
+        throw new Error('Database URL is not configured. Please set it in Settings.')
+      }
+    }
+  )
 }
 
-// Initialize database if it doesn't exist or is empty
-initializeDatabase(dbFilePath)
-
-const adapter = new PrismaBetterSqlite3({ url: connectionString })
-const prisma = new PrismaClient({ adapter })
-
-export { prisma, dbFilePath }
+export { prisma }

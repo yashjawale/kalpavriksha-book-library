@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -7,9 +7,6 @@ import { tagsController } from './controllers/tags'
 import { captureController } from './controllers/capture'
 import { startCaptureProcessor } from './lib/captureProcessor'
 import { getBookInfoGoogleBooks, getBookInfoIndian, getBookInfoOpenLibrary } from './lib/bookApi'
-import { prisma, dbFilePath } from './lib/prisma'
-import { initializeDatabase } from './lib/initDatabase'
-import * as fs from 'fs'
 import { usersController } from './controllers/users'
 import { loansController } from './controllers/loans'
 import { authController } from './lib/auth'
@@ -122,81 +119,7 @@ if (!gotTheLock) {
       return await getBookInfoIndian(isbn)
     })
 
-    // Database backup/restore handlers
-    ipcMain.handle('database:export', async () => {
-      try {
-        const { filePath } = await dialog.showSaveDialog({
-          title: 'Export Database Backup',
-          defaultPath: `library-backup-${new Date().toISOString().split('T')[0]}.db`,
-          filters: [{ name: 'Database', extensions: ['db'] }]
-        })
-
-        if (!filePath) {
-          return { success: false, error: 'No file selected' }
-        }
-
-        // Check if database exists
-        if (!fs.existsSync(dbFilePath)) {
-          return { success: false, error: `Database not found at: ${dbFilePath}` }
-        }
-
-        fs.copyFileSync(dbFilePath, filePath)
-
-        return { success: true }
-      } catch (error) {
-        console.error('Error exporting database:', error)
-        return { success: false, error: (error as Error).message }
-      }
-    })
-
-    ipcMain.handle('database:import', async (_, data: Uint8Array) => {
-      try {
-        const backupPath = `${dbFilePath}.backup`
-
-        // Create backup of current database
-        if (fs.existsSync(dbFilePath)) {
-          fs.copyFileSync(dbFilePath, backupPath)
-        }
-
-        // Convert Uint8Array to Buffer for Node.js file operations
-        const buffer = Buffer.from(data)
-
-        // Write new database
-        fs.writeFileSync(dbFilePath, buffer)
-
-        return { success: true }
-      } catch (error) {
-        console.error('Error importing database:', error)
-        return { success: false, error: (error as Error).message }
-      }
-    })
-
-    ipcMain.handle('database:clear', async () => {
-      try {
-        // Disconnect prisma to release file lock
-        await prisma.$disconnect()
-
-        // Delete database file
-        if (fs.existsSync(dbFilePath)) {
-          fs.unlinkSync(dbFilePath)
-        }
-
-        // Delete backup file if you want to completely reset?
-        // The prompt says "clear out database, which resets everything"
-        // We'll just reset the active database, the user can use export/import for backups.
-
-        // Re-initialize (runs migrations to create tables)
-        initializeDatabase(dbFilePath)
-
-        // Reconnect prisma
-        await prisma.$connect()
-
-        return { success: true }
-      } catch (error) {
-        console.error('Error clearing database:', error)
-        return { success: false, error: (error as Error).message }
-      }
-    })
+    // Database handlers removed.
 
     // Start the background capture processor
     startCaptureProcessor()

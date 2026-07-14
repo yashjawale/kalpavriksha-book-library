@@ -6,12 +6,14 @@ export interface AppSettings {
   googleClientId: string
   googleClientSecret: string
   enableEmails: boolean
+  databaseUrl: string
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   googleClientId: '',
   googleClientSecret: '',
-  enableEmails: false
+  enableEmails: false,
+  databaseUrl: ''
 }
 
 export function getSettingsPath(): string {

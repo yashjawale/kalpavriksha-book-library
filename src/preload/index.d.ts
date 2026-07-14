@@ -34,12 +34,19 @@ interface API {
       googleClientId: string
       googleClientSecret: string
       enableEmails: boolean
+      databaseUrl: string
     }>
     update: (settings: {
       googleClientId?: string
       googleClientSecret?: string
       enableEmails?: boolean
-    }) => Promise<{ googleClientId: string; googleClientSecret: string; enableEmails: boolean }>
+      databaseUrl?: string
+    }) => Promise<{
+      googleClientId: string
+      googleClientSecret: string
+      enableEmails: boolean
+      databaseUrl: string
+    }>
   }
   loans: ControllerAPI<LoansController>
 }

@@ -3,7 +3,7 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { SidebarProvider, SidebarTrigger } from '@renderer/components/ui/sidebar'
 import { AppSidebar } from '@renderer/components/AppSidebar'
 import { Toaster, toast } from 'sonner'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import '@fontsource/fira-sans'
 
@@ -13,6 +13,13 @@ const RootLayout = () => {
   const currentPath = router.location.pathname
   const bufferRef = useRef('')
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [dbConfigured, setDbConfigured] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    window.api.settings.get().then((settings) => {
+      setDbConfigured(!!settings.databaseUrl)
+    })
+  }, [])
 
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
@@ -78,7 +85,26 @@ const RootLayout = () => {
           <AppSidebar />
           <main className="p-4 w-full max-w-full overflow-x-hidden">
             <SidebarTrigger className="mb-2" />
-            <Outlet />
+
+            {dbConfigured === false && currentPath !== '/settings' ? (
+              <div className="flex flex-col items-center justify-center h-[80vh] text-center">
+                <h1 className="text-2xl font-bold text-destructive mb-2">
+                  Database Not Configured
+                </h1>
+                <p className="text-muted-foreground mb-4 max-w-md">
+                  Please configure the Supabase PostgreSQL database URL in the settings to start
+                  using the application.
+                </p>
+                <button
+                  onClick={() => navigate({ to: '/settings' })}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                >
+                  Go to Settings
+                </button>
+              </div>
+            ) : (
+              <Outlet />
+            )}
           </main>
         </SidebarProvider>
         <TanStackRouterDevtools />
