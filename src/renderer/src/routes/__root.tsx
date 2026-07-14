@@ -88,12 +88,10 @@ const RootLayout = () => {
 
             {dbConfigured === false && currentPath !== '/settings' ? (
               <div className="flex flex-col items-center justify-center h-[80vh] text-center">
-                <h1 className="text-2xl font-bold text-destructive mb-2">
-                  Database Not Configured
-                </h1>
+                <h1 className="text-2xl font-bold mb-2">Database Not Configured</h1>
                 <p className="text-muted-foreground mb-4 max-w-md">
-                  Please configure the Supabase PostgreSQL database URL in the settings to start
-                  using the application.
+                  Please configure the PostgreSQL database URL in the settings to start using the
+                  application.
                 </p>
                 <button
                   onClick={() => navigate({ to: '/settings' })}
