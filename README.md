@@ -1,6 +1,6 @@
-# kalpavriksha-book-library
+# Kalpavriksha Library
 
-An Electron application with React and TypeScript
+A simple electron application for managing library book assets.
 
 ## Recommended IDE Setup
 
