@@ -6,11 +6,8 @@ on:
       - v*.*.*
 
 jobs:
-  release:
+  build:
     runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
-
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -42,12 +39,41 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: npm run build:win
 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-${{ matrix.os }}
+          path: dist/*
+          if-no-files-found: warn
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-ubuntu-latest
+          path: dist
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-windows-latest
+          path: dist
+
       - name: release
         uses: softprops/action-gh-release@v1
         with:
           draft: true
-          body_path: RELEASE_NOTES.md # Optional: if this file exists
-          generate_release_notes: true # Auto-generate from commits
+          body_path: RELEASE_NOTES.md
+          generate_release_notes: true
           files: |
             dist/*.exe
             dist/*.msi
