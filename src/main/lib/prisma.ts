@@ -18,7 +18,7 @@ if (connectionString) {
   prisma = new Proxy(
     {},
     {
-      get: function (target, prop) {
+      get: function (_target, prop) {
         if (prop === '$disconnect') return async () => {}
         throw new Error('Database URL is not configured. Please set it in Settings.')
       }

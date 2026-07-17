@@ -218,8 +218,12 @@ export const loansController = {
       )
 
       for (const [email, userLoans] of Object.entries(loansByUser)) {
+        const { name, books } = userLoans as {
+          name: string
+          books: { title: string; isbn: string }[]
+        }
         const subject = `[Library] Books Returned`
-        const body = generateReturnEmailBody(userLoans.name, userLoans.books)
+        const body = generateReturnEmailBody(name, books)
         sendTransactionEmail(email, subject, body).catch(console.error)
       }
     }
@@ -258,8 +262,12 @@ export const loansController = {
       )
 
       for (const [email, userLoans] of Object.entries(loansByUser)) {
+        const { name, books } = userLoans as {
+          name: string
+          books: { title: string; isbn: string }[]
+        }
         const subject = `[Library] Books Extended`
-        const body = generateExtensionEmailBody(userLoans.name, userLoans.books, dueDate)
+        const body = generateExtensionEmailBody(name, books, dueDate)
         sendTransactionEmail(email, subject, body).catch(console.error)
       }
     }
