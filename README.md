@@ -154,9 +154,10 @@ interface API {
 const users = await window.api.users.getAll()
 ```
 
-### Type Safety Benefits
+## Copying over schema & data to Supabase from `dev.db` file in _prisma_ folder
 
-- TypeScript will enforce correct parameter types and return types
-- Autocomplete works for all exposed methods
-- Compile-time errors if controller signatures don't match the preload definitions
-- No runtime overhead from the type system
+1. Copy the Database URI from the Supabase dashboard.
+2. Run `export DATABASE_URL="postgresql://..."` in your terminal.
+3. Run `npx prisma db push` to create the tables.
+4. Run `npx tsx scripts/migrate-to-supabase.ts` to migrate your local data into Supabase!
+5. Finally, start the app with npm run dev. Go to Settings, paste in the database URI, and the app is ready for use.
