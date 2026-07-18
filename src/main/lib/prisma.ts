@@ -10,8 +10,10 @@ const settings = getSettings()
 const connectionString = process.env.DATABASE_URL || settings.databaseUrl || ''
 process.env.DATABASE_URL = connectionString
 
+export const isDbConfigured = !!connectionString
+
 let prisma
-if (connectionString) {
+if (isDbConfigured) {
   const adapter = new PrismaPg({ connectionString })
   prisma = new PrismaClient({ adapter })
 } else {

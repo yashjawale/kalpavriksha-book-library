@@ -3,6 +3,7 @@ import { join } from 'path'
 import * as fs from 'fs'
 import { prisma } from '../lib/prisma'
 import crypto from 'crypto'
+import { wakeUpCaptureProcessor } from '../lib/captureProcessor'
 
 export const captureController = {
   saveImages: async (frontBase64: string, backBase64: string, tagIds?: number[]) => {
@@ -32,6 +33,8 @@ export const captureController = {
           status: 'PENDING'
         }
       })
+
+      wakeUpCaptureProcessor()
 
       return { success: true, data: capturedBook }
     } catch (error) {
@@ -64,6 +67,8 @@ export const captureController = {
           status: 'PENDING'
         }
       })
+
+      wakeUpCaptureProcessor()
 
       return { success: true, data: capturedBook }
     } catch (error) {

@@ -65,11 +65,27 @@ function ReviewQueue() {
     }
   }
 
+  const hasPendingRef = useRef(false)
+  useEffect(() => {
+    hasPendingRef.current = queue.some((q) => q.status === 'PENDING')
+  }, [queue])
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchQueue()
-    const interval = setInterval(fetchQueue, 5000)
-    return () => clearInterval(interval)
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible' && hasPendingRef.current) {
+        fetchQueue()
+      }
+    }, 10000)
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchQueue()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

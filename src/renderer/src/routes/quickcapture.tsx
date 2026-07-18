@@ -55,6 +55,7 @@ function QuickCapture() {
   }, [rotation])
 
   // Polling recent captures history
+  const loadedThumbsRef = useRef<Set<number>>(new Set())
   useEffect(() => {
     const fetchRecent = async () => {
       try {
@@ -62,29 +63,48 @@ function QuickCapture() {
         const data = await window.electron.ipcRenderer.invoke('capture:getRecentCaptures')
         setRecentCaptures(data)
 
-        const newThumbnails: Record<number, string> = { ...recentThumbnails }
+        const newThumbnails: Record<number, string> = {}
         let updated = false
         for (const item of data) {
-          if (!newThumbnails[item.id]) {
+          if (!loadedThumbsRef.current.has(item.id)) {
             // @ts-ignore - IPC types are not fully defined in the global window object
             const f = await window.electron.ipcRenderer.invoke(
               'capture:getImageBase64',
               item.frontImage
             )
-            newThumbnails[item.id] = f || ''
-            updated = true
+            if (f) {
+              newThumbnails[item.id] = f
+              loadedThumbsRef.current.add(item.id)
+              updated = true
+            }
           }
         }
-        if (updated) setRecentThumbnails(newThumbnails)
+        if (updated) {
+          setRecentThumbnails((prev) => ({ ...prev, ...newThumbnails }))
+        }
       } catch (e) {
         console.error(e)
       }
     }
 
+    const hasPending = () => recentCaptures.some((c) => c.status === 'PENDING')
+
     fetchRecent()
-    const interval = setInterval(fetchRecent, 3000)
-    return () => clearInterval(interval)
-  }, [recentThumbnails])
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible' && hasPending()) {
+        fetchRecent()
+      }
+    }, 10000)
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchRecent()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Camera setup
   useEffect(() => {
