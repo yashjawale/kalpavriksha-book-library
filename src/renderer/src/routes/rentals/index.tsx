@@ -51,7 +51,8 @@ function RentalsPage() {
 
   const { data: activeLoans = [], isLoading } = useQuery<ActiveLoan[]>({
     queryKey: ['loans', 'active'],
-    queryFn: async () => await window.api.loans.getAllActive()
+    queryFn: async () => await window.api.loans.getAllActive(),
+    staleTime: 30_000
   })
 
   const handleReturnAction = async () => {

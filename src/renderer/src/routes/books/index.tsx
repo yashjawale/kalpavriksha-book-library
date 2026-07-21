@@ -78,7 +78,8 @@ function ManageBooks() {
         selectedTagFilters.length > 0 ? selectedTagFilters : undefined
       )
       return result as { books: Book[]; total: number }
-    }
+    },
+    staleTime: 30_000
   })
 
   const books = data?.books ?? []
@@ -86,7 +87,8 @@ function ManageBooks() {
 
   const { data: allTags = [] } = useQuery<Tag[]>({
     queryKey: ['tags'],
-    queryFn: async () => await window.api.tags.getAll()
+    queryFn: async () => await window.api.tags.getAll(),
+    staleTime: 30_000
   })
 
   const handleSearchChange = useSimpleDebouncedCallback((value: string) => {

@@ -132,7 +132,8 @@ function BulkAdd() {
     queryFn: async () => {
       const result = await window.api.books.getAll(1, 25, 'updatedAt', 'desc')
       return result.books
-    }
+    },
+    staleTime: 30_000
   })
 
   // Mutation for creating a book

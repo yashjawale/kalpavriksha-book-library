@@ -46,7 +46,8 @@ function ReturnsToday() {
   const { data, isLoading } = useQuery({
     queryKey: ['returns-today'],
     queryFn: async () => await window.api.loans.getReturnsToday(),
-    enabled: authStatus.loggedIn
+    enabled: authStatus.loggedIn,
+    staleTime: 30_000
   })
 
   const returnBookMutation = useMutation({

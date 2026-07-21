@@ -47,7 +47,8 @@ function UpcomingReturns() {
   const { data, isLoading } = useQuery({
     queryKey: ['upcoming-returns'],
     queryFn: async () => await window.api.loans.getUpcomingReturns(),
-    enabled: authStatus.loggedIn
+    enabled: authStatus.loggedIn,
+    staleTime: 30_000
   })
 
   const returnBookMutation = useMutation({

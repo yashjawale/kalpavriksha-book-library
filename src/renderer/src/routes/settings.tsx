@@ -30,7 +30,8 @@ function Settings() {
 
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
     queryKey: ['settings'],
-    queryFn: async () => await window.api.settings.get()
+    queryFn: async () => await window.api.settings.get(),
+    staleTime: 300_000
   })
 
   useEffect(() => {
@@ -67,7 +68,8 @@ function Settings() {
     queryFn: async () => {
       const result = await window.api.books.getAll(1, Number.MAX_SAFE_INTEGER)
       return result.books
-    }
+    },
+    staleTime: 30_000
   })
 
   const handleExportCSV = () => {

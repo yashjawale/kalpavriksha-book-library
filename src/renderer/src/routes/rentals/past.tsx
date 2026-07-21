@@ -42,7 +42,8 @@ function PastRentalsPage() {
     queryFn: async () => {
       const result = await window.api.loans.getPastLoans(page, perPage, searchQuery)
       return result as { loans: PastLoan[]; total: number }
-    }
+    },
+    staleTime: 30_000
   })
 
   const loans = data?.loans ?? []

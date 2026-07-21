@@ -33,7 +33,8 @@ function SingleBook() {
 
   const { data: book, isLoading } = useQuery({
     queryKey: ['book', isbn],
-    queryFn: async () => await window.api.books.getBookDetails(isbn)
+    queryFn: async () => await window.api.books.getBookDetails(isbn),
+    staleTime: 30_000
   })
 
   const returnBookMutation = useMutation({

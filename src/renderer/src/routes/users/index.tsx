@@ -48,7 +48,8 @@ function UsersPage() {
     queryFn: async () => {
       const result = await window.api.users.getAll(page, perPage, searchQuery || undefined)
       return result as { users: User[]; total: number }
-    }
+    },
+    staleTime: 30_000
   })
 
   const users = data?.users ?? []

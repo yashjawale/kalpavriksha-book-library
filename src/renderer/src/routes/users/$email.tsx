@@ -81,7 +81,8 @@ function UserDetailsPage() {
       const data = await window.api.users.getByEmail(email)
       return data as unknown as User
     },
-    enabled: authStatus.loggedIn
+    enabled: authStatus.loggedIn,
+    staleTime: 30_000
   })
 
   const { data: orgUnit } = useQuery({
@@ -90,7 +91,8 @@ function UserDetailsPage() {
       const googleData = await window.api.auth.getUserDetails(email)
       return googleData?.orgUnitPath ?? null
     },
-    enabled: authStatus.loggedIn
+    enabled: authStatus.loggedIn,
+    staleTime: 300_000
   })
 
   const invalidateUser = () => {
