@@ -27,22 +27,13 @@ export const tagsController = {
   },
 
   createMany: async (names: string[]) => {
-    // Create tags one by one, catching duplicate errors
-    for (const name of names) {
-      try {
-        await prisma.tag.create({ data: { name } })
-      } catch {
-        // Ignore duplicate errors
-        console.log(`Tag "${name}" already exists, skipping`)
-      }
-    }
-    // Return all tags with these names
+    await prisma.tag.createMany({
+      data: names.map((name) => ({ name })),
+      skipDuplicates: true
+    })
+
     return await prisma.tag.findMany({
-      where: {
-        name: {
-          in: names
-        }
-      }
+      where: { name: { in: names } }
     })
   },
 
@@ -53,28 +44,15 @@ export const tagsController = {
   },
 
   addTagsToBook: async (isbn: string, tagIds: number[]) => {
-    // Add tags one by one to avoid duplicate errors
-    for (const tagId of tagIds) {
-      try {
-        await prisma.bookTag.create({
-          data: {
-            bookIsbn: isbn,
-            tagId
-          }
-        })
-      } catch {
-        // Ignore duplicate errors
-        console.log(`Tag ${tagId} already assigned to book ${isbn}, skipping`)
-      }
-    }
+    await prisma.bookTag.createMany({
+      data: tagIds.map((tagId) => ({ bookIsbn: isbn, tagId })),
+      skipDuplicates: true
+    })
+
     return await prisma.book.findUnique({
       where: { isbn },
       include: {
-        bookTags: {
-          include: {
-            tag: true
-          }
-        }
+        bookTags: { include: { tag: true } }
       }
     })
   },

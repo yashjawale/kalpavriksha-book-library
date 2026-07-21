@@ -185,76 +185,35 @@ export const booksController = {
   },
 
   bulkUpdateTags: async (isbns: string[], tagIds: number[]) => {
-    // For each book, first delete all existing tags, then add the new ones
-    for (const isbn of isbns) {
-      // Delete existing tags
-      await prisma.bookTag.deleteMany({
-        where: { bookIsbn: isbn }
-      })
+    await prisma.bookTag.deleteMany({
+      where: { bookIsbn: { in: isbns } }
+    })
 
-      // Add new tags
-      if (tagIds.length > 0) {
-        await prisma.bookTag.createMany({
-          data: tagIds.map((tagId) => ({
-            bookIsbn: isbn,
-            tagId
-          }))
-        })
-      }
+    if (tagIds.length > 0) {
+      const data = isbns.flatMap((isbn) => tagIds.map((tagId) => ({ bookIsbn: isbn, tagId })))
+      await prisma.bookTag.createMany({ data })
     }
 
     return await prisma.book.findMany({
-      where: {
-        isbn: {
-          in: isbns
-        }
-      },
+      where: { isbn: { in: isbns } },
       include: {
-        bookTags: {
-          include: {
-            tag: true
-          }
-        }
+        bookTags: { include: { tag: true } }
       }
     })
   },
 
   bulkAddTag: async (isbns: string[], tagIds: number[]) => {
-    // For each book and tag combination, add the tag if it doesn't already exist
-    for (const isbn of isbns) {
-      for (const tagId of tagIds) {
-        const existing = await prisma.bookTag.findUnique({
-          where: {
-            bookIsbn_tagId: {
-              bookIsbn: isbn,
-              tagId
-            }
-          }
-        })
+    const data = isbns.flatMap((isbn) => tagIds.map((tagId) => ({ bookIsbn: isbn, tagId })))
 
-        if (!existing) {
-          await prisma.bookTag.create({
-            data: {
-              bookIsbn: isbn,
-              tagId
-            }
-          })
-        }
-      }
-    }
+    await prisma.bookTag.createMany({
+      data,
+      skipDuplicates: true
+    })
 
     return await prisma.book.findMany({
-      where: {
-        isbn: {
-          in: isbns
-        }
-      },
+      where: { isbn: { in: isbns } },
       include: {
-        bookTags: {
-          include: {
-            tag: true
-          }
-        }
+        bookTags: { include: { tag: true } }
       }
     })
   },

@@ -114,16 +114,13 @@ function ManageBooks() {
 
   const updateTagsMutation = useMutation({
     mutationFn: async ({ isbn, tagIds }: { isbn: string; tagIds: number[] }) => {
-      // First remove all tags, then add the new ones
       const book = allBooks.find((b) => b.isbn === isbn)
-      if (book?.bookTags) {
-        for (const bt of book.bookTags) {
-          await window.api.tags.removeTagFromBook(isbn, bt.tag.id)
-        }
-      }
-      if (tagIds.length > 0) {
-        await window.api.tags.addTagsToBook(isbn, tagIds)
-      }
+      await window.api.books.updateDetails(isbn, {
+        title: book?.title || '',
+        author: book?.author ?? undefined,
+        publisher: book?.publisher ?? undefined,
+        tagIds
+      })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] })

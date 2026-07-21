@@ -140,18 +140,10 @@ export const captureController = {
       const tagsToSave = data.tagIds || (captured.tagIds ? JSON.parse(captured.tagIds) : [])
       if (tagsToSave.length > 0) {
         try {
-          for (const tagId of tagsToSave) {
-            await prisma.bookTag.upsert({
-              where: {
-                bookIsbn_tagId: { bookIsbn: finalIsbn, tagId }
-              },
-              update: {},
-              create: {
-                bookIsbn: finalIsbn,
-                tagId
-              }
-            })
-          }
+          await prisma.bookTag.createMany({
+            data: tagsToSave.map((tagId) => ({ bookIsbn: finalIsbn, tagId })),
+            skipDuplicates: true
+          })
         } catch (e) {
           console.error('Failed to add tags', e)
         }
