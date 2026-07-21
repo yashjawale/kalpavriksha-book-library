@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { LoginOverlay } from '@renderer/components/LoginOverlay'
 import { Button } from '@renderer/components/ui/button'
@@ -80,81 +80,84 @@ function RentalsPage() {
     return bookTitle.includes(s) || userName.includes(s) || userEmail.includes(s)
   }
 
-  const columns: ColumnDef<ActiveLoan>[] = [
-    {
-      id: 'name',
-      header: 'Name',
-      cell: ({ row }) => (
-        <div className="flex flex-col">
+  const columns = useMemo<ColumnDef<ActiveLoan>[]>(
+    () => [
+      {
+        id: 'name',
+        header: 'Name',
+        cell: ({ row }) => (
+          <div className="flex flex-col">
+            <Link
+              to="/users/$email"
+              params={{ email: row.original.userEmail }}
+              className="hover:underline text-primary font-medium"
+            >
+              {row.original.borrower?.name || 'Unknown'}
+            </Link>
+            <span className="text-xs text-muted-foreground">{row.original.userEmail}</span>
+          </div>
+        )
+      },
+      {
+        id: 'book',
+        header: 'Book',
+        cell: ({ row }) => (
           <Link
-            to="/users/$email"
-            params={{ email: row.original.userEmail }}
-            className="hover:underline text-primary font-medium"
+            to="/books/$isbn"
+            params={{ isbn: row.original.bookIsbn }}
+            className="hover:underline text-primary"
           >
-            {row.original.borrower?.name || 'Unknown'}
+            {row.original.book?.title || row.original.bookIsbn}
           </Link>
-          <span className="text-xs text-muted-foreground">{row.original.userEmail}</span>
-        </div>
-      )
-    },
-    {
-      id: 'book',
-      header: 'Book',
-      cell: ({ row }) => (
-        <Link
-          to="/books/$isbn"
-          params={{ isbn: row.original.bookIsbn }}
-          className="hover:underline text-primary"
-        >
-          {row.original.book?.title || row.original.bookIsbn}
-        </Link>
-      )
-    },
-    {
-      id: 'status',
-      header: 'Status',
-      cell: ({ row }) => {
-        const dueDateObj = row.original.dueDate ? new Date(row.original.dueDate) : null
-        const startOfToday = new Date()
-        startOfToday.setHours(0, 0, 0, 0)
-        const isOverdue = dueDateObj && dueDateObj < startOfToday
-        if (isOverdue) {
+        )
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        cell: ({ row }) => {
+          const dueDateObj = row.original.dueDate ? new Date(row.original.dueDate) : null
+          const startOfToday = new Date()
+          startOfToday.setHours(0, 0, 0, 0)
+          const isOverdue = dueDateObj && dueDateObj < startOfToday
+          if (isOverdue) {
+            return (
+              <span className="text-red-600 font-medium text-xs bg-red-50 px-2 py-1 rounded">
+                Overdue
+              </span>
+            )
+          }
           return (
-            <span className="text-red-600 font-medium text-xs bg-red-50 px-2 py-1 rounded">
-              Overdue
+            <span className="text-green-600 font-medium text-xs bg-green-50 px-2 py-1 rounded">
+              Active
             </span>
           )
         }
-        return (
-          <span className="text-green-600 font-medium text-xs bg-green-50 px-2 py-1 rounded">
-            Active
-          </span>
+      },
+      {
+        id: 'returnDate',
+        header: 'Return date',
+        cell: ({ row }) =>
+          row.original.dueDate ? format(new Date(row.original.dueDate), 'dd/MM/yy') : 'Not Set'
+      },
+      {
+        id: 'actions',
+        header: '',
+        cell: ({ row }) => (
+          <div className="flex justify-end gap-2">
+            <Link to="/users/$email" params={{ email: row.original.userEmail }}>
+              <Button size="sm" variant="outline">
+                View details
+              </Button>
+            </Link>
+            <Button size="sm" variant="secondary" onClick={() => setReturnLoanId(row.original.id)}>
+              Mark Returned
+            </Button>
+          </div>
         )
       }
-    },
-    {
-      id: 'returnDate',
-      header: 'Return date',
-      cell: ({ row }) =>
-        row.original.dueDate ? format(new Date(row.original.dueDate), 'dd/MM/yy') : 'Not Set'
-    },
-    {
-      id: 'actions',
-      header: '',
-      cell: ({ row }) => (
-        <div className="flex justify-end gap-2">
-          <Link to="/users/$email" params={{ email: row.original.userEmail }}>
-            <Button size="sm" variant="outline">
-              View details
-            </Button>
-          </Link>
-          <Button size="sm" variant="secondary" onClick={() => setReturnLoanId(row.original.id)}>
-            Mark Returned
-          </Button>
-        </div>
-      )
-    }
-  ]
+    ],
+    [setReturnLoanId]
+  )
 
   const rowClassName = (row: Row<ActiveLoan>): string => {
     const dueDateObj = row.original.dueDate ? new Date(row.original.dueDate) : null

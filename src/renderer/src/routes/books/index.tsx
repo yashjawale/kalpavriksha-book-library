@@ -362,17 +362,28 @@ function ManageBooks() {
     setEditDialogOpen(true)
   }
 
-  const columns = getBooksColumns({
-    onDelete: handleDelete,
-    isDeleting: deleteBookMutation.isPending,
-    onEditStock: handleEditStock,
-    onChangeTags: (isbn, title, author, publisher) =>
-      handleChangeTags(isbn, title, author, publisher),
-    onEditDetails: handleEditDetails,
-    onTitleClick: (isbn) => {
-      navigate({ to: '/books/$isbn', params: { isbn } })
-    }
-  })
+  const columns = useMemo(
+    () =>
+      getBooksColumns({
+        onDelete: handleDelete,
+        isDeleting: deleteBookMutation.isPending,
+        onEditStock: handleEditStock,
+        onChangeTags: (isbn, title, author, publisher) =>
+          handleChangeTags(isbn, title, author, publisher),
+        onEditDetails: handleEditDetails,
+        onTitleClick: (isbn) => {
+          navigate({ to: '/books/$isbn', params: { isbn } })
+        }
+      }),
+    [
+      handleDelete,
+      deleteBookMutation.isPending,
+      handleEditStock,
+      handleChangeTags,
+      handleEditDetails,
+      navigate
+    ]
+  )
 
   return (
     <div className="w-full">
