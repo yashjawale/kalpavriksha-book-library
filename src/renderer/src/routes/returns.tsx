@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Spinner } from '@renderer/components/ui/spinner'
 import PageTitle from '@renderer/components/ui/page-title'
 import { DataTable } from '@renderer/components/ui/data-table'
@@ -88,19 +88,22 @@ function UpcomingReturns() {
     }
   }
 
-  const handleExtend = async (loanId: number, currentDueDate: Date | null) => {
-    // Extend by 14 days from current due date or today
-    const baseDate = currentDueDate ? new Date(currentDueDate) : new Date()
-    const newDueDate = new Date(baseDate)
-    newDueDate.setDate(newDueDate.getDate() + 14)
+  const handleExtend = useCallback(
+    async (loanId: number, currentDueDate: Date | null) => {
+      // Extend by 14 days from current due date or today
+      const baseDate = currentDueDate ? new Date(currentDueDate) : new Date()
+      const newDueDate = new Date(baseDate)
+      newDueDate.setDate(newDueDate.getDate() + 14)
 
-    try {
-      await extendLoanMutation.mutateAsync({ loanId, dueDate: newDueDate })
-    } catch (error) {
-      console.error('Failed to extend loan:', error)
-      toast.error('Failed to extend loan. Please try again.')
-    }
-  }
+      try {
+        await extendLoanMutation.mutateAsync({ loanId, dueDate: newDueDate })
+      } catch (error) {
+        console.error('Failed to extend loan:', error)
+        toast.error('Failed to extend loan. Please try again.')
+      }
+    },
+    [extendLoanMutation]
+  )
 
   const columns = useMemo<ColumnDef<LoanWithDetails>[]>(
     () => [

@@ -5,7 +5,7 @@ import type { Book, Tag } from '@renderer/types/book'
 import { DataTable } from '@renderer/components/ui/data-table'
 import { getBooksColumns } from '@renderer/components/columns/books-columns'
 import PageTitle from '@renderer/components/ui/page-title'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useSimpleDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 import { Button } from '@renderer/components/ui/button'
 import { Trash2, Tag as TagIcon, Plus, Minus } from 'lucide-react'
@@ -82,7 +82,7 @@ function ManageBooks() {
     staleTime: 30_000
   })
 
-  const books = data?.books ?? []
+  const books = useMemo(() => data?.books ?? [], [data?.books])
   const totalBooks = data?.total ?? 0
 
   const { data: allTags = [] } = useQuery<Tag[]>({
@@ -192,25 +192,28 @@ function ManageBooks() {
     }
   })
 
-  const handleDelete = async (isbn: string, title: string): Promise<void> => {
-    const confirmed = confirm(
-      `Are you sure you want to delete "${title}"?\n\nThis action cannot be undone.`
-    )
-    if (!confirmed) return
+  const handleDelete = useCallback(
+    async (isbn: string, title: string): Promise<void> => {
+      const confirmed = confirm(
+        `Are you sure you want to delete "${title}"?\n\nThis action cannot be undone.`
+      )
+      if (!confirmed) return
 
-    try {
-      await deleteBookMutation.mutateAsync(isbn)
-      // Remove from selection if it was selected
-      if (rowSelection[isbn]) {
-        const newSelection = { ...rowSelection }
-        delete newSelection[isbn]
-        setRowSelection(newSelection)
+      try {
+        await deleteBookMutation.mutateAsync(isbn)
+        // Remove from selection if it was selected
+        if (rowSelection[isbn]) {
+          const newSelection = { ...rowSelection }
+          delete newSelection[isbn]
+          setRowSelection(newSelection)
+        }
+      } catch (error) {
+        console.error('Error deleting book:', error)
+        toast.error('Failed to delete book. Please try again.')
       }
-    } catch (error) {
-      console.error('Error deleting book:', error)
-      toast.error('Failed to delete book. Please try again.')
-    }
-  }
+    },
+    [deleteBookMutation, rowSelection]
+  )
 
   const handleBulkDelete = async (): Promise<void> => {
     const confirmed = confirm(
@@ -226,16 +229,14 @@ function ManageBooks() {
     }
   }
 
-  const handleEditStock = (
-    isbn: string,
-    title: string,
-    currentStock: number,
-    activeRentals: number
-  ): void => {
-    setSelectedBook({ isbn, title, currentStock, activeRentals })
-    setNewStockValue(currentStock)
-    setEditStockDialogOpen(true)
-  }
+  const handleEditStock = useCallback(
+    (isbn: string, title: string, currentStock: number, activeRentals: number): void => {
+      setSelectedBook({ isbn, title, currentStock, activeRentals })
+      setNewStockValue(currentStock)
+      setEditStockDialogOpen(true)
+    },
+    []
+  )
 
   const handleEditStockConfirm = async (): Promise<void> => {
     if (!selectedBook) return
@@ -258,24 +259,22 @@ function ManageBooks() {
     }
   }
 
-  const handleChangeTags = (
-    isbn: string,
-    title: string,
-    author?: string | null,
-    publisher?: string | null
-  ): void => {
-    const book = books.find((b) => b.isbn === isbn)
-    setSelectedBook({
-      isbn,
-      title,
-      currentStock: 0,
-      activeRentals: 0,
-      author: author ?? undefined,
-      publisher: publisher ?? undefined
-    })
-    setSelectedTagIds(book?.bookTags?.map((bt) => bt.tag.id) || [])
-    setChangeTagsDialogOpen(true)
-  }
+  const handleChangeTags = useCallback(
+    (isbn: string, title: string, author?: string | null, publisher?: string | null): void => {
+      const book = books.find((b) => b.isbn === isbn)
+      setSelectedBook({
+        isbn,
+        title,
+        currentStock: 0,
+        activeRentals: 0,
+        author: author ?? undefined,
+        publisher: publisher ?? undefined
+      })
+      setSelectedTagIds(book?.bookTags?.map((bt) => bt.tag.id) || [])
+      setChangeTagsDialogOpen(true)
+    },
+    [books]
+  )
 
   const handleChangeTagsConfirm = async (): Promise<void> => {
     if (!selectedBook) return
@@ -359,10 +358,10 @@ function ManageBooks() {
     setPageIndex(0)
   }
 
-  const handleEditDetails = (book: Book): void => {
+  const handleEditDetails = useCallback((book: Book): void => {
     setEditDetailsBook(book)
     setEditDialogOpen(true)
-  }
+  }, [])
 
   const columns = useMemo(
     () =>
