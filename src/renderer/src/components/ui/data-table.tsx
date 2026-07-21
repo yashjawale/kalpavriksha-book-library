@@ -214,11 +214,14 @@ export function DataTable<TData, TValue>({
             {isLoading ? (
               Array.from({ length: skeletonRowCount }).map((_, rowIdx) => (
                 <TableRow key={`skeleton-${rowIdx}`}>
-                  {table.getVisibleFlatColumns().map((col, colIdx) => (
-                    <TableCell key={col.id}>
-                      <Skeleton className={`h-4 ${colIdx === 0 ? 'w-4' : 'w-3/4'}`} />
-                    </TableCell>
-                  ))}
+                  {table.getVisibleFlatColumns().map((col, colIdx) => {
+                    const widths = ['w-3/4', 'w-1/2', 'w-2/3', 'w-1/3', 'w-4/5', 'w-3/5', 'w-2/5']
+                    return (
+                      <TableCell key={col.id}>
+                        <Skeleton className={`h-4 ${widths[colIdx % widths.length]}`} />
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
               ))
             ) : table.getRowModel().rows?.length ? (
