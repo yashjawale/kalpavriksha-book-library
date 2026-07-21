@@ -28,21 +28,21 @@ function Settings() {
   const [databaseUrl, setDatabaseUrl] = useState('')
   const [isSavingSettings, setIsSavingSettings] = useState(false)
 
-  // Fetch settings on mount
+  const { data: settings, isLoading: isLoadingSettings } = useQuery({
+    queryKey: ['settings'],
+    queryFn: async () => await window.api.settings.get()
+  })
+
   useEffect(() => {
-    let mounted = true
-    window.api.settings.get().then((settings) => {
-      if (mounted) {
-        setGoogleClientId(settings.googleClientId || '')
-        setGoogleClientSecret(settings.googleClientSecret || '')
-        setEnableEmails(settings.enableEmails || false)
-        setDatabaseUrl(settings.databaseUrl || '')
-      }
-    })
-    return () => {
-      mounted = false
+    if (settings) {
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setGoogleClientId(settings.googleClientId || '')
+      setGoogleClientSecret(settings.googleClientSecret || '')
+      setEnableEmails(settings.enableEmails || false)
+      setDatabaseUrl(settings.databaseUrl || '')
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
-  }, [])
+  }, [settings])
 
   const handleSaveSettings = async () => {
     setIsSavingSettings(true)
@@ -62,7 +62,7 @@ function Settings() {
     }
   }
 
-  const { data: books = [], isLoading } = useQuery<Book[]>({
+  const { data: books = [], isLoading: isLoadingBooks } = useQuery<Book[]>({
     queryKey: ['books'],
     queryFn: async () => {
       const result = await window.api.books.getAll(1, Number.MAX_SAFE_INTEGER)
@@ -72,7 +72,6 @@ function Settings() {
 
   const handleExportCSV = () => {
     try {
-      // Prepare data for CSV
       const csvData = books.map((book) => ({
         Title: book.title,
         ISBN: book.isbn,
@@ -80,10 +79,8 @@ function Settings() {
         'Date Added': format(new Date(book.createdAt), 'dd/MM/yy')
       }))
 
-      // Generate CSV using papaparse
       const csv = Papa.unparse(csvData)
 
-      // Create and download file
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -126,13 +123,10 @@ function Settings() {
     try {
       setIsExporting(true)
 
-      // Load logo as data URL
       const logoDataUrl = await loadImageAsDataUrl(Logo)
 
-      // Generate PDF
       const blob = await pdf(<BookCatalogPDF books={books} logoDataUrl={logoDataUrl} />).toBlob()
 
-      // Download
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
@@ -149,15 +143,14 @@ function Settings() {
     }
   }
 
-  // Handlers for removed features were deleted.
-
-  if (isLoading) {
+  if (isLoadingSettings || isLoadingBooks) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Spinner className="size-16" />
       </div>
     )
   }
+
   return (
     <>
       <PageTitle title="Settings" />
