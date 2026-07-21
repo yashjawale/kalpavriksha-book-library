@@ -2,6 +2,13 @@ import { app } from 'electron'
 import { join } from 'path'
 import * as fs from 'fs'
 import { prisma } from '../lib/prisma'
+import {
+  createCapturedBook,
+  getCapturedBookById,
+  getQueue,
+  getRecentCaptures,
+  deleteCapturedBook
+} from '../lib/captureDb'
 import crypto from 'crypto'
 import { wakeUpCaptureProcessor } from '../lib/captureProcessor'
 
@@ -25,13 +32,11 @@ export const captureController = {
       fs.writeFileSync(frontPath, frontBuffer)
       fs.writeFileSync(backPath, backBuffer)
 
-      const capturedBook = await prisma.capturedBook.create({
-        data: {
-          frontImage: frontPath,
-          backImage: backPath,
-          tagIds: tagIds && tagIds.length > 0 ? JSON.stringify(tagIds) : null,
-          status: 'PENDING'
-        }
+      const capturedBook = createCapturedBook({
+        frontImage: frontPath,
+        backImage: backPath,
+        tagIds: tagIds && tagIds.length > 0 ? JSON.stringify(tagIds) : null,
+        status: 'PENDING'
       })
 
       wakeUpCaptureProcessor()
@@ -58,14 +63,12 @@ export const captureController = {
       const frontBuffer = Buffer.from(frontBase64.replace(/^data:image\/\w+;base64,/, ''), 'base64')
       fs.writeFileSync(frontPath, frontBuffer)
 
-      const capturedBook = await prisma.capturedBook.create({
-        data: {
-          frontImage: frontPath,
-          backImage: '', // No back image for quick capture
-          isbn: isbn || null,
-          tagIds: tagIds && tagIds.length > 0 ? JSON.stringify(tagIds) : null,
-          status: 'PENDING'
-        }
+      const capturedBook = createCapturedBook({
+        frontImage: frontPath,
+        backImage: '',
+        isbn: isbn || null,
+        tagIds: tagIds && tagIds.length > 0 ? JSON.stringify(tagIds) : null,
+        status: 'PENDING'
       })
 
       wakeUpCaptureProcessor()
@@ -78,17 +81,11 @@ export const captureController = {
   },
 
   getQueue: async () => {
-    return await prisma.capturedBook.findMany({
-      where: { status: { in: ['PENDING', 'PROCESSED'] } },
-      orderBy: { createdAt: 'asc' }
-    })
+    return getQueue()
   },
 
   getRecentCaptures: async () => {
-    return await prisma.capturedBook.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 20
-    })
+    return getRecentCaptures(20)
   },
 
   approve: async (
@@ -97,7 +94,7 @@ export const captureController = {
     mode: 'INCREMENT' | 'NEW_ENTRY' = 'INCREMENT'
   ) => {
     try {
-      const captured = await prisma.capturedBook.findUnique({ where: { id } })
+      const captured = getCapturedBookById(id)
       if (!captured) return { success: false, error: 'Not found' }
 
       let finalIsbn = data.isbn
@@ -143,18 +140,10 @@ export const captureController = {
       const tagsToSave = data.tagIds || (captured.tagIds ? JSON.parse(captured.tagIds) : [])
       if (tagsToSave.length > 0) {
         try {
-          for (const tagId of tagsToSave) {
-            await prisma.bookTag.upsert({
-              where: {
-                bookIsbn_tagId: { bookIsbn: finalIsbn, tagId }
-              },
-              update: {},
-              create: {
-                bookIsbn: finalIsbn,
-                tagId
-              }
-            })
-          }
+          await prisma.bookTag.createMany({
+            data: tagsToSave.map((tagId) => ({ bookIsbn: finalIsbn, tagId })),
+            skipDuplicates: true
+          })
         } catch (e) {
           console.error('Failed to add tags', e)
         }
@@ -162,8 +151,8 @@ export const captureController = {
 
       // Cleanup
       if (fs.existsSync(captured.frontImage)) fs.unlinkSync(captured.frontImage)
-      if (fs.existsSync(captured.backImage)) fs.unlinkSync(captured.backImage)
-      await prisma.capturedBook.delete({ where: { id } })
+      if (captured.backImage && fs.existsSync(captured.backImage)) fs.unlinkSync(captured.backImage)
+      deleteCapturedBook(id)
 
       return { success: true }
     } catch (error) {
@@ -174,13 +163,13 @@ export const captureController = {
 
   reject: async (id: number) => {
     try {
-      const captured = await prisma.capturedBook.findUnique({ where: { id } })
+      const captured = getCapturedBookById(id)
       if (!captured) return { success: false, error: 'Not found' }
 
       // Cleanup
       if (fs.existsSync(captured.frontImage)) fs.unlinkSync(captured.frontImage)
-      if (fs.existsSync(captured.backImage)) fs.unlinkSync(captured.backImage)
-      await prisma.capturedBook.delete({ where: { id } })
+      if (captured.backImage && fs.existsSync(captured.backImage)) fs.unlinkSync(captured.backImage)
+      deleteCapturedBook(id)
 
       return { success: true }
     } catch (error) {

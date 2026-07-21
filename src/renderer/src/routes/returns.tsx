@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Spinner } from '@renderer/components/ui/spinner'
 import PageTitle from '@renderer/components/ui/page-title'
 import { DataTable } from '@renderer/components/ui/data-table'
@@ -47,7 +47,8 @@ function UpcomingReturns() {
   const { data, isLoading } = useQuery({
     queryKey: ['upcoming-returns'],
     queryFn: async () => await window.api.loans.getUpcomingReturns(),
-    enabled: authStatus.loggedIn
+    enabled: authStatus.loggedIn,
+    staleTime: 30_000
   })
 
   const returnBookMutation = useMutation({
@@ -57,6 +58,8 @@ function UpcomingReturns() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['upcoming-returns'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['loans', 'active'] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
     }
   })
 
@@ -67,6 +70,8 @@ function UpcomingReturns() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['upcoming-returns'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['loans', 'active'] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
     }
   })
 
@@ -83,105 +88,111 @@ function UpcomingReturns() {
     }
   }
 
-  const handleExtend = async (loanId: number, currentDueDate: Date | null) => {
-    // Extend by 14 days from current due date or today
-    const baseDate = currentDueDate ? new Date(currentDueDate) : new Date()
-    const newDueDate = new Date(baseDate)
-    newDueDate.setDate(newDueDate.getDate() + 14)
+  const handleExtend = useCallback(
+    async (loanId: number, currentDueDate: Date | null) => {
+      // Extend by 14 days from current due date or today
+      const baseDate = currentDueDate ? new Date(currentDueDate) : new Date()
+      const newDueDate = new Date(baseDate)
+      newDueDate.setDate(newDueDate.getDate() + 14)
 
-    try {
-      await extendLoanMutation.mutateAsync({ loanId, dueDate: newDueDate })
-    } catch (error) {
-      console.error('Failed to extend loan:', error)
-      alert('Failed to extend loan. Please try again.')
-    }
-  }
-
-  const columns: ColumnDef<LoanWithDetails>[] = [
-    {
-      accessorKey: 'borrower',
-      header: 'Name',
-      cell: ({ row }) => {
-        const borrower = row.original.borrower
-        return (
-          <div className="flex flex-col">
-            <Link
-              to="/users/$email"
-              params={{ email: borrower.email }}
-              className="hover:underline text-primary font-medium"
-            >
-              {borrower.name || 'Unknown User'}
-            </Link>
-            <span className="text-xs text-muted-foreground">{borrower.email}</span>
-          </div>
-        )
+      try {
+        await extendLoanMutation.mutateAsync({ loanId, dueDate: newDueDate })
+      } catch (error) {
+        console.error('Failed to extend loan:', error)
+        toast.error('Failed to extend loan. Please try again.')
       }
     },
-    {
-      accessorKey: 'book',
-      header: 'Book',
-      cell: ({ row }) => {
-        const book = row.original.book
-        return (
-          <div className="flex flex-col">
-            <Link
-              to="/books/$isbn"
-              params={{ isbn: row.original.bookIsbn }}
-              className="font-medium line-clamp-1 hover:underline text-primary"
-              title={book.title}
-            >
-              {book.title}
-            </Link>
-            <span className="text-xs text-muted-foreground font-mono">{book.isbn}</span>
-          </div>
-        )
-      }
-    },
-    {
-      accessorKey: 'dueDate',
-      header: 'Expected return date',
-      cell: ({ row }) => {
-        const dueDate = row.original.dueDate
-        if (!dueDate) return <span className="text-muted-foreground">None</span>
+    [extendLoanMutation]
+  )
 
-        const date = new Date(dueDate)
-        const isPastDue = date < new Date() && date.toDateString() !== new Date().toDateString()
+  const columns = useMemo<ColumnDef<LoanWithDetails>[]>(
+    () => [
+      {
+        accessorKey: 'borrower',
+        header: 'Name',
+        cell: ({ row }) => {
+          const borrower = row.original.borrower
+          return (
+            <div className="flex flex-col">
+              <Link
+                to="/users/$email"
+                params={{ email: borrower.email }}
+                className="hover:underline text-primary font-medium"
+              >
+                {borrower.name || 'Unknown User'}
+              </Link>
+              <span className="text-xs text-muted-foreground">{borrower.email}</span>
+            </div>
+          )
+        }
+      },
+      {
+        accessorKey: 'book',
+        header: 'Book',
+        cell: ({ row }) => {
+          const book = row.original.book
+          return (
+            <div className="flex flex-col">
+              <Link
+                to="/books/$isbn"
+                params={{ isbn: row.original.bookIsbn }}
+                className="font-medium line-clamp-1 hover:underline text-primary"
+                title={book.title}
+              >
+                {book.title}
+              </Link>
+              <span className="text-xs text-muted-foreground font-mono">{book.isbn}</span>
+            </div>
+          )
+        }
+      },
+      {
+        accessorKey: 'dueDate',
+        header: 'Expected return date',
+        cell: ({ row }) => {
+          const dueDate = row.original.dueDate
+          if (!dueDate) return <span className="text-muted-foreground">None</span>
 
-        return (
-          <span className={isPastDue ? 'text-destructive font-medium' : ''}>
-            {format(date, 'MMM d, yyyy')}
-            {isPastDue && ' (Overdue)'}
-          </span>
-        )
+          const date = new Date(dueDate)
+          const isPastDue = date < new Date() && date.toDateString() !== new Date().toDateString()
+
+          return (
+            <span className={isPastDue ? 'text-destructive font-medium' : ''}>
+              {format(date, 'MMM d, yyyy')}
+              {isPastDue && ' (Overdue)'}
+            </span>
+          )
+        }
+      },
+      {
+        id: 'actions',
+        cell: ({ row }) => {
+          const loan = row.original
+          return (
+            <div className="flex items-center gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setReturnLoanId(loan.id)}
+                disabled={returnBookMutation.isPending}
+              >
+                Mark as returned
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExtend(loan.id, loan.dueDate)}
+                disabled={extendLoanMutation.isPending}
+              >
+                Extend
+              </Button>
+            </div>
+          )
+        }
       }
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) => {
-        const loan = row.original
-        return (
-          <div className="flex items-center gap-2 justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setReturnLoanId(loan.id)}
-              disabled={returnBookMutation.isPending}
-            >
-              Mark as returned
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExtend(loan.id, loan.dueDate)}
-              disabled={extendLoanMutation.isPending}
-            >
-              Extend
-            </Button>
-          </div>
-        )
-      }
-    }
-  ]
+    ],
+    [setReturnLoanId, returnBookMutation.isPending, extendLoanMutation.isPending, handleExtend]
+  )
 
   const globalFilterFn = (loan: LoanWithDetails, filterValue: string): boolean => {
     const searchLower = filterValue.toLowerCase()

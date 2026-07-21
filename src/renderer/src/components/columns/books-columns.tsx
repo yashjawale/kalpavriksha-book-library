@@ -17,7 +17,12 @@ interface BooksColumnsProps {
   onDelete?: (isbn: string, title: string) => Promise<void>
   isDeleting?: boolean
   onEditStock?: (isbn: string, title: string, currentStock: number, activeRentals: number) => void
-  onChangeTags?: (isbn: string, title: string) => void
+  onChangeTags?: (
+    isbn: string,
+    title: string,
+    author?: string | null,
+    publisher?: string | null
+  ) => void
   onTitleClick?: (isbn: string) => void
   onEditDetails?: (book: Book) => void
 }
@@ -240,7 +245,14 @@ export function getBooksColumns({
                     )}
                     {onChangeTags && (
                       <DropdownMenuItem
-                        onClick={() => onChangeTags(row.original.isbn, row.original.title)}
+                        onClick={() =>
+                          onChangeTags(
+                            row.original.isbn,
+                            row.original.title,
+                            row.original.author,
+                            row.original.publisher
+                          )
+                        }
                       >
                         <Tag className="mr-2 size-4" />
                         Change Tags

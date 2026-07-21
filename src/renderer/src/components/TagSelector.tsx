@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Check, Plus } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Checkbox } from './ui/checkbox'
@@ -64,7 +65,7 @@ export function TagSelector({
       setNewTagName('')
     } catch (error) {
       console.error('Error creating tag:', error)
-      alert('Failed to create tag. It may already exist.')
+      toast.error('Failed to create tag. It may already exist.')
     } finally {
       setIsCreating(false)
     }

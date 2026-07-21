@@ -129,7 +129,11 @@ function BulkAdd() {
   // Fetch recent books using React Query
   const { data: recentBooks = [] } = useQuery<Book[]>({
     queryKey: ['books', 'recent'],
-    queryFn: async () => await window.api.books.getAll(1, 25, 'updatedAt', 'desc')
+    queryFn: async () => {
+      const result = await window.api.books.getAll(1, 25, 'updatedAt', 'desc')
+      return result.books
+    },
+    staleTime: 30_000
   })
 
   // Mutation for creating a book
@@ -138,7 +142,7 @@ function BulkAdd() {
       return await window.api.books.create(data)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
     }
   })
 
@@ -148,7 +152,7 @@ function BulkAdd() {
       return await window.api.books.updateStock(isbn, stockCount)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
     }
   })
 
@@ -160,7 +164,7 @@ function BulkAdd() {
       return await window.api.books.delete(isbn)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
     }
   })
 

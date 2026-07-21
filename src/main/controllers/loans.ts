@@ -1,5 +1,4 @@
 import { prisma } from '../lib/prisma'
-import { Loan } from '../../../generated/prisma/client'
 import { getSettings } from '../lib/settings'
 import { sendTransactionEmail } from '../lib/auth'
 import {
@@ -83,72 +82,74 @@ export const loansController = {
     userName?: string
     dueDate?: Date | null
   }) => {
-    // Check if user exists
-    let user = await prisma.user.findUnique({
-      where: { email: data.userEmail }
-    })
-
-    if (!user) {
-      // Create user if not existent? The schema needs the user. If they selected from the directory,
-      // they might not exist in the DB yet. The previous create checked and threw an error. Let's create instead to simplify.
-      user = await prisma.user.create({
-        data: { email: data.userEmail, name: data.userName || null }
+    const createdLoans = await prisma.$transaction(async (tx) => {
+      let user = await tx.user.findUnique({
+        where: { email: data.userEmail }
       })
-    }
 
-    const createdLoans: Loan[] = []
+      if (!user) {
+        user = await tx.user.create({
+          data: { email: data.userEmail, name: data.userName || null }
+        })
+      }
 
-    // Check books and create loans
-    for (const isbn of data.bookIsbns) {
-      const book = await prisma.book.findUnique({
-        where: { isbn: isbn },
+      const books = await tx.book.findMany({
+        where: { isbn: { in: data.bookIsbns } },
         include: {
           loans: {
-            where: { returnedAt: null }
+            where: { returnedAt: null },
+            select: { id: true }
           }
         }
       })
 
-      if (!book) {
-        throw new Error(`Book with ISBN ${isbn} not found.`)
+      const bookMap = new Map<string, (typeof books)[number]>(books.map((b) => [b.isbn, b]))
+
+      for (const isbn of data.bookIsbns) {
+        const book = bookMap.get(isbn)
+        if (!book) {
+          throw new Error(`Book with ISBN ${isbn} not found.`)
+        }
+        if (book.totalStock - book.loans.length <= 0) {
+          throw new Error(`Book ${book.title || isbn} is out of stock.`)
+        }
       }
 
-      const availableStock = book.totalStock - book.loans.length
-      if (availableStock <= 0) {
-        throw new Error(`Book ${book.title || isbn} is out of stock.`)
-      }
-
-      const loan = await prisma.loan.create({
-        data: {
+      await tx.loan.createMany({
+        data: data.bookIsbns.map((isbn) => ({
           bookIsbn: isbn,
           userEmail: data.userEmail,
           dueDate: data.dueDate
-        }
+        }))
       })
-      createdLoans.push(loan)
-    }
+
+      const result = await tx.loan.findMany({
+        where: {
+          bookIsbn: { in: data.bookIsbns },
+          userEmail: data.userEmail,
+          borrowedAt: { gte: new Date(Date.now() - 5000) }
+        },
+        orderBy: { borrowedAt: 'desc' },
+        take: data.bookIsbns.length
+      })
+
+      return { loans: result, bookMap }
+    })
+
+    const { loans, bookMap } = createdLoans
 
     const settings = getSettings()
-    if (settings.enableEmails && data.userEmail && createdLoans.length > 0) {
-      const subject = `[Library] Issuance Confirmation: ${createdLoans.length > 1 ? `${createdLoans.length} books` : 'a book'}`
-
-      // Need to fetch book info to pass to the template
-      const loansWithBooks = await prisma.loan.findMany({
-        where: { id: { in: createdLoans.map((l) => l.id) } },
-        include: { book: true }
-      })
-      const bookData = loansWithBooks.map((l) => ({
-        title: l.book?.title || l.bookIsbn,
-        isbn: l.bookIsbn
+    if (settings.enableEmails && data.userEmail && loans.length > 0) {
+      const subject = `[Library] Issuance Confirmation: ${loans.length > 1 ? `${loans.length} books` : 'a book'}`
+      const bookData = data.bookIsbns.map((isbn) => ({
+        title: bookMap.get(isbn)?.title || isbn,
+        isbn
       }))
-
       const body = generateRentalEmailBody(data.userName || '', bookData, data.dueDate)
-
-      // Fire and forget
       sendTransactionEmail(data.userEmail, subject, body).catch(console.error)
     }
 
-    return createdLoans
+    return loans
   },
 
   returnBook: async (loanId: number) => {

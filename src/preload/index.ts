@@ -13,7 +13,8 @@ const api = {
       orderBy?: string,
       order?: 'asc' | 'desc',
       isbnPrefix?: string,
-      needsBarcodeSticker?: boolean
+      needsBarcodeSticker?: boolean,
+      tagIds?: number[]
     ) =>
       ipcRenderer.invoke(
         'books:getAll',
@@ -22,7 +23,8 @@ const api = {
         orderBy,
         order,
         isbnPrefix,
-        needsBarcodeSticker
+        needsBarcodeSticker,
+        tagIds
       ),
     getById: (isbn: string) => ipcRenderer.invoke('books:getById', isbn),
     getBookDetails: (isbn: string) => ipcRenderer.invoke('books:getBookDetails', isbn),

@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import { AboutDialog } from './AboutDialog'
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 
 export function AppSidebar() {
   const [aboutDialogOpen, setAboutDialogOpen] = useState(false)
@@ -48,7 +49,7 @@ export function AppSidebar() {
   const handleLogin = async () => {
     const result = await window.api.auth.login()
     if (result && !result.success) {
-      alert(`Login failed: ${result.error}`)
+      toast.error(`Login failed: ${result.error}`)
     }
     checkAuth()
   }

@@ -11,6 +11,7 @@ import { BarcodePDF } from '../components/BarcodePDF'
 import { DataTable } from '@renderer/components/ui/data-table'
 import { getBarcodesColumns } from '@renderer/components/columns/barcodes-columns'
 import PageTitle from '@renderer/components/ui/page-title'
+import { toast } from 'sonner'
 import { ToggleGroup, ToggleGroupItem } from '@renderer/components/ui/toggle-group'
 import {
   DropdownMenu,
@@ -38,17 +39,16 @@ function BarcodesPage() {
     queryKey: ['books', 'barcodes', bookType],
     queryFn: async () => {
       if (bookType === 'custom') {
-        // Custom books: books starting with KVB-
-        return await window.api.books.getAll(
+        const result = await window.api.books.getAll(
           1,
           Number.MAX_SAFE_INTEGER,
           'updatedAt',
           'desc',
           'KVB-'
         )
+        return result.books
       } else {
-        // ISBN books: books NOT starting with KVB- AND needsBarcodeSticker = true
-        const allIsbnBooks = await window.api.books.getAll(
+        const result = await window.api.books.getAll(
           1,
           Number.MAX_SAFE_INTEGER,
           'updatedAt',
@@ -56,7 +56,7 @@ function BarcodesPage() {
           undefined,
           true
         )
-        return allIsbnBooks.filter((book) => !book.isbn.startsWith('KVB-'))
+        return result.books.filter((book) => !book.isbn.startsWith('KVB-'))
       }
     }
   })
@@ -125,7 +125,7 @@ function BarcodesPage() {
       }
     } catch (error) {
       console.error('Error deleting book:', error)
-      alert('Failed to delete book. Please try again.')
+      toast.error('Failed to delete book. Please try again.')
     }
   }
 
@@ -157,7 +157,7 @@ function BarcodesPage() {
       }
 
       if (booksToPrint.length === 0) {
-        alert('Please select at least one book to generate barcodes.')
+        toast.error('Please select at least one book to generate barcodes.')
         return
       }
 
@@ -180,7 +180,7 @@ function BarcodesPage() {
       })
 
       if (booksWithBarcodes.length === 0) {
-        alert('Failed to generate any barcodes. Please try again.')
+        toast.error('Failed to generate any barcodes. Please try again.')
         return
       }
 
@@ -196,7 +196,7 @@ function BarcodesPage() {
       URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Error generating PDF:', error)
-      alert('Failed to generate PDF. Please try again.')
+      toast.error('Failed to generate PDF. Please try again.')
     } finally {
       setIsGenerating(false)
     }

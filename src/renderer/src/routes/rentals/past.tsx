@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Table,
   TableBody,
@@ -9,11 +10,12 @@ import {
   TableRow
 } from '@renderer/components/ui/table'
 import { Input } from '@renderer/components/ui/input'
-import { Button } from '@renderer/components/ui/button'
+import { Skeleton } from '@renderer/components/ui/skeleton'
 import { useSimpleDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import PageTitle from '@renderer/components/ui/page-title'
 import { format } from 'date-fns'
+import { PaginationBar } from '@renderer/components/ui/pagination-bar'
 
 export const Route = createFileRoute('/rentals/past')({
   component: PastRentalsPage
@@ -30,63 +32,28 @@ type PastLoan = {
 }
 
 function PastRentalsPage() {
-  const [loans, setLoans] = useState<PastLoan[]>([])
-  const [totalLoans, setTotalLoans] = useState(0)
+  const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
   const perPage = 10
-  const [loading, setLoading] = useState(false)
 
-  const fetchLoans = async (p: number, q: string) => {
-    setLoading(true)
-    try {
-      const data = (await window.api.loans.getPastLoans(p, perPage, q)) as {
-        loans: PastLoan[]
-        total: number
-      }
-      setLoans(data.loans)
-      setTotalLoans(data.total)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { data, isLoading } = useQuery({
+    queryKey: ['loans', 'past', page, searchQuery],
+    queryFn: async () => {
+      const result = await window.api.loans.getPastLoans(page, perPage, searchQuery)
+      return result as { loans: PastLoan[]; total: number }
+    },
+    staleTime: 30_000
+  })
+
+  const loans = data?.loans ?? []
+  const totalLoans = data?.total ?? 0
+  const totalPages = Math.ceil(totalLoans / perPage)
 
   const debouncedSearch = useSimpleDebouncedCallback((val: string) => {
+    setSearchQuery(val)
     setPage(1)
-    fetchLoans(1, val)
   }, 500)
-
-  useEffect(() => {
-    let mounted = true
-    const load = async () => {
-      setLoading(true)
-      try {
-        const data = (await window.api.loans.getPastLoans(page, perPage, searchQuery)) as {
-          loans: PastLoan[]
-          total: number
-        }
-        if (mounted) {
-          setLoans(data.loans)
-          setTotalLoans(data.total)
-        }
-      } catch (err) {
-        console.error(err)
-      } finally {
-        if (mounted) {
-          setLoading(false)
-        }
-      }
-    }
-    load()
-    return () => {
-      mounted = false
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page])
-
-  const totalPages = Math.ceil(totalLoans / perPage)
 
   return (
     <div className="w-full">
@@ -102,9 +69,9 @@ function PastRentalsPage() {
         <Input
           placeholder="Search by book, name or email..."
           className="pl-8"
-          value={searchQuery}
+          value={searchInput}
           onChange={(e) => {
-            setSearchQuery(e.target.value)
+            setSearchInput(e.target.value)
             debouncedSearch(e.target.value)
           }}
         />
@@ -121,12 +88,24 @@ function PastRentalsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading && loans.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                  Loading...
-                </TableCell>
-              </TableRow>
+            {isLoading ? (
+              Array.from({ length: perPage }).map((_, i) => (
+                <TableRow key={`skeleton-${i}`}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2 mt-1" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-2/3" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-16" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-16" />
+                  </TableCell>
+                </TableRow>
+              ))
             ) : loans.length > 0 ? (
               loans.map((loan) => (
                 <TableRow key={loan.id}>
@@ -168,29 +147,11 @@ function PastRentalsPage() {
         </Table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center space-x-2 py-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-          >
-            <ChevronLeft className="w-4 h-4 mr-1" /> Previous
-          </Button>
-          <div className="text-sm font-medium">
-            Page {page} of {totalPages}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-          >
-            Next <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-        </div>
-      )}
+      <PaginationBar
+        currentPage={page - 1}
+        totalPages={totalPages}
+        onPageChange={(p) => setPage(p + 1)}
+      />
     </div>
   )
 }

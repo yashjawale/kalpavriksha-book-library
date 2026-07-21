@@ -5,13 +5,15 @@ import { PrismaClient } from '../generated/prisma/index.js'
 import { PrismaPg } from '@prisma/adapter-pg'
 import dotenv from 'dotenv'
 
+let kvbCounter = 0
+
 function generateKVBId(): string {
   const now = new Date()
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const day = String(now.getDate()).padStart(2, '0')
-  const milliseconds = String(now.getMilliseconds()).padStart(3, '0')
-  return `KVB-${year}${month}${day}${milliseconds}`
+  const seq = String(kvbCounter++).padStart(3, '0')
+  return `KVB-${year}${month}${day}${seq}`
 }
 
 dotenv.config()

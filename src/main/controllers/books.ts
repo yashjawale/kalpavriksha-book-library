@@ -8,37 +8,47 @@ export const booksController = {
     orderBy: string = 'updatedAt',
     order: 'asc' | 'desc' = 'desc',
     searchQuery?: string,
-    needsBarcodeSticker?: boolean
+    needsBarcodeSticker?: boolean,
+    tagIds?: number[]
   ) => {
     const skip = (page - 1) * perPage
     const orderByClause = orderBy ? { [orderBy]: order } : {}
     const whereClause: Prisma.BookWhereInput = {}
 
     if (searchQuery) {
-      whereClause.OR = [{ isbn: { contains: searchQuery } }, { title: { contains: searchQuery } }]
+      whereClause.OR = [
+        { isbn: { contains: searchQuery, mode: 'insensitive' } },
+        { title: { contains: searchQuery, mode: 'insensitive' } },
+        { author: { contains: searchQuery, mode: 'insensitive' } },
+        { publisher: { contains: searchQuery, mode: 'insensitive' } }
+      ]
     }
 
     if (needsBarcodeSticker !== undefined) {
       whereClause.needsBarcodeSticker = needsBarcodeSticker
     }
 
-    return await prisma.book.findMany({
-      skip,
-      take: perPage,
-      where: whereClause,
-      orderBy: orderByClause,
-      include: {
-        bookTags: {
-          include: {
-            tag: true
-          }
-        },
-        loans: {
-          where: { returnedAt: null },
-          select: { id: true }
-        }
+    if (tagIds && tagIds.length > 0) {
+      whereClause.bookTags = {
+        some: { tagId: { in: tagIds } }
       }
-    })
+    }
+
+    const [books, total] = await Promise.all([
+      prisma.book.findMany({
+        skip,
+        take: perPage,
+        where: whereClause,
+        orderBy: orderByClause,
+        include: {
+          bookTags: { include: { tag: true } },
+          loans: { where: { returnedAt: null }, select: { id: true } }
+        }
+      }),
+      prisma.book.count({ where: whereClause })
+    ])
+
+    return { books, total }
   },
 
   getById: async (isbn: string) => {
@@ -114,28 +124,27 @@ export const booksController = {
     isbn: string,
     details: { title: string; author?: string; publisher?: string; tagIds?: number[] }
   ) => {
-    // If tagIds are provided, we do a transaction or just update them
-    if (details.tagIds !== undefined) {
-      // First remove existing tags for this book
-      await prisma.bookTag.deleteMany({
-        where: { bookIsbn: isbn }
-      })
-
-      // Add new tags
-      if (details.tagIds.length > 0) {
-        await prisma.bookTag.createMany({
-          data: details.tagIds.map((tagId) => ({ bookIsbn: isbn, tagId }))
+    return await prisma.$transaction(async (tx) => {
+      if (details.tagIds !== undefined) {
+        await tx.bookTag.deleteMany({
+          where: { bookIsbn: isbn }
         })
-      }
-    }
 
-    return await prisma.book.update({
-      where: { isbn },
-      data: {
-        title: details.title,
-        author: details.author,
-        publisher: details.publisher
+        if (details.tagIds.length > 0) {
+          await tx.bookTag.createMany({
+            data: details.tagIds.map((tagId) => ({ bookIsbn: isbn, tagId }))
+          })
+        }
       }
+
+      return await tx.book.update({
+        where: { isbn },
+        data: {
+          title: details.title,
+          author: details.author,
+          publisher: details.publisher
+        }
+      })
     })
   },
 
@@ -185,76 +194,37 @@ export const booksController = {
   },
 
   bulkUpdateTags: async (isbns: string[], tagIds: number[]) => {
-    // For each book, first delete all existing tags, then add the new ones
-    for (const isbn of isbns) {
-      // Delete existing tags
-      await prisma.bookTag.deleteMany({
-        where: { bookIsbn: isbn }
+    return await prisma.$transaction(async (tx) => {
+      await tx.bookTag.deleteMany({
+        where: { bookIsbn: { in: isbns } }
       })
 
-      // Add new tags
       if (tagIds.length > 0) {
-        await prisma.bookTag.createMany({
-          data: tagIds.map((tagId) => ({
-            bookIsbn: isbn,
-            tagId
-          }))
-        })
+        const data = isbns.flatMap((isbn) => tagIds.map((tagId) => ({ bookIsbn: isbn, tagId })))
+        await tx.bookTag.createMany({ data })
       }
-    }
 
-    return await prisma.book.findMany({
-      where: {
-        isbn: {
-          in: isbns
+      return await tx.book.findMany({
+        where: { isbn: { in: isbns } },
+        include: {
+          bookTags: { include: { tag: true } }
         }
-      },
-      include: {
-        bookTags: {
-          include: {
-            tag: true
-          }
-        }
-      }
+      })
     })
   },
 
   bulkAddTag: async (isbns: string[], tagIds: number[]) => {
-    // For each book and tag combination, add the tag if it doesn't already exist
-    for (const isbn of isbns) {
-      for (const tagId of tagIds) {
-        const existing = await prisma.bookTag.findUnique({
-          where: {
-            bookIsbn_tagId: {
-              bookIsbn: isbn,
-              tagId
-            }
-          }
-        })
+    const data = isbns.flatMap((isbn) => tagIds.map((tagId) => ({ bookIsbn: isbn, tagId })))
 
-        if (!existing) {
-          await prisma.bookTag.create({
-            data: {
-              bookIsbn: isbn,
-              tagId
-            }
-          })
-        }
-      }
-    }
+    await prisma.bookTag.createMany({
+      data,
+      skipDuplicates: true
+    })
 
     return await prisma.book.findMany({
-      where: {
-        isbn: {
-          in: isbns
-        }
-      },
+      where: { isbn: { in: isbns } },
       include: {
-        bookTags: {
-          include: {
-            tag: true
-          }
-        }
+        bookTags: { include: { tag: true } }
       }
     })
   },

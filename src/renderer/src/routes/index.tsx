@@ -14,7 +14,8 @@ export const Route = createFileRoute('/')({
 function Dashboard() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: async () => await window.api.dashboard.getStats()
+    queryFn: async () => await window.api.dashboard.getStats(),
+    staleTime: 30_000
   })
 
   if (isLoading) {

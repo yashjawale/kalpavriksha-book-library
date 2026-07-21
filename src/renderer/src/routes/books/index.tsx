@@ -5,7 +5,8 @@ import type { Book, Tag } from '@renderer/types/book'
 import { DataTable } from '@renderer/components/ui/data-table'
 import { getBooksColumns } from '@renderer/components/columns/books-columns'
 import PageTitle from '@renderer/components/ui/page-title'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
+import { useSimpleDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 import { Button } from '@renderer/components/ui/button'
 import { Trash2, Tag as TagIcon, Plus, Minus } from 'lucide-react'
 import {
@@ -30,6 +31,7 @@ import {
 } from '@renderer/components/ui/dropdown-menu'
 import { Filter } from 'lucide-react'
 import { EditBookDialog } from '@renderer/components/EditBookDialog'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/books/')({
   component: ManageBooks
@@ -49,6 +51,8 @@ function ManageBooks() {
     title: string
     currentStock: number
     activeRentals: number
+    author?: string | null
+    publisher?: string | null
   } | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editDetailsBook, setEditDetailsBook] = useState<Book | null>(null)
@@ -57,26 +61,40 @@ function ManageBooks() {
   const [selectedTagFilters, setSelectedTagFilters] = useState<number[]>([])
   const [selectedAddTagIds, setSelectedAddTagIds] = useState<number[]>([])
   const [selectedRemoveTagIds, setSelectedRemoveTagIds] = useState<number[]>([])
+  const [pageIndex, setPageIndex] = useState(0)
+  const pageSize = 25
+  const [searchQuery, setSearchQuery] = useState('')
 
-  const { data: allBooks = [], isLoading } = useQuery<Book[]>({
-    queryKey: ['books'],
-    // Fetch all books without pagination limits for client-side filtering
-    queryFn: async () => await window.api.books.getAll(1, Number.MAX_SAFE_INTEGER)
+  const { data, isLoading } = useQuery({
+    queryKey: ['books', pageIndex, searchQuery, selectedTagFilters],
+    queryFn: async () => {
+      const result = await window.api.books.getAll(
+        pageIndex + 1,
+        pageSize,
+        'updatedAt',
+        'desc',
+        searchQuery || undefined,
+        undefined,
+        selectedTagFilters.length > 0 ? selectedTagFilters : undefined
+      )
+      return result as { books: Book[]; total: number }
+    },
+    staleTime: 30_000
   })
+
+  const books = useMemo(() => data?.books ?? [], [data?.books])
+  const totalBooks = data?.total ?? 0
 
   const { data: allTags = [] } = useQuery<Tag[]>({
     queryKey: ['tags'],
-    queryFn: async () => await window.api.tags.getAll()
+    queryFn: async () => await window.api.tags.getAll(),
+    staleTime: 30_000
   })
 
-  // Filter books by selected tags
-  const filteredBooks = useMemo(() => {
-    if (selectedTagFilters.length === 0) return allBooks
-    return allBooks.filter((book) => {
-      if (!book.bookTags || book.bookTags.length === 0) return false
-      return selectedTagFilters.some((tagId) => book.bookTags!.some((bt) => bt.tag.id === tagId))
-    })
-  }, [allBooks, selectedTagFilters])
+  const handleSearchChange = useSimpleDebouncedCallback((value: string) => {
+    setSearchQuery(value)
+    setPageIndex(0)
+  }, 300)
 
   // Get selected ISBNs from rowSelection
   const selectedISBNs = useMemo(
@@ -88,8 +106,10 @@ function ManageBooks() {
     mutationFn: async (isbn: string) => {
       return await window.api.books.delete(isbn)
     },
-    onSuccess: () => {
+    onSuccess: (_data, isbn) => {
       queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['book', isbn] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
     }
   })
 
@@ -99,6 +119,7 @@ function ManageBooks() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
       setRowSelection({})
     }
   })
@@ -107,26 +128,36 @@ function ManageBooks() {
     mutationFn: async ({ isbn, newStock }: { isbn: string; newStock: number }) => {
       return await window.api.books.updateStock(isbn, newStock)
     },
-    onSuccess: () => {
+    onSuccess: (_data, { isbn }) => {
       queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['book', isbn] })
     }
   })
 
   const updateTagsMutation = useMutation({
-    mutationFn: async ({ isbn, tagIds }: { isbn: string; tagIds: number[] }) => {
-      // First remove all tags, then add the new ones
-      const book = allBooks.find((b) => b.isbn === isbn)
-      if (book?.bookTags) {
-        for (const bt of book.bookTags) {
-          await window.api.tags.removeTagFromBook(isbn, bt.tag.id)
-        }
-      }
-      if (tagIds.length > 0) {
-        await window.api.tags.addTagsToBook(isbn, tagIds)
-      }
+    mutationFn: async ({
+      isbn,
+      tagIds,
+      title,
+      author,
+      publisher
+    }: {
+      isbn: string
+      tagIds: number[]
+      title: string
+      author?: string | null
+      publisher?: string | null
+    }) => {
+      await window.api.books.updateDetails(isbn, {
+        title,
+        author: author ?? undefined,
+        publisher: publisher ?? undefined,
+        tagIds
+      })
     },
-    onSuccess: () => {
+    onSuccess: (_data, { isbn }) => {
       queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['book', isbn] })
     }
   })
 
@@ -136,6 +167,7 @@ function ManageBooks() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
       setRowSelection({})
     }
   })
@@ -160,25 +192,28 @@ function ManageBooks() {
     }
   })
 
-  const handleDelete = async (isbn: string, title: string): Promise<void> => {
-    const confirmed = confirm(
-      `Are you sure you want to delete "${title}"?\n\nThis action cannot be undone.`
-    )
-    if (!confirmed) return
+  const handleDelete = useCallback(
+    async (isbn: string, title: string): Promise<void> => {
+      const confirmed = confirm(
+        `Are you sure you want to delete "${title}"?\n\nThis action cannot be undone.`
+      )
+      if (!confirmed) return
 
-    try {
-      await deleteBookMutation.mutateAsync(isbn)
-      // Remove from selection if it was selected
-      if (rowSelection[isbn]) {
-        const newSelection = { ...rowSelection }
-        delete newSelection[isbn]
-        setRowSelection(newSelection)
+      try {
+        await deleteBookMutation.mutateAsync(isbn)
+        // Remove from selection if it was selected
+        if (rowSelection[isbn]) {
+          const newSelection = { ...rowSelection }
+          delete newSelection[isbn]
+          setRowSelection(newSelection)
+        }
+      } catch (error) {
+        console.error('Error deleting book:', error)
+        toast.error('Failed to delete book. Please try again.')
       }
-    } catch (error) {
-      console.error('Error deleting book:', error)
-      alert('Failed to delete book. Please try again.')
-    }
-  }
+    },
+    [deleteBookMutation, rowSelection]
+  )
 
   const handleBulkDelete = async (): Promise<void> => {
     const confirmed = confirm(
@@ -190,26 +225,24 @@ function ManageBooks() {
       await bulkDeleteMutation.mutateAsync(selectedISBNs)
     } catch (error) {
       console.error('Error deleting books:', error)
-      alert('Failed to delete books. Please try again.')
+      toast.error('Failed to delete books. Please try again.')
     }
   }
 
-  const handleEditStock = (
-    isbn: string,
-    title: string,
-    currentStock: number,
-    activeRentals: number
-  ): void => {
-    setSelectedBook({ isbn, title, currentStock, activeRentals })
-    setNewStockValue(currentStock)
-    setEditStockDialogOpen(true)
-  }
+  const handleEditStock = useCallback(
+    (isbn: string, title: string, currentStock: number, activeRentals: number): void => {
+      setSelectedBook({ isbn, title, currentStock, activeRentals })
+      setNewStockValue(currentStock)
+      setEditStockDialogOpen(true)
+    },
+    []
+  )
 
   const handleEditStockConfirm = async (): Promise<void> => {
     if (!selectedBook) return
 
     if (newStockValue < selectedBook.activeRentals) {
-      alert(
+      toast.error(
         `Cannot set stock lower than active rentals (${selectedBook.activeRentals} book(s) currently issued).`
       )
       return
@@ -222,28 +255,44 @@ function ManageBooks() {
       setNewStockValue(1)
     } catch (error) {
       console.error('Error updating stock:', error)
-      alert('Failed to update stock. Please try again.')
+      toast.error('Failed to update stock. Please try again.')
     }
   }
 
-  const handleChangeTags = (isbn: string, title: string): void => {
-    const book = allBooks.find((b) => b.isbn === isbn)
-    setSelectedBook({ isbn, title, currentStock: 0, activeRentals: 0 })
-    setSelectedTagIds(book?.bookTags?.map((bt) => bt.tag.id) || [])
-    setChangeTagsDialogOpen(true)
-  }
+  const handleChangeTags = useCallback(
+    (isbn: string, title: string, author?: string | null, publisher?: string | null): void => {
+      const book = books.find((b) => b.isbn === isbn)
+      setSelectedBook({
+        isbn,
+        title,
+        currentStock: 0,
+        activeRentals: 0,
+        author: author ?? undefined,
+        publisher: publisher ?? undefined
+      })
+      setSelectedTagIds(book?.bookTags?.map((bt) => bt.tag.id) || [])
+      setChangeTagsDialogOpen(true)
+    },
+    [books]
+  )
 
   const handleChangeTagsConfirm = async (): Promise<void> => {
     if (!selectedBook) return
 
     try {
-      await updateTagsMutation.mutateAsync({ isbn: selectedBook.isbn, tagIds: selectedTagIds })
+      await updateTagsMutation.mutateAsync({
+        isbn: selectedBook.isbn,
+        tagIds: selectedTagIds,
+        title: selectedBook.title,
+        author: selectedBook.author,
+        publisher: selectedBook.publisher
+      })
       setChangeTagsDialogOpen(false)
       setSelectedBook(null)
       setSelectedTagIds([])
     } catch (error) {
       console.error('Error updating tags:', error)
-      alert('Failed to update tags. Please try again.')
+      toast.error('Failed to update tags. Please try again.')
     }
   }
 
@@ -259,7 +308,7 @@ function ManageBooks() {
       setSelectedTagIds([])
     } catch (error) {
       console.error('Error updating tags:', error)
-      alert('Failed to update tags. Please try again.')
+      toast.error('Failed to update tags. Please try again.')
     }
   }
 
@@ -277,7 +326,7 @@ function ManageBooks() {
       setSelectedAddTagIds([])
     } catch (error) {
       console.error('Error adding tag:', error)
-      alert('Failed to add tag. Please try again.')
+      toast.error('Failed to add tag. Please try again.')
     }
   }
 
@@ -298,7 +347,7 @@ function ManageBooks() {
       setSelectedRemoveTagIds([])
     } catch (error) {
       console.error('Error removing tag:', error)
-      alert('Failed to remove tag. Please try again.')
+      toast.error('Failed to remove tag. Please try again.')
     }
   }
 
@@ -306,46 +355,36 @@ function ManageBooks() {
     setSelectedTagFilters((prev) =>
       prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
     )
+    setPageIndex(0)
   }
 
-  const handleEditDetails = (book: Book): void => {
+  const handleEditDetails = useCallback((book: Book): void => {
     setEditDetailsBook(book)
     setEditDialogOpen(true)
-  }
+  }, [])
 
-  const columns = getBooksColumns({
-    onDelete: handleDelete,
-    isDeleting: deleteBookMutation.isPending,
-    onEditStock: handleEditStock,
-    onChangeTags: handleChangeTags,
-    onEditDetails: handleEditDetails,
-    onTitleClick: (isbn) => {
-      navigate({ to: '/books/$isbn', params: { isbn } })
-    }
-  })
-
-  // Global filter function for searching across multiple fields
-  const globalFilterFn = (book: Book, filterValue: string): boolean => {
-    const searchLower = filterValue.toLowerCase()
-    const matchesText =
-      book.title.toLowerCase().includes(searchLower) ||
-      book.isbn.toLowerCase().includes(searchLower) ||
-      book.author?.toLowerCase().includes(searchLower) ||
-      book.publisher?.toLowerCase().includes(searchLower)
-
-    // Also search in tags
-    const matchesTags = book.bookTags?.some((bt) => bt.tag.name.toLowerCase().includes(searchLower))
-
-    return matchesText || Boolean(matchesTags)
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Spinner className="size-16" />
-      </div>
-    )
-  }
+  const columns = useMemo(
+    () =>
+      getBooksColumns({
+        onDelete: handleDelete,
+        isDeleting: deleteBookMutation.isPending,
+        onEditStock: handleEditStock,
+        onChangeTags: (isbn, title, author, publisher) =>
+          handleChangeTags(isbn, title, author, publisher),
+        onEditDetails: handleEditDetails,
+        onTitleClick: (isbn) => {
+          navigate({ to: '/books/$isbn', params: { isbn } })
+        }
+      }),
+    [
+      handleDelete,
+      deleteBookMutation.isPending,
+      handleEditStock,
+      handleChangeTags,
+      handleEditDetails,
+      navigate
+    ]
+  )
 
   return (
     <div className="w-full">
@@ -428,15 +467,21 @@ function ManageBooks() {
       </div>
       <DataTable
         columns={columns}
-        data={filteredBooks}
+        data={books}
         searchPlaceholder="Search books..."
-        pageSize={25}
-        globalFilterFn={globalFilterFn}
+        pageSize={pageSize}
         initialSorting={[{ id: 'createdAt', desc: true }]}
         enableRowSelection
         rowSelection={rowSelection}
         onRowSelectionChange={setRowSelection}
         getRowId={(book) => book.isbn}
+        manualPagination
+        pageIndex={pageIndex}
+        onPageChange={setPageIndex}
+        pageCount={Math.ceil(totalBooks / pageSize)}
+        total={totalBooks}
+        onSearchChange={handleSearchChange}
+        isLoading={isLoading}
       />
 
       {/* Edit Stock Dialog */}

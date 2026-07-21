@@ -14,6 +14,7 @@ import { Spinner } from '@renderer/components/ui/spinner'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Book } from '@renderer/types/book'
 import { TagSelector } from '@renderer/components/TagSelector'
+import { toast } from 'sonner'
 
 interface EditBookDialogProps {
   book: Book | null
@@ -76,7 +77,7 @@ export function EditBookDialog({ book, open, onOpenChange, onSuccess }: EditBook
       })
     } catch (error) {
       console.error('Error updating details:', error)
-      alert('Failed to update details. Please try again.')
+      toast.error('Failed to update details. Please try again.')
     }
   }
 
