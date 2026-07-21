@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { LoginOverlay } from '@renderer/components/LoginOverlay'
 import {
   Table,
@@ -11,6 +13,7 @@ import {
 } from '@renderer/components/ui/table'
 import { Card, CardContent } from '@renderer/components/ui/card'
 import { Button } from '@renderer/components/ui/button'
+import { Spinner } from '@renderer/components/ui/spinner'
 import { Input } from '@renderer/components/ui/input'
 import { ArrowLeft, Pencil } from 'lucide-react'
 import {
@@ -52,13 +55,10 @@ function UserDetailsPage() {
   const [authStatus, setAuthStatus] = useState<{
     loggedIn: boolean
     user?: { name?: string; email?: string } | null
-  }>({
-    loggedIn: false
-  })
+  }>({ loggedIn: false })
 
   const { email } = Route.useParams()
-  const [user, setUser] = useState<User | null>(null)
-  const [orgUnit, setOrgUnit] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
   const [isEditingName, setIsEditingName] = useState(false)
   const [editNameValue, setEditNameValue] = useState('')
@@ -69,51 +69,126 @@ function UserDetailsPage() {
 
   const [returnDialogOpen, setReturnDialogOpen] = useState(false)
   const [loanToReturn, setLoanToReturn] = useState<number | null>(null)
-
-  // For bulk extend
   const [isBulkExtend, setIsBulkExtend] = useState(false)
 
-  const loadUser = async () => {
-    const data = await window.api.users.getByEmail(email)
-    setUser(data as unknown as User)
+  useEffect(() => {
+    window.api.auth.getStatus().then(setAuthStatus)
+  }, [])
+
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['user', email],
+    queryFn: async () => {
+      const data = await window.api.users.getByEmail(email)
+      return data as unknown as User
+    },
+    enabled: authStatus.loggedIn
+  })
+
+  const { data: orgUnit } = useQuery({
+    queryKey: ['user-org', email],
+    queryFn: async () => {
+      const googleData = await window.api.auth.getUserDetails(email)
+      return googleData?.orgUnitPath ?? null
+    },
+    enabled: authStatus.loggedIn
+  })
+
+  const invalidateUser = () => {
+    queryClient.invalidateQueries({ queryKey: ['user', email] })
+    queryClient.invalidateQueries({ queryKey: ['loans', 'active'] })
+    queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+    queryClient.invalidateQueries({ queryKey: ['upcoming-returns'] })
+    queryClient.invalidateQueries({ queryKey: ['returns-today'] })
+    queryClient.invalidateQueries({ queryKey: ['books'] })
   }
 
-  useEffect(() => {
-    let mounted = true
-    window.api.auth.getStatus().then((status) => {
-      if (mounted) {
-        setAuthStatus(status)
-        if (status.loggedIn) {
-          window.api.users.getByEmail(email).then((data) => {
-            if (mounted) setUser(data as unknown as User)
-          })
-          window.api.auth.getUserDetails(email).then((googleData) => {
-            if (mounted && googleData) setOrgUnit(googleData.orgUnitPath)
-          })
-        }
-      }
-    })
-    return () => {
-      mounted = false
+  const returnMutation = useMutation({
+    mutationFn: async (loanId: number) => {
+      await window.api.loans.returnBook(loanId)
+    },
+    onSuccess: () => {
+      toast.success('Book marked as returned.')
+      invalidateUser()
+    },
+    onError: (err) => {
+      console.error(err)
+      toast.error('Failed to return book.')
     }
-  }, [email])
+  })
+
+  const updateNameMutation = useMutation({
+    mutationFn: async (name: string) => {
+      await window.api.users.updateName(email, name)
+    },
+    onSuccess: () => {
+      toast.success('Name updated.')
+      invalidateUser()
+    },
+    onError: (err) => {
+      console.error(err)
+      toast.error('Failed to update name.')
+    }
+  })
+
+  const extendMutation = useMutation({
+    mutationFn: async ({ loanId, dueDate }: { loanId: number; dueDate: Date }) => {
+      await window.api.loans.extendLoan(loanId, dueDate)
+    },
+    onSuccess: () => {
+      toast.success('Loan extended.')
+      invalidateUser()
+    },
+    onError: (err) => {
+      console.error(err)
+      toast.error('Failed to extend loan.')
+    }
+  })
+
+  const bulkExtendMutation = useMutation({
+    mutationFn: async (dueDate: Date) => {
+      const activeLoanIds = user?.loans.filter((l) => !l.returnedAt).map((l) => l.id) || []
+      if (activeLoanIds.length > 0) {
+        await window.api.loans.bulkExtendLoans(activeLoanIds, dueDate)
+      }
+    },
+    onSuccess: () => {
+      toast.success('All active loans extended.')
+      invalidateUser()
+    },
+    onError: (err) => {
+      console.error(err)
+      toast.error('Failed to extend loans.')
+    }
+  })
+
+  const bulkReturnMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) return
+      const activeLoanIds = user.loans.filter((l) => !l.returnedAt).map((l) => l.id)
+      if (activeLoanIds.length > 0) {
+        await window.api.loans.bulkReturnBooks(activeLoanIds)
+      }
+    },
+    onSuccess: () => {
+      toast.success('All active loans marked as returned.')
+      invalidateUser()
+    },
+    onError: (err) => {
+      console.error(err)
+      toast.error('Failed to return books.')
+    }
+  })
 
   const handleReturn = async () => {
     if (loanToReturn === null) return
-    await window.api.loans.returnBook(loanToReturn)
+    await returnMutation.mutateAsync(loanToReturn)
     setReturnDialogOpen(false)
     setLoanToReturn(null)
-    loadUser()
   }
 
   const handleUpdateName = async () => {
-    try {
-      await window.api.users.updateName(email, editNameValue)
-      setIsEditingName(false)
-      loadUser()
-    } catch (err) {
-      console.error(err)
-    }
+    await updateNameMutation.mutateAsync(editNameValue)
+    setIsEditingName(false)
   }
 
   const handleOpenExtendDialog = (loan: Loan) => {
@@ -125,33 +200,22 @@ function UserDetailsPage() {
   }
 
   const handleExtendLoan = async () => {
-    try {
-      if (isBulkExtend) {
-        const activeLoanIds = user?.loans.filter((l) => !l.returnedAt).map((l) => l.id) || []
-        if (activeLoanIds.length > 0 && newDueDate) {
-          await window.api.loans.bulkExtendLoans(activeLoanIds, new Date(newDueDate))
-        }
-      } else {
-        if (loanToExtend && newDueDate) {
-          await window.api.loans.extendLoan(loanToExtend.id, new Date(newDueDate))
-        }
+    if (isBulkExtend) {
+      await bulkExtendMutation.mutateAsync(new Date(newDueDate))
+    } else {
+      if (loanToExtend) {
+        await extendMutation.mutateAsync({ loanId: loanToExtend.id, dueDate: new Date(newDueDate) })
       }
-      setExtensionDialogOpen(false)
-      setLoanToExtend(null)
-      loadUser()
-    } catch (err) {
-      console.error(err)
     }
+    setExtensionDialogOpen(false)
+    setLoanToExtend(null)
   }
 
-  const handleBulkReturn = async () => {
+  const handleBulkReturn = () => {
     if (!user) return
-    const activeLoanIds = user.loans.filter((l) => !l.returnedAt).map((l) => l.id)
-    if (activeLoanIds.length === 0) return
-    if (confirm(`Are you sure you want to mark all ${activeLoanIds.length} loans as returned?`)) {
-      await window.api.loans.bulkReturnBooks(activeLoanIds)
-      loadUser()
-    }
+    const count = user.loans.filter((l) => !l.returnedAt).length
+    if (count === 0) return
+    bulkReturnMutation.mutate()
   }
 
   const handleBulkExtend = () => {
@@ -164,22 +228,27 @@ function UserDetailsPage() {
     return <LoginOverlay description="You must be logged in to view user details." />
   }
 
-  if (!user) return <div className="p-4">Loading user details...</div>
-
-  const currentLoans = user.loans.filter((l: Loan) => !l.returnedAt)
-  const pastLoans = user.loans.filter((l: Loan) => l.returnedAt)
-
-  const renderTags = (loan: Loan) => {
-    const tags = loan.book?.bookTags?.map((t) => t.tag) || []
-    if (tags.length === 0) return <span className="text-muted-foreground">-</span>
+  if (isLoading) {
     return (
-      <div className="flex flex-wrap gap-1">
-        {tags.map((t) => (
-          <TagBadge tag={t} key={t.id} />
-        ))}
+      <div className="flex items-center justify-center h-screen">
+        <Spinner className="size-16" />
       </div>
     )
   }
+
+  if (!user) {
+    return (
+      <div className="p-8 text-center">
+        <h2 className="text-2xl font-bold mb-4">User not found</h2>
+        <Button asChild variant="outline">
+          <Link to="/users">Return to Users</Link>
+        </Button>
+      </div>
+    )
+  }
+
+  const currentLoans = user.loans.filter((l: Loan) => !l.returnedAt)
+  const pastLoans = user.loans.filter((l: Loan) => l.returnedAt)
 
   return (
     <div className="w-full">
@@ -230,6 +299,7 @@ function UserDetailsPage() {
                           variant="outline"
                           className="border-primary text-primary"
                           onClick={handleBulkReturn}
+                          disabled={bulkReturnMutation.isPending}
                         >
                           Mark all as returned
                         </Button>
@@ -238,6 +308,7 @@ function UserDetailsPage() {
                           variant="outline"
                           className="border-primary text-primary"
                           onClick={handleBulkExtend}
+                          disabled={bulkExtendMutation.isPending}
                         >
                           Extend all
                         </Button>
@@ -276,7 +347,20 @@ function UserDetailsPage() {
                       <TableCell className="text-muted-foreground font-mono text-xs">
                         {loan.bookIsbn}
                       </TableCell>
-                      <TableCell>{renderTags(loan)}</TableCell>
+                      <TableCell>
+                        {(() => {
+                          const tags = loan.book?.bookTags?.map((t) => t.tag) || []
+                          if (tags.length === 0)
+                            return <span className="text-muted-foreground">-</span>
+                          return (
+                            <div className="flex flex-wrap gap-1">
+                              {tags.map((t) => (
+                                <TagBadge tag={t} key={t.id} />
+                              ))}
+                            </div>
+                          )
+                        })()}
+                      </TableCell>
                       <TableCell>
                         {loan.dueDate ? format(new Date(loan.dueDate), 'dd/MM/yy') : 'Not Set'}
                       </TableCell>
@@ -289,6 +373,7 @@ function UserDetailsPage() {
                             setReturnDialogOpen(true)
                           }}
                           className="h-8"
+                          disabled={returnMutation.isPending}
                         >
                           Mark as returned
                         </Button>
@@ -297,6 +382,7 @@ function UserDetailsPage() {
                           variant="outline"
                           onClick={() => handleOpenExtendDialog(loan)}
                           className="h-8"
+                          disabled={extendMutation.isPending}
                         >
                           Extend
                         </Button>
@@ -345,7 +431,20 @@ function UserDetailsPage() {
                     <TableCell className="text-muted-foreground font-mono text-xs">
                       {loan.bookIsbn}
                     </TableCell>
-                    <TableCell>{renderTags(loan)}</TableCell>
+                    <TableCell>
+                      {(() => {
+                        const tags = loan.book?.bookTags?.map((t) => t.tag) || []
+                        if (tags.length === 0)
+                          return <span className="text-muted-foreground">-</span>
+                        return (
+                          <div className="flex flex-wrap gap-1">
+                            {tags.map((t) => (
+                              <TagBadge tag={t} key={t.id} />
+                            ))}
+                          </div>
+                        )
+                      })()}
+                    </TableCell>
                     <TableCell>{format(new Date(loan.returnedAt!), 'dd/MM/yy')}</TableCell>
                   </TableRow>
                 ))}
@@ -382,7 +481,16 @@ function UserDetailsPage() {
             <Button variant="outline" onClick={() => setExtensionDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleExtendLoan}>Save</Button>
+            <Button onClick={handleExtendLoan}>
+              {extendMutation.isPending || bulkExtendMutation.isPending ? (
+                <>
+                  <Spinner className="size-4 mr-2" />
+                  Saving...
+                </>
+              ) : (
+                'Save'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -405,7 +513,16 @@ function UserDetailsPage() {
             <Button variant="outline" onClick={() => setIsEditingName(false)}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateName}>Save Changes</Button>
+            <Button onClick={handleUpdateName} disabled={updateNameMutation.isPending}>
+              {updateNameMutation.isPending ? (
+                <>
+                  <Spinner className="size-4 mr-2" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -423,7 +540,16 @@ function UserDetailsPage() {
             <Button variant="outline" onClick={() => setReturnDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleReturn}>Confirm Return</Button>
+            <Button onClick={handleReturn} disabled={returnMutation.isPending}>
+              {returnMutation.isPending ? (
+                <>
+                  <Spinner className="size-4 mr-2" />
+                  Returning...
+                </>
+              ) : (
+                'Confirm Return'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
