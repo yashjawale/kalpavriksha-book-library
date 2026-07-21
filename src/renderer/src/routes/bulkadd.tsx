@@ -129,7 +129,10 @@ function BulkAdd() {
   // Fetch recent books using React Query
   const { data: recentBooks = [] } = useQuery<Book[]>({
     queryKey: ['books', 'recent'],
-    queryFn: async () => await window.api.books.getAll(1, 25, 'updatedAt', 'desc')
+    queryFn: async () => {
+      const result = await window.api.books.getAll(1, 25, 'updatedAt', 'desc')
+      return result.books
+    }
   })
 
   // Mutation for creating a book

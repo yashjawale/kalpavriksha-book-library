@@ -150,9 +150,8 @@ function NewRentalPage() {
 
     setSearchingBooks(true)
     try {
-      // Fetch up to 5 books matching the search query (title or isbn)
-      const results = await window.api.books.getAll(1, 5, 'title', 'asc', query)
-      setBookSearchResults(results)
+      const result = await window.api.books.getAll(1, 5, 'title', 'asc', query)
+      setBookSearchResults(result.books)
     } catch (err) {
       console.error(err)
     } finally {

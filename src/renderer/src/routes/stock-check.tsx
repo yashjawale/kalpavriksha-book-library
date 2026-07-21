@@ -209,7 +209,8 @@ function StockCheckPage() {
   const { data: books = [], isLoading } = useQuery<Book[]>({
     queryKey: ['books', 'all'],
     queryFn: async () => {
-      return await window.api.books.getAll(1, Number.MAX_SAFE_INTEGER, 'title', 'asc')
+      const result = await window.api.books.getAll(1, Number.MAX_SAFE_INTEGER, 'title', 'asc')
+      return result.books
     }
   })
 

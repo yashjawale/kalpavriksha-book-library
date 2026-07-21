@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { LoginOverlay } from '@renderer/components/LoginOverlay'
 import {
   Table,
@@ -11,10 +12,11 @@ import {
 } from '@renderer/components/ui/table'
 import { Card, CardContent } from '@renderer/components/ui/card'
 import { Input } from '@renderer/components/ui/input'
-import { Button } from '@renderer/components/ui/button'
+import { Skeleton } from '@renderer/components/ui/skeleton'
 import { useSimpleDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import PageTitle from '@renderer/components/ui/page-title'
+import { PaginationBar } from '@renderer/components/ui/pagination-bar'
 
 export const Route = createFileRoute('/users/')({
   component: UsersPage
@@ -30,56 +32,33 @@ function UsersPage() {
   const [authStatus, setAuthStatus] = useState<{
     loggedIn: boolean
     user?: { name?: string; email?: string } | null
-  }>({
-    loggedIn: false
-  })
+  }>({ loggedIn: false })
 
-  const [users, setUsers] = useState<User[]>([])
-  const [totalUsers, setTotalUsers] = useState(0)
+  useEffect(() => {
+    window.api.auth.getStatus().then(setAuthStatus)
+  }, [])
+
+  const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
   const perPage = 10
 
-  const fetchUsers = async (p: number, q: string) => {
-    try {
-      const data = (await window.api.users.getAll(p, perPage, q)) as {
-        users: User[]
-        total: number
-      }
-      setUsers(data.users)
-      setTotalUsers(data.total)
-    } catch (err) {
-      console.error(err)
+  const { data, isLoading } = useQuery({
+    queryKey: ['users', page, searchQuery],
+    queryFn: async () => {
+      const result = await window.api.users.getAll(page, perPage, searchQuery || undefined)
+      return result as { users: User[]; total: number }
     }
-  }
+  })
+
+  const users = data?.users ?? []
+  const totalUsers = data?.total ?? 0
+  const totalPages = Math.ceil(totalUsers / perPage)
 
   const debouncedSearch = useSimpleDebouncedCallback((val: string) => {
+    setSearchQuery(val)
     setPage(1)
-    fetchUsers(1, val)
   }, 500)
-
-  useEffect(() => {
-    let mounted = true
-    window.api.auth.getStatus().then((status) => {
-      if (mounted) {
-        setAuthStatus(status)
-        if (status.loggedIn) {
-          window.api.users.getAll(page, perPage, searchQuery).then((data) => {
-            if (mounted) {
-              const res = data as { users: User[]; total: number }
-              setUsers(res.users)
-              setTotalUsers(res.total)
-            }
-          })
-        }
-      }
-    })
-    return () => {
-      mounted = false
-    }
-  }, [page, searchQuery]) // searchQuery change handled by debouncedSearch
-
-  const totalPages = Math.ceil(totalUsers / perPage)
 
   if (!authStatus.loggedIn) {
     return <LoginOverlay description="You must be logged in to view users." />
@@ -94,9 +73,9 @@ function UsersPage() {
           <Input
             placeholder="Search by name or email"
             className="pl-8"
-            value={searchQuery}
+            value={searchInput}
             onChange={(e) => {
-              setSearchQuery(e.target.value)
+              setSearchInput(e.target.value)
               debouncedSearch(e.target.value)
             }}
           />
@@ -115,21 +94,39 @@ function UsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.email}>
-                  <TableCell className="font-medium">{user.name || 'Unknown'}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user._count?.loans || 0}</TableCell>
-                  <TableCell className="text-right">
-                    <Link to="/users/$email" params={{ email: user.email }}>
-                      <Button variant="outline" size="sm">
-                        View details
-                      </Button>
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {users.length === 0 && (
+              {isLoading ? (
+                Array.from({ length: perPage }).map((_, i) => (
+                  <TableRow key={`skeleton-${i}`}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-3/4" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-2/3" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-8" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-20 ml-auto" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : users.length > 0 ? (
+                users.map((user) => (
+                  <TableRow key={user.email}>
+                    <TableCell className="font-medium">{user.name || 'Unknown'}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user._count?.loans || 0}</TableCell>
+                    <TableCell className="text-right">
+                      <Link to="/users/$email" params={{ email: user.email }}>
+                        <span className="text-sm text-primary hover:underline cursor-pointer">
+                          View details
+                        </span>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                     No users found matching your criteria.
@@ -139,29 +136,11 @@ function UsersPage() {
             </TableBody>
           </Table>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-2 py-4 border-t">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" /> Previous
-              </Button>
-              <div className="text-sm font-medium">
-                Page {page} of {totalPages}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                Next <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          )}
+          <PaginationBar
+            currentPage={page - 1}
+            totalPages={totalPages}
+            onPageChange={(p) => setPage(p + 1)}
+          />
         </CardContent>
       </Card>
     </div>

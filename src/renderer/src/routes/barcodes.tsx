@@ -38,17 +38,16 @@ function BarcodesPage() {
     queryKey: ['books', 'barcodes', bookType],
     queryFn: async () => {
       if (bookType === 'custom') {
-        // Custom books: books starting with KVB-
-        return await window.api.books.getAll(
+        const result = await window.api.books.getAll(
           1,
           Number.MAX_SAFE_INTEGER,
           'updatedAt',
           'desc',
           'KVB-'
         )
+        return result.books
       } else {
-        // ISBN books: books NOT starting with KVB- AND needsBarcodeSticker = true
-        const allIsbnBooks = await window.api.books.getAll(
+        const result = await window.api.books.getAll(
           1,
           Number.MAX_SAFE_INTEGER,
           'updatedAt',
@@ -56,7 +55,7 @@ function BarcodesPage() {
           undefined,
           true
         )
-        return allIsbnBooks.filter((book) => !book.isbn.startsWith('KVB-'))
+        return result.books.filter((book) => !book.isbn.startsWith('KVB-'))
       }
     }
   })

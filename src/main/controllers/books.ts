@@ -8,37 +8,47 @@ export const booksController = {
     orderBy: string = 'updatedAt',
     order: 'asc' | 'desc' = 'desc',
     searchQuery?: string,
-    needsBarcodeSticker?: boolean
+    needsBarcodeSticker?: boolean,
+    tagIds?: number[]
   ) => {
     const skip = (page - 1) * perPage
     const orderByClause = orderBy ? { [orderBy]: order } : {}
     const whereClause: Prisma.BookWhereInput = {}
 
     if (searchQuery) {
-      whereClause.OR = [{ isbn: { contains: searchQuery } }, { title: { contains: searchQuery } }]
+      whereClause.OR = [
+        { isbn: { contains: searchQuery, mode: 'insensitive' } },
+        { title: { contains: searchQuery, mode: 'insensitive' } },
+        { author: { contains: searchQuery, mode: 'insensitive' } },
+        { publisher: { contains: searchQuery, mode: 'insensitive' } }
+      ]
     }
 
     if (needsBarcodeSticker !== undefined) {
       whereClause.needsBarcodeSticker = needsBarcodeSticker
     }
 
-    return await prisma.book.findMany({
-      skip,
-      take: perPage,
-      where: whereClause,
-      orderBy: orderByClause,
-      include: {
-        bookTags: {
-          include: {
-            tag: true
-          }
-        },
-        loans: {
-          where: { returnedAt: null },
-          select: { id: true }
-        }
+    if (tagIds && tagIds.length > 0) {
+      whereClause.bookTags = {
+        some: { tagId: { in: tagIds } }
       }
-    })
+    }
+
+    const [books, total] = await Promise.all([
+      prisma.book.findMany({
+        skip,
+        take: perPage,
+        where: whereClause,
+        orderBy: orderByClause,
+        include: {
+          bookTags: { include: { tag: true } },
+          loans: { where: { returnedAt: null }, select: { id: true } }
+        }
+      }),
+      prisma.book.count({ where: whereClause })
+    ])
+
+    return { books, total }
   },
 
   getById: async (isbn: string) => {

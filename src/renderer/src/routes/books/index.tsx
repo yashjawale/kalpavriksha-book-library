@@ -5,7 +5,7 @@ import type { Book, Tag } from '@renderer/types/book'
 import { DataTable } from '@renderer/components/ui/data-table'
 import { getBooksColumns } from '@renderer/components/columns/books-columns'
 import PageTitle from '@renderer/components/ui/page-title'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Button } from '@renderer/components/ui/button'
 import { Trash2, Tag as TagIcon, Plus, Minus } from 'lucide-react'
 import {
@@ -57,26 +57,38 @@ function ManageBooks() {
   const [selectedTagFilters, setSelectedTagFilters] = useState<number[]>([])
   const [selectedAddTagIds, setSelectedAddTagIds] = useState<number[]>([])
   const [selectedRemoveTagIds, setSelectedRemoveTagIds] = useState<number[]>([])
+  const [pageIndex, setPageIndex] = useState(0)
+  const pageSize = 25
+  const [searchQuery, setSearchQuery] = useState('')
 
-  const { data: allBooks = [], isLoading } = useQuery<Book[]>({
-    queryKey: ['books'],
-    // Fetch all books without pagination limits for client-side filtering
-    queryFn: async () => await window.api.books.getAll(1, Number.MAX_SAFE_INTEGER)
+  const { data, isLoading } = useQuery({
+    queryKey: ['books', pageIndex, searchQuery, selectedTagFilters],
+    queryFn: async () => {
+      const result = await window.api.books.getAll(
+        pageIndex + 1,
+        pageSize,
+        'updatedAt',
+        'desc',
+        searchQuery || undefined,
+        undefined,
+        selectedTagFilters.length > 0 ? selectedTagFilters : undefined
+      )
+      return result as { books: Book[]; total: number }
+    }
   })
+
+  const books = data?.books ?? []
+  const totalBooks = data?.total ?? 0
 
   const { data: allTags = [] } = useQuery<Tag[]>({
     queryKey: ['tags'],
     queryFn: async () => await window.api.tags.getAll()
   })
 
-  // Filter books by selected tags
-  const filteredBooks = useMemo(() => {
-    if (selectedTagFilters.length === 0) return allBooks
-    return allBooks.filter((book) => {
-      if (!book.bookTags || book.bookTags.length === 0) return false
-      return selectedTagFilters.some((tagId) => book.bookTags!.some((bt) => bt.tag.id === tagId))
-    })
-  }, [allBooks, selectedTagFilters])
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value)
+    setPageIndex(0)
+  }, [])
 
   // Get selected ISBNs from rowSelection
   const selectedISBNs = useMemo(
@@ -114,7 +126,7 @@ function ManageBooks() {
 
   const updateTagsMutation = useMutation({
     mutationFn: async ({ isbn, tagIds }: { isbn: string; tagIds: number[] }) => {
-      const book = allBooks.find((b) => b.isbn === isbn)
+      const book = books.find((b) => b.isbn === isbn)
       await window.api.books.updateDetails(isbn, {
         title: book?.title || '',
         author: book?.author ?? undefined,
@@ -224,7 +236,7 @@ function ManageBooks() {
   }
 
   const handleChangeTags = (isbn: string, title: string): void => {
-    const book = allBooks.find((b) => b.isbn === isbn)
+    const book = books.find((b) => b.isbn === isbn)
     setSelectedBook({ isbn, title, currentStock: 0, activeRentals: 0 })
     setSelectedTagIds(book?.bookTags?.map((bt) => bt.tag.id) || [])
     setChangeTagsDialogOpen(true)
@@ -303,6 +315,7 @@ function ManageBooks() {
     setSelectedTagFilters((prev) =>
       prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
     )
+    setPageIndex(0)
   }
 
   const handleEditDetails = (book: Book): void => {
@@ -320,29 +333,6 @@ function ManageBooks() {
       navigate({ to: '/books/$isbn', params: { isbn } })
     }
   })
-
-  // Global filter function for searching across multiple fields
-  const globalFilterFn = (book: Book, filterValue: string): boolean => {
-    const searchLower = filterValue.toLowerCase()
-    const matchesText =
-      book.title.toLowerCase().includes(searchLower) ||
-      book.isbn.toLowerCase().includes(searchLower) ||
-      book.author?.toLowerCase().includes(searchLower) ||
-      book.publisher?.toLowerCase().includes(searchLower)
-
-    // Also search in tags
-    const matchesTags = book.bookTags?.some((bt) => bt.tag.name.toLowerCase().includes(searchLower))
-
-    return matchesText || Boolean(matchesTags)
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Spinner className="size-16" />
-      </div>
-    )
-  }
 
   return (
     <div className="w-full">
@@ -425,15 +415,21 @@ function ManageBooks() {
       </div>
       <DataTable
         columns={columns}
-        data={filteredBooks}
+        data={books}
         searchPlaceholder="Search books..."
-        pageSize={25}
-        globalFilterFn={globalFilterFn}
+        pageSize={pageSize}
         initialSorting={[{ id: 'createdAt', desc: true }]}
         enableRowSelection
         rowSelection={rowSelection}
         onRowSelectionChange={setRowSelection}
         getRowId={(book) => book.isbn}
+        manualPagination
+        pageIndex={pageIndex}
+        onPageChange={setPageIndex}
+        pageCount={Math.ceil(totalBooks / pageSize)}
+        total={totalBooks}
+        onSearchChange={handleSearchChange}
+        isLoading={isLoading}
       />
 
       {/* Edit Stock Dialog */}

@@ -1,18 +1,14 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { LoginOverlay } from '@renderer/components/LoginOverlay'
 import { Button } from '@renderer/components/ui/button'
-import { Input } from '@renderer/components/ui/input'
-import { PlusIcon, Search } from 'lucide-react'
+import { PlusIcon } from 'lucide-react'
 import { toast } from 'sonner'
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell
-} from '@renderer/components/ui/table'
+import { DataTable } from '@renderer/components/ui/data-table'
+import { format } from 'date-fns'
+import PageTitle from '@renderer/components/ui/page-title'
+import type { ColumnDef, Row } from '@tanstack/react-table'
 import {
   Dialog,
   DialogContent,
@@ -21,60 +17,49 @@ import {
   DialogHeader,
   DialogTitle
 } from '@renderer/components/ui/dialog'
-import { format } from 'date-fns'
-import PageTitle from '@renderer/components/ui/page-title'
 
 export const Route = createFileRoute('/rentals/')({
   component: RentalsPage
 })
 
+type ActiveLoan = {
+  id: number
+  bookIsbn: string
+  borrowedAt: Date
+  dueDate: Date | null
+  returnedAt: Date | null
+  userEmail: string
+  createdAt: Date
+  updatedAt: Date
+  book?: { title: string; isbn: string }
+  borrower?: { name: string | null; email: string }
+}
+
 function RentalsPage() {
   const [authStatus, setAuthStatus] = useState<{
     loggedIn: boolean
     user?: { name?: string; email?: string } | null
-  }>({
-    loggedIn: false
-  })
-
-  // Active rentals
-  const [activeLoans, setActiveLoans] = useState<
-    Awaited<ReturnType<typeof window.api.loans.getAllActive>>
-  >([])
-  const [loadingLoans, setLoadingLoans] = useState(false)
-
-  // Filtering for All Rentals
-  const [searchQuery, setSearchQuery] = useState('')
-
-  // Return Confirmation Dialog
-  const [returnLoanId, setReturnLoanId] = useState<number | null>(null)
+  }>({ loggedIn: false })
 
   useEffect(() => {
-    window.api.auth.getStatus().then((status) => {
-      setAuthStatus(status)
-      if (status.loggedIn) {
-        loadActiveLoans()
-      }
-    })
+    window.api.auth.getStatus().then(setAuthStatus)
   }, [])
 
-  async function loadActiveLoans() {
-    setLoadingLoans(true)
-    try {
-      const data = await window.api.loans.getAllActive()
-      setActiveLoans(data)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoadingLoans(false)
-    }
-  }
+  const [returnLoanId, setReturnLoanId] = useState<number | null>(null)
+
+  const queryClient = useQueryClient()
+
+  const { data: activeLoans = [], isLoading } = useQuery<ActiveLoan[]>({
+    queryKey: ['loans', 'active'],
+    queryFn: async () => await window.api.loans.getAllActive()
+  })
 
   const handleReturnAction = async () => {
     if (!returnLoanId) return
     try {
       await window.api.loans.returnBook(returnLoanId)
       toast.success('Book marked as returned.')
-      loadActiveLoans()
+      queryClient.invalidateQueries({ queryKey: ['loans', 'active'] })
     } catch (err) {
       console.error(err)
       toast.error('Failed to return book.')
@@ -83,14 +68,102 @@ function RentalsPage() {
     }
   }
 
-  // Filter loans for All Rentals
-  const filteredLoans = activeLoans.filter((loan) => {
-    const s = searchQuery.toLowerCase()
+  const globalFilterFn = (loan: ActiveLoan, filterValue: string): boolean => {
+    const s = filterValue.toLowerCase()
     const bookTitle = (loan.book?.title || loan.bookIsbn).toLowerCase()
     const userName = (loan.borrower?.name || '').toLowerCase()
     const userEmail = (loan.userEmail || '').toLowerCase()
     return bookTitle.includes(s) || userName.includes(s) || userEmail.includes(s)
-  })
+  }
+
+  const columns: ColumnDef<ActiveLoan>[] = [
+    {
+      id: 'name',
+      header: 'Name',
+      cell: ({ row }) => (
+        <div className="flex flex-col">
+          <Link
+            to="/users/$email"
+            params={{ email: row.original.userEmail }}
+            className="hover:underline text-primary font-medium"
+          >
+            {row.original.borrower?.name || 'Unknown'}
+          </Link>
+          <span className="text-xs text-muted-foreground">{row.original.userEmail}</span>
+        </div>
+      )
+    },
+    {
+      id: 'book',
+      header: 'Book',
+      cell: ({ row }) => (
+        <Link
+          to="/books/$isbn"
+          params={{ isbn: row.original.bookIsbn }}
+          className="hover:underline text-primary"
+        >
+          {row.original.book?.title || row.original.bookIsbn}
+        </Link>
+      )
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      cell: ({ row }) => {
+        const dueDateObj = row.original.dueDate ? new Date(row.original.dueDate) : null
+        const startOfToday = new Date()
+        startOfToday.setHours(0, 0, 0, 0)
+        const isOverdue = dueDateObj && dueDateObj < startOfToday
+        if (isOverdue) {
+          return (
+            <span className="text-red-600 font-medium text-xs bg-red-50 px-2 py-1 rounded">
+              Overdue
+            </span>
+          )
+        }
+        return (
+          <span className="text-green-600 font-medium text-xs bg-green-50 px-2 py-1 rounded">
+            Active
+          </span>
+        )
+      }
+    },
+    {
+      id: 'returnDate',
+      header: 'Return date',
+      cell: ({ row }) =>
+        row.original.dueDate ? format(new Date(row.original.dueDate), 'dd/MM/yy') : 'Not Set'
+    },
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => (
+        <div className="flex justify-end gap-2">
+          <Link to="/users/$email" params={{ email: row.original.userEmail }}>
+            <Button size="sm" variant="outline">
+              View details
+            </Button>
+          </Link>
+          <Button size="sm" variant="secondary" onClick={() => setReturnLoanId(row.original.id)}>
+            Mark Returned
+          </Button>
+        </div>
+      )
+    }
+  ]
+
+  const rowClassName = (row: Row<ActiveLoan>): string => {
+    const dueDateObj = row.original.dueDate ? new Date(row.original.dueDate) : null
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+    const isOverdue = dueDateObj && dueDateObj < startOfToday
+    const isDueToday = dueDateObj && dueDateObj.toDateString() === new Date().toDateString()
+    if (isOverdue)
+      return 'bg-red-50 hover:bg-red-100/50 dark:bg-red-900/20 dark:hover:bg-red-900/30'
+    if (isDueToday)
+      return 'bg-yellow-50 hover:bg-yellow-100/50 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30'
+    return ''
+  }
 
   if (!authStatus.loggedIn) {
     return <LoginOverlay description="You must be logged in to view loans." />
@@ -101,15 +174,7 @@ function RentalsPage() {
       <PageTitle title="Active Loans" />
 
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-8">
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by book, name or email..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+        <div />
         <Button asChild>
           <Link to="/rentals/new">
             <PlusIcon /> Issue Book
@@ -117,99 +182,16 @@ function RentalsPage() {
         </Button>
       </div>
 
-      {loadingLoans ? (
-        <p>Loading...</p>
-      ) : filteredLoans.length > 0 ? (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Book</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Return date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredLoans.map((loan) => {
-                const dueDateObj = loan.dueDate ? new Date(loan.dueDate) : null
-                const startOfToday = new Date()
-                startOfToday.setHours(0, 0, 0, 0)
-                const isOverdue = dueDateObj && dueDateObj < startOfToday
-                const isDueToday =
-                  dueDateObj && dueDateObj.toDateString() === new Date().toDateString()
-                return (
-                  <TableRow
-                    key={loan.id}
-                    className={
-                      isOverdue
-                        ? 'bg-red-50 hover:bg-red-100/50 dark:bg-red-900/20 dark:hover:bg-red-900/30'
-                        : isDueToday
-                          ? 'bg-yellow-50 hover:bg-yellow-100/50 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30'
-                          : ''
-                    }
-                  >
-                    <TableCell className="font-medium">
-                      <div className="flex flex-col">
-                        <Link
-                          to="/users/$email"
-                          params={{ email: loan.userEmail }}
-                          className="hover:underline text-primary"
-                        >
-                          {loan.borrower?.name || 'Unknown'}
-                        </Link>
-                        <span className="text-xs text-muted-foreground">{loan.userEmail}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Link
-                        to="/books/$isbn"
-                        params={{ isbn: loan.bookIsbn }}
-                        className="hover:underline text-primary"
-                      >
-                        {loan.book?.title || loan.bookIsbn}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      {isOverdue ? (
-                        <span className="text-red-600 font-medium text-xs bg-red-50 px-2 py-1 rounded">
-                          Overdue
-                        </span>
-                      ) : (
-                        <span className="text-green-600 font-medium text-xs bg-green-50 px-2 py-1 rounded">
-                          Active
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {loan.dueDate ? format(new Date(loan.dueDate), 'dd/MM/yy') : 'Not Set'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Link to="/users/$email" params={{ email: loan.userEmail }}>
-                          <Button size="sm" variant="outline">
-                            View details
-                          </Button>
-                        </Link>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setReturnLoanId(loan.id)}
-                        >
-                          Mark Returned
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      ) : (
-        <p className="text-muted-foreground text-center py-8">No active rentals found.</p>
-      )}
+      <DataTable
+        columns={columns}
+        data={activeLoans}
+        searchPlaceholder="Search by book, name or email..."
+        pageSize={10}
+        globalFilterFn={globalFilterFn}
+        rowClassName={rowClassName}
+        isLoading={isLoading}
+        getRowId={(loan) => String(loan.id)}
+      />
 
       <Dialog open={!!returnLoanId} onOpenChange={(open) => !open && setReturnLoanId(null)}>
         <DialogContent>

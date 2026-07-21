@@ -14,6 +14,7 @@ import {
 import { useState } from 'react'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
+import { Skeleton } from '@renderer/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -22,7 +23,32 @@ import {
   TableHeader,
   TableRow
 } from '@renderer/components/ui/table'
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-react'
+
+function getPageRange(totalPages: number, currentPage: number): (number | '...')[] {
+  const siblingCount = 1
+  const totalPagesToShow = siblingCount * 2 + 5
+
+  if (totalPages <= totalPagesToShow) {
+    return Array.from({ length: totalPages }, (_, i) => i)
+  }
+
+  const leftSiblingIndex = Math.max(currentPage - siblingCount, 0)
+  const rightSiblingIndex = Math.min(currentPage + siblingCount, totalPages - 1)
+  const showLeftEllipsis = leftSiblingIndex > 1
+  const showRightEllipsis = rightSiblingIndex < totalPages - 2
+
+  const pages: (number | '...')[] = []
+  if (showLeftEllipsis) pages.push(0, '...')
+  for (let i = leftSiblingIndex; i <= rightSiblingIndex; i++) pages.push(i)
+  if (showRightEllipsis) {
+    pages.push('...', totalPages - 1)
+  } else if (pages[pages.length - 1] !== totalPages - 1) {
+    pages.push(totalPages - 1)
+  }
+
+  return pages
+}
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -37,6 +63,14 @@ interface DataTableProps<TData, TValue> {
   rowSelection?: Record<string, boolean>
   getRowId?: (row: TData) => string
   rowClassName?: (row: Row<TData>) => string
+  manualPagination?: boolean
+  pageCount?: number
+  total?: number
+  pageIndex?: number
+  onPageChange?: (pageIndex: number) => void
+  onSearchChange?: (value: string) => void
+  isLoading?: boolean
+  skeletonRowCount?: number
 }
 
 export function DataTable<TData, TValue>({
@@ -51,23 +85,39 @@ export function DataTable<TData, TValue>({
   onRowSelectionChange,
   rowSelection: externalRowSelection,
   getRowId,
-  rowClassName
+  rowClassName,
+  manualPagination = false,
+  pageCount: externalPageCount,
+  total: externalTotal,
+  pageIndex: externalPageIndex,
+  onPageChange,
+  onSearchChange,
+  isLoading = false,
+  skeletonRowCount = 10
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [internalRowSelection, setInternalRowSelection] = useState({})
   const [globalFilter, setGlobalFilter] = useState('')
+  const [searchInput, setSearchInput] = useState('')
 
   const rowSelection = externalRowSelection !== undefined ? externalRowSelection : internalRowSelection
 
   const handleRowSelectionChange = (updater: any) => {
     const newSelection = typeof updater === 'function' ? updater(rowSelection) : updater
-    
     if (onRowSelectionChange) {
       onRowSelectionChange(newSelection)
     } else {
       setInternalRowSelection(newSelection)
+    }
+  }
+
+  const handlePaginationChange = (updater: any) => {
+    if (manualPagination && onPageChange) {
+      const current = { pageIndex: externalPageIndex ?? 0, pageSize }
+      const next = typeof updater === 'function' ? updater(current) : updater
+      onPageChange(next.pageIndex)
     }
   }
 
@@ -78,6 +128,9 @@ export function DataTable<TData, TValue>({
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    ...(manualPagination
+      ? { manualPagination: true, pageCount: externalPageCount, onPaginationChange: handlePaginationChange }
+      : {}),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -93,7 +146,10 @@ export function DataTable<TData, TValue>({
       columnFilters,
       columnVisibility,
       rowSelection,
-      globalFilter
+      globalFilter,
+      ...(manualPagination && externalPageIndex !== undefined
+        ? { pagination: { pageIndex: externalPageIndex, pageSize } }
+        : {})
     },
     initialState: {
       pagination: {
@@ -102,20 +158,35 @@ export function DataTable<TData, TValue>({
     }
   })
 
+  let searchValue: string
+  if (onSearchChange) {
+    searchValue = searchInput
+  } else if (globalFilterFn) {
+    searchValue = globalFilter
+  } else {
+    searchValue = (table.getColumn(searchKey!)?.getFilterValue() as string) ?? ''
+  }
+
   return (
     <div className="space-y-4">
-      {(searchKey || globalFilterFn) && (
+      {(searchKey || globalFilterFn || onSearchChange) && (
         <div className="flex items-center gap-2">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               placeholder={searchPlaceholder}
-              value={globalFilterFn ? globalFilter : (table.getColumn(searchKey!)?.getFilterValue() as string) ?? ''}
-              onChange={(event) =>
-                globalFilterFn
-                  ? setGlobalFilter(event.target.value)
-                  : table.getColumn(searchKey!)?.setFilterValue(event.target.value)
-              }
+              value={searchValue}
+              onChange={(event) => {
+                const value = event.target.value
+                if (onSearchChange) {
+                  setSearchInput(value)
+                  onSearchChange(value)
+                } else if (globalFilterFn) {
+                  setGlobalFilter(value)
+                } else {
+                  table.getColumn(searchKey!)?.setFilterValue(value)
+                }
+              }}
               className="pl-9"
             />
           </div>
@@ -140,7 +211,17 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              Array.from({ length: skeletonRowCount }).map((_, rowIdx) => (
+                <TableRow key={`skeleton-${rowIdx}`}>
+                  {table.getVisibleFlatColumns().map((col, colIdx) => (
+                    <TableCell key={col.id}>
+                      <Skeleton className={`h-4 ${colIdx === 0 ? 'w-4' : 'w-3/4'}`} />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow 
                   key={row.id} 
@@ -168,14 +249,35 @@ export function DataTable<TData, TValue>({
       {table.getPageCount() > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
-            {Math.min(
-              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length
-            )}{' '}
-            of {table.getFilteredRowModel().rows.length} rows
+            {manualPagination ? (
+              <>
+                Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
+                {Math.min(
+                  (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                  externalTotal ?? 0
+                )}{' '}
+                of {externalTotal ?? 0} rows
+              </>
+            ) : (
+              <>
+                Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
+                {Math.min(
+                  (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                  table.getFilteredRowModel().rows.length
+                )}{' '}
+                of {table.getFilteredRowModel().rows.length} rows
+              </>
+            )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronsLeft className="size-4" />
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -183,19 +285,40 @@ export function DataTable<TData, TValue>({
               disabled={!table.getCanPreviousPage()}
             >
               <ChevronLeft className="size-4" />
-              Previous
             </Button>
-            <div className="text-sm">
-              Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-            </div>
+            {getPageRange(table.getPageCount(), table.getState().pagination.pageIndex).map(
+              (page, i) =>
+                page === '...' ? (
+                  <span key={`ellipsis-${i}`} className="px-1 text-muted-foreground">
+                    ...
+                  </span>
+                ) : (
+                  <Button
+                    key={page}
+                    variant={page === table.getState().pagination.pageIndex ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => table.setPageIndex(page)}
+                    className="min-w-9"
+                  >
+                    {page + 1}
+                  </Button>
+                )
+            )}
             <Button
               variant="outline"
               size="sm"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
             >
-              Next
               <ChevronRight className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              disabled={!table.getCanNextPage()}
+            >
+              <ChevronsRight className="size-4" />
             </Button>
           </div>
         </div>

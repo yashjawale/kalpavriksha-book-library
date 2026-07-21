@@ -63,7 +63,10 @@ function Settings() {
 
   const { data: books = [], isLoading } = useQuery<Book[]>({
     queryKey: ['books'],
-    queryFn: async () => await window.api.books.getAll(1, Number.MAX_SAFE_INTEGER)
+    queryFn: async () => {
+      const result = await window.api.books.getAll(1, Number.MAX_SAFE_INTEGER)
+      return result.books
+    }
   })
 
   const handleExportCSV = () => {
