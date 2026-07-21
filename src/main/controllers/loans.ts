@@ -82,59 +82,65 @@ export const loansController = {
     userName?: string
     dueDate?: Date | null
   }) => {
-    let user = await prisma.user.findUnique({
-      where: { email: data.userEmail }
-    })
-
-    if (!user) {
-      user = await prisma.user.create({
-        data: { email: data.userEmail, name: data.userName || null }
+    const createdLoans = await prisma.$transaction(async (tx) => {
+      let user = await tx.user.findUnique({
+        where: { email: data.userEmail }
       })
-    }
 
-    const books = await prisma.book.findMany({
-      where: { isbn: { in: data.bookIsbns } },
-      include: {
-        loans: {
-          where: { returnedAt: null },
-          select: { id: true }
+      if (!user) {
+        user = await tx.user.create({
+          data: { email: data.userEmail, name: data.userName || null }
+        })
+      }
+
+      const books = await tx.book.findMany({
+        where: { isbn: { in: data.bookIsbns } },
+        include: {
+          loans: {
+            where: { returnedAt: null },
+            select: { id: true }
+          }
+        }
+      })
+
+      const bookMap = new Map<string, (typeof books)[number]>(books.map((b) => [b.isbn, b]))
+
+      for (const isbn of data.bookIsbns) {
+        const book = bookMap.get(isbn)
+        if (!book) {
+          throw new Error(`Book with ISBN ${isbn} not found.`)
+        }
+        if (book.totalStock - book.loans.length <= 0) {
+          throw new Error(`Book ${book.title || isbn} is out of stock.`)
         }
       }
+
+      await tx.loan.createMany({
+        data: data.bookIsbns.map((isbn) => ({
+          bookIsbn: isbn,
+          userEmail: data.userEmail,
+          dueDate: data.dueDate
+        }))
+      })
+
+      const result = await tx.loan.findMany({
+        where: {
+          bookIsbn: { in: data.bookIsbns },
+          userEmail: data.userEmail,
+          borrowedAt: { gte: new Date(Date.now() - 5000) }
+        },
+        orderBy: { borrowedAt: 'desc' },
+        take: data.bookIsbns.length
+      })
+
+      return { loans: result, bookMap }
     })
 
-    const bookMap = new Map<string, (typeof books)[number]>(books.map((b) => [b.isbn, b]))
-
-    for (const isbn of data.bookIsbns) {
-      const book = bookMap.get(isbn)
-      if (!book) {
-        throw new Error(`Book with ISBN ${isbn} not found.`)
-      }
-      if (book.totalStock - book.loans.length <= 0) {
-        throw new Error(`Book ${book.title || isbn} is out of stock.`)
-      }
-    }
-
-    await prisma.loan.createMany({
-      data: data.bookIsbns.map((isbn) => ({
-        bookIsbn: isbn,
-        userEmail: data.userEmail,
-        dueDate: data.dueDate
-      }))
-    })
-
-    const createdLoans = await prisma.loan.findMany({
-      where: {
-        bookIsbn: { in: data.bookIsbns },
-        userEmail: data.userEmail,
-        borrowedAt: { gte: new Date(Date.now() - 5000) }
-      },
-      orderBy: { borrowedAt: 'desc' },
-      take: data.bookIsbns.length
-    })
+    const { loans, bookMap } = createdLoans
 
     const settings = getSettings()
-    if (settings.enableEmails && data.userEmail && createdLoans.length > 0) {
-      const subject = `[Library] Issuance Confirmation: ${createdLoans.length > 1 ? `${createdLoans.length} books` : 'a book'}`
+    if (settings.enableEmails && data.userEmail && loans.length > 0) {
+      const subject = `[Library] Issuance Confirmation: ${loans.length > 1 ? `${loans.length} books` : 'a book'}`
       const bookData = data.bookIsbns.map((isbn) => ({
         title: bookMap.get(isbn)?.title || isbn,
         isbn
@@ -143,7 +149,7 @@ export const loansController = {
       sendTransactionEmail(data.userEmail, subject, body).catch(console.error)
     }
 
-    return createdLoans
+    return loans
   },
 
   returnBook: async (loanId: number) => {

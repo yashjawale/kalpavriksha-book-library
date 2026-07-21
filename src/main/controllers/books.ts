@@ -124,28 +124,27 @@ export const booksController = {
     isbn: string,
     details: { title: string; author?: string; publisher?: string; tagIds?: number[] }
   ) => {
-    // If tagIds are provided, we do a transaction or just update them
-    if (details.tagIds !== undefined) {
-      // First remove existing tags for this book
-      await prisma.bookTag.deleteMany({
-        where: { bookIsbn: isbn }
-      })
-
-      // Add new tags
-      if (details.tagIds.length > 0) {
-        await prisma.bookTag.createMany({
-          data: details.tagIds.map((tagId) => ({ bookIsbn: isbn, tagId }))
+    return await prisma.$transaction(async (tx) => {
+      if (details.tagIds !== undefined) {
+        await tx.bookTag.deleteMany({
+          where: { bookIsbn: isbn }
         })
-      }
-    }
 
-    return await prisma.book.update({
-      where: { isbn },
-      data: {
-        title: details.title,
-        author: details.author,
-        publisher: details.publisher
+        if (details.tagIds.length > 0) {
+          await tx.bookTag.createMany({
+            data: details.tagIds.map((tagId) => ({ bookIsbn: isbn, tagId }))
+          })
+        }
       }
+
+      return await tx.book.update({
+        where: { isbn },
+        data: {
+          title: details.title,
+          author: details.author,
+          publisher: details.publisher
+        }
+      })
     })
   },
 
@@ -195,20 +194,22 @@ export const booksController = {
   },
 
   bulkUpdateTags: async (isbns: string[], tagIds: number[]) => {
-    await prisma.bookTag.deleteMany({
-      where: { bookIsbn: { in: isbns } }
-    })
+    return await prisma.$transaction(async (tx) => {
+      await tx.bookTag.deleteMany({
+        where: { bookIsbn: { in: isbns } }
+      })
 
-    if (tagIds.length > 0) {
-      const data = isbns.flatMap((isbn) => tagIds.map((tagId) => ({ bookIsbn: isbn, tagId })))
-      await prisma.bookTag.createMany({ data })
-    }
-
-    return await prisma.book.findMany({
-      where: { isbn: { in: isbns } },
-      include: {
-        bookTags: { include: { tag: true } }
+      if (tagIds.length > 0) {
+        const data = isbns.flatMap((isbn) => tagIds.map((tagId) => ({ bookIsbn: isbn, tagId })))
+        await tx.bookTag.createMany({ data })
       }
+
+      return await tx.book.findMany({
+        where: { isbn: { in: isbns } },
+        include: {
+          bookTags: { include: { tag: true } }
+        }
+      })
     })
   },
 
