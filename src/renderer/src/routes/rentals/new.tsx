@@ -196,10 +196,7 @@ function NewRentalPage() {
 
       toast.success(`Successfully rented ${bookIsbns.length} book(s)`)
 
-      // Navigate back on success
-      setTimeout(() => {
-        navigate({ to: '/rentals' })
-      }, 1000)
+      navigate({ to: '/rentals' })
     } catch (err: unknown) {
       if (err instanceof Error) {
         toast.error(err.message)
