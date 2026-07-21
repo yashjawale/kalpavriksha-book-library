@@ -51,6 +51,8 @@ function ManageBooks() {
     title: string
     currentStock: number
     activeRentals: number
+    author?: string | null
+    publisher?: string | null
   } | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editDetailsBook, setEditDetailsBook] = useState<Book | null>(null)
@@ -131,12 +133,23 @@ function ManageBooks() {
   })
 
   const updateTagsMutation = useMutation({
-    mutationFn: async ({ isbn, tagIds }: { isbn: string; tagIds: number[] }) => {
-      const book = books.find((b) => b.isbn === isbn)
+    mutationFn: async ({
+      isbn,
+      tagIds,
+      title,
+      author,
+      publisher
+    }: {
+      isbn: string
+      tagIds: number[]
+      title: string
+      author?: string | null
+      publisher?: string | null
+    }) => {
       await window.api.books.updateDetails(isbn, {
-        title: book?.title || '',
-        author: book?.author ?? undefined,
-        publisher: book?.publisher ?? undefined,
+        title,
+        author: author ?? undefined,
+        publisher: publisher ?? undefined,
         tagIds
       })
     },
@@ -243,9 +256,21 @@ function ManageBooks() {
     }
   }
 
-  const handleChangeTags = (isbn: string, title: string): void => {
+  const handleChangeTags = (
+    isbn: string,
+    title: string,
+    author?: string | null,
+    publisher?: string | null
+  ): void => {
     const book = books.find((b) => b.isbn === isbn)
-    setSelectedBook({ isbn, title, currentStock: 0, activeRentals: 0 })
+    setSelectedBook({
+      isbn,
+      title,
+      currentStock: 0,
+      activeRentals: 0,
+      author: author ?? undefined,
+      publisher: publisher ?? undefined
+    })
     setSelectedTagIds(book?.bookTags?.map((bt) => bt.tag.id) || [])
     setChangeTagsDialogOpen(true)
   }
@@ -254,7 +279,13 @@ function ManageBooks() {
     if (!selectedBook) return
 
     try {
-      await updateTagsMutation.mutateAsync({ isbn: selectedBook.isbn, tagIds: selectedTagIds })
+      await updateTagsMutation.mutateAsync({
+        isbn: selectedBook.isbn,
+        tagIds: selectedTagIds,
+        title: selectedBook.title,
+        author: selectedBook.author,
+        publisher: selectedBook.publisher
+      })
       setChangeTagsDialogOpen(false)
       setSelectedBook(null)
       setSelectedTagIds([])
@@ -335,7 +366,8 @@ function ManageBooks() {
     onDelete: handleDelete,
     isDeleting: deleteBookMutation.isPending,
     onEditStock: handleEditStock,
-    onChangeTags: handleChangeTags,
+    onChangeTags: (isbn, title, author, publisher) =>
+      handleChangeTags(isbn, title, author, publisher),
     onEditDetails: handleEditDetails,
     onTitleClick: (isbn) => {
       navigate({ to: '/books/$isbn', params: { isbn } })
