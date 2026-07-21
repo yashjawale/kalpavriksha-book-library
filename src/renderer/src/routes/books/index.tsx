@@ -5,7 +5,8 @@ import type { Book, Tag } from '@renderer/types/book'
 import { DataTable } from '@renderer/components/ui/data-table'
 import { getBooksColumns } from '@renderer/components/columns/books-columns'
 import PageTitle from '@renderer/components/ui/page-title'
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo } from 'react'
+import { useSimpleDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 import { Button } from '@renderer/components/ui/button'
 import { Trash2, Tag as TagIcon, Plus, Minus } from 'lucide-react'
 import {
@@ -86,10 +87,10 @@ function ManageBooks() {
     queryFn: async () => await window.api.tags.getAll()
   })
 
-  const handleSearchChange = useCallback((value: string) => {
+  const handleSearchChange = useSimpleDebouncedCallback((value: string) => {
     setSearchQuery(value)
     setPageIndex(0)
-  }, [])
+  }, 300)
 
   // Get selected ISBNs from rowSelection
   const selectedISBNs = useMemo(
