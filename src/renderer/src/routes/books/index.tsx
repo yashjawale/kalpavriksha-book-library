@@ -30,6 +30,7 @@ import {
 } from '@renderer/components/ui/dropdown-menu'
 import { Filter } from 'lucide-react'
 import { EditBookDialog } from '@renderer/components/EditBookDialog'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/books/')({
   component: ManageBooks
@@ -185,7 +186,7 @@ function ManageBooks() {
       }
     } catch (error) {
       console.error('Error deleting book:', error)
-      alert('Failed to delete book. Please try again.')
+      toast.error('Failed to delete book. Please try again.')
     }
   }
 
@@ -199,7 +200,7 @@ function ManageBooks() {
       await bulkDeleteMutation.mutateAsync(selectedISBNs)
     } catch (error) {
       console.error('Error deleting books:', error)
-      alert('Failed to delete books. Please try again.')
+      toast.error('Failed to delete books. Please try again.')
     }
   }
 
@@ -218,7 +219,7 @@ function ManageBooks() {
     if (!selectedBook) return
 
     if (newStockValue < selectedBook.activeRentals) {
-      alert(
+      toast.error(
         `Cannot set stock lower than active rentals (${selectedBook.activeRentals} book(s) currently issued).`
       )
       return
@@ -231,7 +232,7 @@ function ManageBooks() {
       setNewStockValue(1)
     } catch (error) {
       console.error('Error updating stock:', error)
-      alert('Failed to update stock. Please try again.')
+      toast.error('Failed to update stock. Please try again.')
     }
   }
 
@@ -252,7 +253,7 @@ function ManageBooks() {
       setSelectedTagIds([])
     } catch (error) {
       console.error('Error updating tags:', error)
-      alert('Failed to update tags. Please try again.')
+      toast.error('Failed to update tags. Please try again.')
     }
   }
 
@@ -268,7 +269,7 @@ function ManageBooks() {
       setSelectedTagIds([])
     } catch (error) {
       console.error('Error updating tags:', error)
-      alert('Failed to update tags. Please try again.')
+      toast.error('Failed to update tags. Please try again.')
     }
   }
 
@@ -286,7 +287,7 @@ function ManageBooks() {
       setSelectedAddTagIds([])
     } catch (error) {
       console.error('Error adding tag:', error)
-      alert('Failed to add tag. Please try again.')
+      toast.error('Failed to add tag. Please try again.')
     }
   }
 
@@ -307,7 +308,7 @@ function ManageBooks() {
       setSelectedRemoveTagIds([])
     } catch (error) {
       console.error('Error removing tag:', error)
-      alert('Failed to remove tag. Please try again.')
+      toast.error('Failed to remove tag. Please try again.')
     }
   }
 

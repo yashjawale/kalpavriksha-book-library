@@ -13,6 +13,7 @@ import type { Book } from '@renderer/types/book'
 import Logo from '../assets/images/logo.svg'
 import Papa from 'papaparse'
 import PageTitle from '@renderer/components/ui/page-title'
+import { toast } from 'sonner'
 import { format } from 'date-fns'
 
 export const Route = createFileRoute('/settings')({
@@ -52,10 +53,10 @@ function Settings() {
         enableEmails,
         databaseUrl
       })
-      alert('Settings saved successfully!')
+      toast.success('Settings saved successfully!')
     } catch (error) {
       console.error('Error saving settings:', error)
-      alert('Failed to save settings.')
+      toast.error('Failed to save settings.')
     } finally {
       setIsSavingSettings(false)
     }
@@ -94,7 +95,7 @@ function Settings() {
       URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Error exporting CSV:', error)
-      alert('Failed to export CSV. Please try again.')
+      toast.error('Failed to export CSV. Please try again.')
     }
   }
 
@@ -142,7 +143,7 @@ function Settings() {
       URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Error exporting PDF:', error)
-      alert('Failed to export PDF. Please try again.')
+      toast.error('Failed to export PDF. Please try again.')
     } finally {
       setIsExporting(false)
     }

@@ -15,6 +15,7 @@ import {
 import { Card, CardHeader, CardContent } from '@renderer/components/ui/card'
 import PageTitle from '@renderer/components/ui/page-title'
 import { Edit2, Tag as TagIcon } from 'lucide-react'
+import { toast } from 'sonner'
 import type { Tag } from '@renderer/types/book'
 import { TagBadge } from '@renderer/components/TagBadge'
 import { TAG_COLOR_OPTIONS, TAG_COLOR_MAP } from '@renderer/utils/tag-colors'
@@ -80,7 +81,7 @@ function TagsPage() {
       })
     } catch (error) {
       console.error('Failed to update tag:', error)
-      alert('Failed to update tag. The name might already be in use.')
+      toast.error('Failed to update tag. The name might already be in use.')
     }
   }
 

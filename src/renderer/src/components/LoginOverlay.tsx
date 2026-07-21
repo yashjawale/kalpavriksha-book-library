@@ -1,5 +1,6 @@
 import { Lock } from 'lucide-react'
 import { Button } from '@renderer/components/ui/button'
+import { toast } from 'sonner'
 
 interface LoginOverlayProps {
   title?: string
@@ -19,7 +20,7 @@ export function LoginOverlay({
         onClick={async () => {
           const result = await window.api.auth.login()
           if (result && !result.success) {
-            alert(`Login failed: ${result.error}`)
+            toast.error(`Login failed: ${result.error}`)
           } else {
             window.location.reload()
           }

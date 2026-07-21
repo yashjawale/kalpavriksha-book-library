@@ -93,7 +93,7 @@ function UpcomingReturns() {
       await extendLoanMutation.mutateAsync({ loanId, dueDate: newDueDate })
     } catch (error) {
       console.error('Failed to extend loan:', error)
-      alert('Failed to extend loan. Please try again.')
+      toast.error('Failed to extend loan. Please try again.')
     }
   }
 

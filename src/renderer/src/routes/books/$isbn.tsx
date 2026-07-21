@@ -18,6 +18,7 @@ import {
   DialogDescription,
   DialogFooter
 } from '@renderer/components/ui/dialog'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/books/$isbn')({
   component: SingleBook
@@ -67,7 +68,7 @@ function SingleBook() {
       await returnBookMutation.mutateAsync(loanId)
     } catch (error) {
       console.error('Failed to return book:', error)
-      alert('Failed to return book. Please try again.')
+      toast.error('Failed to return book. Please try again.')
     }
   }
 
@@ -80,7 +81,7 @@ function SingleBook() {
       await extendLoanMutation.mutateAsync({ loanId, dueDate: newDueDate })
     } catch (error) {
       console.error('Failed to extend loan:', error)
-      alert('Failed to extend loan. Please try again.')
+      toast.error('Failed to extend loan. Please try again.')
     }
   }
 
@@ -89,7 +90,7 @@ function SingleBook() {
 
     const activeLoansCount = book.loans.filter((loan) => !loan.returnedAt).length
     if (newStockValue < activeLoansCount) {
-      alert(
+      toast.error(
         `Cannot set stock lower than active rentals (${activeLoansCount} book(s) currently issued).`
       )
       return
@@ -100,7 +101,7 @@ function SingleBook() {
       setEditStockDialogOpen(false)
     } catch (error) {
       console.error('Error updating stock:', error)
-      alert('Failed to update stock. Please try again.')
+      toast.error('Failed to update stock. Please try again.')
     }
   }
 
