@@ -57,6 +57,8 @@ function UpcomingReturns() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['upcoming-returns'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['loans', 'active'] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
     }
   })
 
@@ -67,6 +69,8 @@ function UpcomingReturns() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['upcoming-returns'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['loans', 'active'] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
     }
   })
 

@@ -60,6 +60,10 @@ function RentalsPage() {
       await window.api.loans.returnBook(returnLoanId)
       toast.success('Book marked as returned.')
       queryClient.invalidateQueries({ queryKey: ['loans', 'active'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['upcoming-returns'] })
+      queryClient.invalidateQueries({ queryKey: ['returns-today'] })
     } catch (err) {
       console.error(err)
       toast.error('Failed to return book.')

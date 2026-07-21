@@ -56,6 +56,9 @@ function ReturnsToday() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['returns-today'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['loans', 'active'] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['upcoming-returns'] })
     }
   })
 

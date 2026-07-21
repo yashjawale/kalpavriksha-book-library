@@ -102,8 +102,10 @@ function ManageBooks() {
     mutationFn: async (isbn: string) => {
       return await window.api.books.delete(isbn)
     },
-    onSuccess: () => {
+    onSuccess: (_data, isbn) => {
       queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['book', isbn] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
     }
   })
 
@@ -113,6 +115,7 @@ function ManageBooks() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
       setRowSelection({})
     }
   })
@@ -121,8 +124,9 @@ function ManageBooks() {
     mutationFn: async ({ isbn, newStock }: { isbn: string; newStock: number }) => {
       return await window.api.books.updateStock(isbn, newStock)
     },
-    onSuccess: () => {
+    onSuccess: (_data, { isbn }) => {
       queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['book', isbn] })
     }
   })
 
@@ -136,8 +140,9 @@ function ManageBooks() {
         tagIds
       })
     },
-    onSuccess: () => {
+    onSuccess: (_data, { isbn }) => {
       queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['book', isbn] })
     }
   })
 
@@ -147,6 +152,7 @@ function ManageBooks() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
       setRowSelection({})
     }
   })

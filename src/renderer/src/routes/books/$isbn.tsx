@@ -42,6 +42,11 @@ function SingleBook() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['book', isbn] })
+      queryClient.invalidateQueries({ queryKey: ['loans', 'active'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['upcoming-returns'] })
+      queryClient.invalidateQueries({ queryKey: ['returns-today'] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
     }
   })
 
@@ -51,6 +56,10 @@ function SingleBook() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['book', isbn] })
+      queryClient.invalidateQueries({ queryKey: ['loans', 'active'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['upcoming-returns'] })
+      queryClient.invalidateQueries({ queryKey: ['returns-today'] })
     }
   })
 
@@ -60,6 +69,7 @@ function SingleBook() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['book', isbn] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
     }
   })
 

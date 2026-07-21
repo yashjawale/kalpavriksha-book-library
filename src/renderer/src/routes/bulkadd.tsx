@@ -141,7 +141,7 @@ function BulkAdd() {
       return await window.api.books.create(data)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
     }
   })
 
@@ -151,7 +151,7 @@ function BulkAdd() {
       return await window.api.books.updateStock(isbn, stockCount)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
     }
   })
 
@@ -163,7 +163,7 @@ function BulkAdd() {
       return await window.api.books.delete(isbn)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['books', 'recent'] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
     }
   })
 
