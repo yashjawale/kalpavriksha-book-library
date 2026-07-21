@@ -1,4 +1,5 @@
 import { prisma, isDbConfigured } from './prisma'
+import { getPendingCapturedBook, updateCapturedBook } from './captureDb'
 import { getBookInfoGoogleBooks, getBookInfoOpenLibrary, getBookInfoIndian } from './bookApi'
 import * as fs from 'fs'
 import { readBarcodesFromImageFile, setZXingModuleOverrides } from 'zxing-wasm/reader'
@@ -46,10 +47,7 @@ async function processNext() {
   if (processing) return
   processing = true
   try {
-    const pending = await prisma.capturedBook.findFirst({
-      where: { status: 'PENDING' },
-      orderBy: { createdAt: 'asc' }
-    })
+    const pending = getPendingCapturedBook()
 
     if (!pending) {
       processing = false
@@ -91,14 +89,21 @@ async function processNext() {
     let isDuplicate = false
 
     if (isbn) {
-      const existing = await prisma.book.findUnique({ where: { isbn } })
+      if (isDbConfigured) {
+        try {
+          const existing = await prisma.book.findUnique({ where: { isbn } })
+          if (existing) {
+            isDuplicate = true
+            title = existing.title
+            author = existing.author || ''
+            publisher = existing.publisher || ''
+          }
+        } catch {
+          console.warn('Capture processor: Supabase lookup failed, skipping duplicate check')
+        }
+      }
 
-      if (existing) {
-        isDuplicate = true
-        title = existing.title
-        author = existing.author || ''
-        publisher = existing.publisher || ''
-      } else {
+      if (!isDuplicate) {
         const info =
           (await getBookInfoGoogleBooks(isbn)) ||
           (await getBookInfoOpenLibrary(isbn)) ||
@@ -112,16 +117,13 @@ async function processNext() {
       }
     }
 
-    await prisma.capturedBook.update({
-      where: { id: pending.id },
-      data: {
-        isbn,
-        title,
-        author,
-        publisher,
-        isDuplicate,
-        status: 'PROCESSED'
-      }
+    updateCapturedBook(pending.id, {
+      isbn,
+      title,
+      author,
+      publisher,
+      isDuplicate,
+      status: 'PROCESSED'
     })
     console.log(`Finished processing book ID: ${pending.id}`)
 
@@ -134,9 +136,5 @@ async function processNext() {
 }
 
 export function startCaptureProcessor() {
-  if (!isDbConfigured) {
-    console.log('Capture processor: DB not configured, skipping')
-    return
-  }
   processNext()
 }

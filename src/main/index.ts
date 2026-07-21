@@ -6,6 +6,7 @@ import { booksController } from './controllers/books'
 import { tagsController } from './controllers/tags'
 import { captureController } from './controllers/capture'
 import { startCaptureProcessor } from './lib/captureProcessor'
+import { closeDb } from './lib/captureDb'
 import { getBookInfoGoogleBooks, getBookInfoIndian, getBookInfoOpenLibrary } from './lib/bookApi'
 import { usersController } from './controllers/users'
 import { loansController } from './controllers/loans'
@@ -133,6 +134,10 @@ if (!gotTheLock) {
     })
   })
 }
+
+app.on('before-quit', () => {
+  closeDb()
+})
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
