@@ -125,9 +125,9 @@ export function DataTable<TData, TValue>({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    ...(manualPagination ? {} : { getPaginationRowModel: getPaginationRowModel() }),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
+    ...(manualPagination ? {} : { getFilteredRowModel: getFilteredRowModel() }),
     ...(manualPagination
       ? { manualPagination: true, pageCount: externalPageCount, onPaginationChange: handlePaginationChange }
       : {}),
