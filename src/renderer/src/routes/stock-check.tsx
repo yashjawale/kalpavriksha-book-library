@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
@@ -478,52 +478,46 @@ function StockCheckPage() {
   const totalNotedPages = Math.ceil(filteredNoted.length / itemsPerPage) || 1
   const totalRemainingPages = Math.ceil(filteredRemaining.length / itemsPerPage) || 1
 
-  const handleRowClick = useCallback(
-    (index: number, listType: 'noted' | 'remaining') => {
-      const list = listType === 'noted' ? paginatedNoted : paginatedRemaining
-      setSelectedIsbns((prev) => {
-        const next = new Set(prev)
-        const book = list[index]
-        if (!book) return prev
-        if (next.has(book.isbn)) {
-          next.delete(book.isbn)
-        } else {
-          next.add(book.isbn)
-        }
-        return next
-      })
-      setLastClickedIndex(index)
-    },
-    [paginatedNoted, paginatedRemaining]
-  )
-
-  const handleShiftClick = useCallback(
-    (index: number, listType: 'noted' | 'remaining') => {
-      const list = listType === 'noted' ? paginatedNoted : paginatedRemaining
-      if (lastClickedIndex === null) {
-        handleRowClick(index, listType)
-        return
+  const handleRowClick = (index: number, listType: 'noted' | 'remaining') => {
+    const list = listType === 'noted' ? paginatedNoted : paginatedRemaining
+    setSelectedIsbns((prev) => {
+      const next = new Set(prev)
+      const book = list[index]
+      if (!book) return prev
+      if (next.has(book.isbn)) {
+        next.delete(book.isbn)
+      } else {
+        next.add(book.isbn)
       }
-      setSelectedIsbns((prev) => {
-        const next = new Set(prev)
-        const start = Math.min(lastClickedIndex, index)
-        const end = Math.max(lastClickedIndex, index)
-        for (let i = start; i <= end; i++) {
-          const book = list[i]
-          if (book) next.add(book.isbn)
-        }
-        return next
-      })
-    },
-    [lastClickedIndex, paginatedNoted, paginatedRemaining, handleRowClick]
-  )
+      return next
+    })
+    setLastClickedIndex(index)
+  }
 
-  const clearSelection = useCallback(() => {
+  const handleShiftClick = (index: number, listType: 'noted' | 'remaining') => {
+    const list = listType === 'noted' ? paginatedNoted : paginatedRemaining
+    if (lastClickedIndex === null) {
+      handleRowClick(index, listType)
+      return
+    }
+    setSelectedIsbns((prev) => {
+      const next = new Set(prev)
+      const start = Math.min(lastClickedIndex, index)
+      const end = Math.max(lastClickedIndex, index)
+      for (let i = start; i <= end; i++) {
+        const book = list[i]
+        if (book) next.add(book.isbn)
+      }
+      return next
+    })
+  }
+
+  const clearSelection = () => {
     setSelectedIsbns(new Set())
     setLastClickedIndex(null)
-  }, [])
+  }
 
-  const handleMarkAsNoted = useCallback(() => {
+  const handleMarkAsNoted = () => {
     selectedIsbns.forEach((isbn) => {
       const book = books.find((b) => b.isbn === isbn)
       if (book) {
@@ -531,9 +525,9 @@ function StockCheckPage() {
       }
     })
     clearSelection()
-  }, [selectedIsbns, books, handleAdd, clearSelection])
+  }
 
-  const handleMarkAsRemaining = useCallback(() => {
+  const handleMarkAsRemaining = () => {
     selectedIsbns.forEach((isbn) => {
       setNoted((prev) => {
         const next = { ...prev }
@@ -542,9 +536,9 @@ function StockCheckPage() {
       })
     })
     clearSelection()
-  }, [selectedIsbns, clearSelection])
+  }
 
-  const handleMarkAllAsNoted = useCallback(() => {
+  const handleMarkAllAsNoted = () => {
     if (!confirm(`Mark all ${filteredRemaining.length} remaining books as noted?`)) return
     filteredRemaining.forEach((book) => {
       const needed = book.totalStock - (noted[book.isbn] || 0)
@@ -555,7 +549,7 @@ function StockCheckPage() {
         }))
       }
     })
-  }, [filteredRemaining, noted])
+  }
 
   const isTagFiltered = filterTagIds.length > 0
 
