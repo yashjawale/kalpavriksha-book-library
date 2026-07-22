@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { LoginOverlay } from '@renderer/components/LoginOverlay'
@@ -27,6 +27,7 @@ import {
 import { addWeeks, format, isToday } from 'date-fns'
 import PageTitle from '@renderer/components/ui/page-title'
 import { TagBadge } from '@renderer/components/TagBadge'
+import { PaginationBar } from '@renderer/components/ui/pagination-bar'
 
 export const Route = createFileRoute('/users/$email')({
   component: UserDetailsPage
@@ -226,6 +227,15 @@ function UserDetailsPage() {
     setExtensionDialogOpen(true)
   }
 
+  const [pastLoansPage, setPastLoansPage] = useState(1)
+  const pastLoansPerPage = 10
+  const pastLoans = (user?.loans || []).filter((l: Loan) => l.returnedAt)
+  const paginatedPastLoans = useMemo(
+    () => pastLoans.slice((pastLoansPage - 1) * pastLoansPerPage, pastLoansPage * pastLoansPerPage),
+    [pastLoans, pastLoansPage, pastLoansPerPage]
+  )
+  const totalPastLoansPages = Math.ceil(pastLoans.length / pastLoansPerPage) || 1
+
   if (!authStatus.loggedIn) {
     return <LoginOverlay description="You must be logged in to view user details." />
   }
@@ -250,7 +260,6 @@ function UserDetailsPage() {
   }
 
   const currentLoans = user.loans.filter((l: Loan) => !l.returnedAt)
-  const pastLoans = user.loans.filter((l: Loan) => l.returnedAt)
 
   return (
     <div className="w-full">
@@ -419,7 +428,7 @@ function UserDetailsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pastLoans.map((loan: Loan) => (
+                {paginatedPastLoans.map((loan: Loan) => (
                   <TableRow key={loan.id}>
                     <TableCell className="font-medium">
                       <Link
@@ -461,6 +470,11 @@ function UserDetailsPage() {
             </Table>
           </CardContent>
         </Card>
+        <PaginationBar
+          currentPage={pastLoansPage - 1}
+          totalPages={totalPastLoansPages}
+          onPageChange={(p) => setPastLoansPage(p + 1)}
+        />
       </div>
 
       {/* Extend Dialog */}
