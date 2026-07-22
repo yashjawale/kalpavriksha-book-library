@@ -717,7 +717,7 @@ function StockCheckPage() {
                 ) : (
                   paginatedNoted.map((book, index) => (
                     <ContextMenu key={book.isbn}>
-                      <ContextMenuTrigger>
+                      <ContextMenuTrigger asChild>
                         <TableRow
                           className={`cursor-pointer ${selectedIsbns.has(book.isbn) ? 'bg-accent' : ''}`}
                           onClick={(e) => {
@@ -892,7 +892,7 @@ function StockCheckPage() {
                 ) : (
                   paginatedRemaining.map((book, index) => (
                     <ContextMenu key={book.isbn}>
-                      <ContextMenuTrigger>
+                      <ContextMenuTrigger asChild>
                         <TableRow
                           className={`cursor-pointer ${selectedIsbns.has(book.isbn) ? 'bg-accent' : ''}`}
                           onClick={(e) => {
