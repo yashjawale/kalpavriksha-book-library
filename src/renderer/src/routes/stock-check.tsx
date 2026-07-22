@@ -406,6 +406,7 @@ function StockCheckPage() {
       setNoted({})
       setNotedPage(1)
       setRemainingPage(1)
+      setFilterTagIds([])
     }
   }
 
