@@ -567,106 +567,110 @@ function StockCheckPage() {
     <div className="flex flex-col overflow-hidden p-6 gap-6">
       <div className="shrink-0">
         <PageTitle title="Stock check" />
-        <div className="flex gap-2 mt-2">
-          {isTagFiltered && (
-            <Button onClick={handleDownloadList} disabled={isDownloadingList} variant="secondary">
-              {isDownloadingList ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <List className="w-4 h-4 mr-2" />
-              )}
-              Download list
-            </Button>
-          )}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={isTagFiltered ? 'border-primary text-primary' : ''}
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                {isTagFiltered ? `Filtered (${filterTagIds.length})` : 'Filter tags'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-72 p-3" align="end">
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Filter by tags</p>
-                <div className="max-h-48 overflow-y-auto space-y-1">
-                  {allTags.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No tags available</p>
-                  ) : (
-                    allTags.map((tag) => {
-                      const isSelected = filterTagIds.includes(tag.id)
-                      return (
-                        <div
-                          key={tag.id}
-                          className="flex items-center gap-2 p-1.5 rounded-md hover:bg-accent cursor-pointer"
-                          onClick={() =>
-                            setFilterTagIds((prev) =>
-                              isSelected ? prev.filter((id) => id !== tag.id) : [...prev, tag.id]
-                            )
-                          }
-                        >
+        <div className="flex gap-2 mt-2 justify-between">
+          <div className="flex gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={isTagFiltered ? 'border-primary text-primary' : ''}
+                >
+                  <Filter className="w-4 h-4 mr-2" />
+                  {isTagFiltered ? `Filtered (${filterTagIds.length})` : 'Filter tags'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-3" align="end">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Filter by tags</p>
+                  <div className="max-h-48 overflow-y-auto space-y-1">
+                    {allTags.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No tags available</p>
+                    ) : (
+                      allTags.map((tag) => {
+                        const isSelected = filterTagIds.includes(tag.id)
+                        return (
                           <div
-                            className={`w-4 h-4 rounded border flex items-center justify-center ${
-                              isSelected ? 'bg-primary border-primary' : 'border-input'
-                            }`}
+                            key={tag.id}
+                            className="flex items-center gap-2 p-1.5 rounded-md hover:bg-accent cursor-pointer"
+                            onClick={() =>
+                              setFilterTagIds((prev) =>
+                                isSelected ? prev.filter((id) => id !== tag.id) : [...prev, tag.id]
+                              )
+                            }
                           >
-                            {isSelected && (
-                              <svg
-                                className="w-3 h-3 text-primary-foreground"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={3}
-                                  d="M5 13l4 4L19 7"
-                                />
-                              </svg>
-                            )}
+                            <div
+                              className={`w-4 h-4 rounded border flex items-center justify-center ${
+                                isSelected ? 'bg-primary border-primary' : 'border-input'
+                              }`}
+                            >
+                              {isSelected && (
+                                <svg
+                                  className="w-3 h-3 text-primary-foreground"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={3}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              )}
+                            </div>
+                            <TagBadge tag={tag} className="text-xs" />
                           </div>
-                          <TagBadge tag={tag} className="text-xs" />
-                        </div>
-                      )
-                    })
+                        )
+                      })
+                    )}
+                  </div>
+                  {isTagFiltered && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs"
+                      onClick={() => {
+                        setFilterTagIds([])
+                        setNotedPage(1)
+                        setRemainingPage(1)
+                      }}
+                    >
+                      Clear filters
+                    </Button>
                   )}
                 </div>
-                {isTagFiltered && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full text-xs"
-                    onClick={() => {
-                      setFilterTagIds([])
-                      setNotedPage(1)
-                      setRemainingPage(1)
-                    }}
-                  >
-                    Clear filters
-                  </Button>
+              </PopoverContent>
+            </Popover>
+            {isTagFiltered && (
+              <Button onClick={handleDownloadList} disabled={isDownloadingList} variant="secondary">
+                {isDownloadingList ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <List className="w-4 h-4 mr-2" />
                 )}
-              </div>
-            </PopoverContent>
-          </Popover>
-          <Button variant="outline" onClick={handleRestart}>
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Restart
-          </Button>
-          <Button variant="outline" onClick={() => setManualAddOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add manually
-          </Button>
-          <Button onClick={handleDownload} disabled={isDownloading}>
-            {isDownloading ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4 mr-2" />
+                Download list
+              </Button>
             )}
-            Download missing books report
-          </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleRestart}>
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Restart
+            </Button>
+            <Button variant="outline" onClick={() => setManualAddOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add manually
+            </Button>
+            <Button onClick={handleDownload} disabled={isDownloading}>
+              {isDownloading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              Download missing books report
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -845,9 +849,9 @@ function StockCheckPage() {
             <div className="flex items-center gap-2">
               {isTagFiltered && filteredRemaining.length > 0 && (
                 <Button
-                  variant="outline"
+                  variant="default"
                   size="sm"
-                  className="h-7 text-xs"
+                  className="h-7 text-xs bg-green-600 hover:bg-green-700"
                   onClick={handleMarkAllAsNoted}
                 >
                   <CheckCheck className="h-3 w-3 mr-1" />
