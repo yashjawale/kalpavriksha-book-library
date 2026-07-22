@@ -565,9 +565,9 @@ function StockCheckPage() {
 
   return (
     <div className="flex flex-col overflow-hidden p-6 gap-6">
-      <div className="flex justify-between items-center shrink-0">
+      <div className="shrink-0">
         <PageTitle title="Stock check" />
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-2">
           {isTagFiltered && (
             <Button onClick={handleDownloadList} disabled={isDownloadingList} variant="secondary">
               {isDownloadingList ? (
@@ -854,8 +854,10 @@ function StockCheckPage() {
                   Mark all as noted
                 </Button>
               )}
-              <span className="text-sm text-muted-foreground">
-                {filteredRemaining.length}/{books.length}
+              <span
+                className={`text-sm ${isTagFiltered ? 'text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded font-medium' : 'text-muted-foreground'}`}
+              >
+                {filteredRemaining.length}/{isTagFiltered ? tagFilteredBooks.length : books.length}
               </span>
             </div>
           </div>
