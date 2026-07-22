@@ -1,11 +1,45 @@
-import { BrowserWindow } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { google } from 'googleapis'
 import * as http from 'http'
 import * as url from 'url'
+import * as fs from 'fs'
+import * as path from 'path'
 import { getSettings } from './settings'
 
 let oauth2Client: InstanceType<typeof google.auth.OAuth2> | null = null
 let currentUser: { name: string; email: string; token: unknown } | null = null
+let isRestoring = false
+
+const TOKENS_PATH = path.join(app.getPath('userData'), 'auth-tokens.json')
+
+function saveTokens(tokens: unknown, user: { name: string; email: string }) {
+  try {
+    const dir = path.dirname(TOKENS_PATH)
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+    fs.writeFileSync(TOKENS_PATH, JSON.stringify({ tokens, user }, null, 2), 'utf-8')
+  } catch (e) {
+    console.error('Failed to save auth tokens:', e)
+  }
+}
+
+function loadTokens(): { tokens: unknown; user: { name: string; email: string } } | null {
+  try {
+    if (fs.existsSync(TOKENS_PATH)) {
+      return JSON.parse(fs.readFileSync(TOKENS_PATH, 'utf-8'))
+    }
+  } catch (e) {
+    console.error('Failed to load auth tokens:', e)
+  }
+  return null
+}
+
+function deleteTokens() {
+  try {
+    if (fs.existsSync(TOKENS_PATH)) fs.unlinkSync(TOKENS_PATH)
+  } catch (e) {
+    console.error('Failed to delete auth tokens:', e)
+  }
+}
 
 export function getOAuthClient() {
   if (!oauth2Client) {
@@ -71,11 +105,17 @@ export const authController = {
                   const oauth2 = google.oauth2({ version: 'v2', auth: client })
                   const userInfo = await oauth2.userinfo.get()
 
-                  currentUser = {
+                  const userData = {
                     name: userInfo.data.name || '',
-                    email: userInfo.data.email || '',
+                    email: userInfo.data.email || ''
+                  }
+                  currentUser = {
+                    name: userData.name,
+                    email: userData.email,
                     token: tokens as unknown as Record<string, unknown>
                   }
+
+                  saveTokens(tokens, userData)
 
                   res.end('Authentication successful! You can close this window now.')
 
@@ -120,15 +160,46 @@ export const authController = {
 
   logout: async () => {
     currentUser = null
+    deleteTokens()
     if (oauth2Client) {
       oauth2Client.revokeCredentials()
-      oauth2Client = null // Clear the client so it picks up new settings if they changed
+      oauth2Client = null
     }
     return { success: true }
   },
 
   getStatus: async () => {
-    return { loggedIn: !!currentUser, user: currentUser }
+    if (currentUser) {
+      return { loggedIn: true, user: currentUser }
+    }
+
+    if (isRestoring) return { loggedIn: false }
+
+    isRestoring = true
+    try {
+      const saved = loadTokens()
+      if (saved) {
+        const client = getOAuthClient()
+        if (client) {
+          client.setCredentials(saved.tokens as { access_token?: string; refresh_token?: string })
+          const oauth2 = google.oauth2({ version: 'v2', auth: client })
+          await oauth2.userinfo.get()
+          currentUser = {
+            name: saved.user.name,
+            email: saved.user.email,
+            token: saved.tokens
+          }
+          return { loggedIn: true, user: currentUser }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to restore auth session:', e)
+      deleteTokens()
+    } finally {
+      isRestoring = false
+    }
+
+    return { loggedIn: false }
   },
 
   searchUsers: async (query: string): Promise<Array<{ name: string; email: string }>> => {
