@@ -29,7 +29,8 @@ import {
   Loader2,
   Filter,
   List,
-  CheckCheck
+  CheckCheck,
+  PlusIcon
 } from 'lucide-react'
 import type { Book, Tag } from '@renderer/types/book'
 import { TagBadge } from '@renderer/components/TagBadge'
@@ -567,6 +568,16 @@ function StockCheckPage() {
       <div className="flex justify-between items-center shrink-0">
         <PageTitle title="Stock check" />
         <div className="flex gap-2">
+          {isTagFiltered && (
+            <Button onClick={handleDownloadList} disabled={isDownloadingList} variant="secondary">
+              {isDownloadingList ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <List className="w-4 h-4 mr-2" />
+              )}
+              Download list
+            </Button>
+          )}
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -656,16 +667,6 @@ function StockCheckPage() {
             )}
             Download missing books report
           </Button>
-          {isTagFiltered && (
-            <Button onClick={handleDownloadList} disabled={isDownloadingList} variant="secondary">
-              {isDownloadingList ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <List className="w-4 h-4 mr-2" />
-              )}
-              Download list
-            </Button>
-          )}
         </div>
       </div>
 
@@ -675,16 +676,13 @@ function StockCheckPage() {
           <div className="flex justify-between items-center shrink-0">
             <div className="flex items-center gap-2">
               <h2 className="font-semibold text-lg">Noted</h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-green-600 hover:text-green-700 hover:bg-green-50"
-                onClick={() => setManualAddOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">{filteredNoted.length} books</span>
+              <Button size="icon" className="h-6 w-6" onClick={() => setManualAddOpen(true)}>
+                <PlusIcon />
               </Button>
             </div>
-            <span className="text-sm text-muted-foreground">{filteredNoted.length} books</span>
           </div>
           <div className="relative shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
