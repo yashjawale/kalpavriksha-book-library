@@ -7,7 +7,7 @@ import { format, isToday } from 'date-fns'
 import PageTitle from '@renderer/components/ui/page-title'
 import { TagBadge } from '@renderer/components/TagBadge'
 import { EditBookDialog } from '@renderer/components/EditBookDialog'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Label } from '@renderer/components/ui/label'
 import { Input } from '@renderer/components/ui/input'
 import {
@@ -19,6 +19,7 @@ import {
   DialogFooter
 } from '@renderer/components/ui/dialog'
 import { toast } from 'sonner'
+import { PaginationBar } from '@renderer/components/ui/pagination-bar'
 
 export const Route = createFileRoute('/books/$isbn')({
   component: SingleBook
@@ -116,6 +117,15 @@ function SingleBook() {
     }
   }
 
+  const [pastLoansPage, setPastLoansPage] = useState(1)
+  const pastLoansPerPage = 10
+  const pastLoans = (book?.loans || []).filter((loan) => loan.returnedAt)
+  const paginatedPastLoans = useMemo(
+    () => pastLoans.slice((pastLoansPage - 1) * pastLoansPerPage, pastLoansPage * pastLoansPerPage),
+    [pastLoans, pastLoansPage, pastLoansPerPage]
+  )
+  const totalPastLoansPages = Math.ceil(pastLoans.length / pastLoansPerPage) || 1
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -136,7 +146,6 @@ function SingleBook() {
   }
 
   const activeLoans = book.loans.filter((loan) => !loan.returnedAt)
-  const pastLoans = book.loans.filter((loan) => loan.returnedAt)
   const availableStock = book.totalStock - activeLoans.length
 
   return (
@@ -305,7 +314,7 @@ function SingleBook() {
                   </td>
                 </tr>
               ) : (
-                pastLoans.map((loan) => (
+                paginatedPastLoans.map((loan) => (
                   <tr key={loan.id} className="border-b last:border-0 hover:bg-muted/50">
                     <td className="p-4 align-middle font-medium">
                       <Link
@@ -328,6 +337,11 @@ function SingleBook() {
             </tbody>
           </table>
         </div>
+        <PaginationBar
+          currentPage={pastLoansPage - 1}
+          totalPages={totalPastLoansPages}
+          onPageChange={(p) => setPastLoansPage(p + 1)}
+        />
       </div>
 
       <EditBookDialog book={book} open={editDialogOpen} onOpenChange={setEditDialogOpen} />
