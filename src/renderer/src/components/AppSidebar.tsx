@@ -78,7 +78,7 @@ export function AppSidebar() {
     { to: '/quickcapture', label: 'Quick Capture', icon: ScanLine },
     { to: '/reviewqueue', label: 'Review Queue', icon: ListChecks },
     { to: '/stock-check', label: 'Stock Check', icon: ClipboardCheck },
-    { to: '/bulkadd', label: 'Bulk Add', icon: UploadIcon },
+    { to: '/bulkadd', label: 'Add Books', icon: UploadIcon },
     { to: '/barcodes', label: 'Print Barcodes', icon: PrinterIcon },
     { to: '/tags', label: 'Tags', icon: TagIcon },
     { to: '/settings', label: 'Settings', icon: Settings }
