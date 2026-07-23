@@ -5,6 +5,7 @@ import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { X, Info } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@renderer/components/ui/tooltip'
 import { LoginOverlay } from '@renderer/components/LoginOverlay'
 import { Combobox } from '@renderer/components/ui/combobox'
 import { useDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
@@ -335,7 +336,16 @@ function NewRentalPage() {
                     ) : (
                       selectedBooks.map((item) => (
                         <TableRow key={item.book.isbn}>
-                          <TableCell className="font-medium">{item.book.title}</TableCell>
+                          <TableCell className="font-medium max-w-[200px]">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="truncate block">{item.book.title}</span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{item.book.title}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableCell>
                           <TableCell className="text-muted-foreground">{item.book.isbn}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
