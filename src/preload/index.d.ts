@@ -49,6 +49,23 @@ interface API {
     }>
   }
   loans: ControllerAPI<LoansController>
+  discards: {
+    getDiscardedBooks: (
+      page?: number,
+      perPage?: number,
+      tagIds?: number[]
+    ) => Promise<{
+      discarded: Array<{
+        id: number
+        isbn: string
+        title: string
+        count: number
+        note: string | null
+        discardedAt: string
+      }>
+      total: number
+    }>
+  }
 }
 
 declare global {

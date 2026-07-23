@@ -26,7 +26,8 @@ import {
   ScanLine,
   TagIcon,
   Settings,
-  History
+  History,
+  Trash2
 } from 'lucide-react'
 import { AboutDialog } from './AboutDialog'
 import { useState, useEffect } from 'react'
@@ -81,6 +82,7 @@ export function AppSidebar() {
     { to: '/bulkadd', label: 'Add Books', icon: UploadIcon },
     { to: '/barcodes', label: 'Print Barcodes', icon: PrinterIcon },
     { to: '/tags', label: 'Tags', icon: TagIcon },
+    { to: '/discarded', label: 'Discarded Books', icon: Trash2 },
     { to: '/settings', label: 'Settings', icon: Settings }
   ]
 

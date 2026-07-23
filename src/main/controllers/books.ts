@@ -34,6 +34,8 @@ export const booksController = {
       }))
     }
 
+    whereClause.totalStock = { gt: 0 }
+
     const [books, total] = await Promise.all([
       prisma.book.findMany({
         skip,
@@ -256,6 +258,94 @@ export const booksController = {
         }
       }
     })
+  },
+
+  addStock: async (isbn: string, count: number) => {
+    return await prisma.book.update({
+      where: { isbn },
+      data: { totalStock: { increment: count } }
+    })
+  },
+
+  discardBooks: async (isbn: string, count: number, note?: string) => {
+    return await prisma.$transaction(async (tx) => {
+      const book = await tx.book.findUnique({ where: { isbn } })
+      if (!book) throw new Error('Book not found')
+
+      const activeRentals = await tx.loan.count({
+        where: { bookIsbn: isbn, returnedAt: null }
+      })
+
+      if (book.totalStock - count < activeRentals) {
+        throw new Error(
+          `Cannot discard ${count} book(s). Only ${book.totalStock - activeRentals} book(s) available after active rentals.`
+        )
+      }
+
+      await tx.book.update({
+        where: { isbn },
+        data: { totalStock: { decrement: count } }
+      })
+
+      return await tx.discardedBook.create({
+        data: {
+          isbn,
+          title: book.title,
+          count,
+          note: note || null
+        }
+      })
+    })
+  },
+
+  getDiscardedBooks: async (page: number = 1, perPage: number = 25, tagIds?: number[]) => {
+    const skip = (page - 1) * perPage
+    const whereClause: Prisma.DiscardedBookWhereInput = {}
+
+    if (tagIds && tagIds.length > 0) {
+      const matchingIsbns = await prisma.bookTag
+        .findMany({
+          where: { tagId: { in: tagIds } },
+          select: { bookIsbn: true },
+          distinct: ['bookIsbn']
+        })
+        .then((rows) => rows.map((r) => r.bookIsbn))
+      whereClause.isbn = { in: matchingIsbns }
+    }
+
+    const [discarded, total] = await Promise.all([
+      prisma.discardedBook.findMany({
+        where: whereClause,
+        orderBy: { discardedAt: 'desc' },
+        skip,
+        take: perPage
+      }),
+      prisma.discardedBook.count({ where: whereClause })
+    ])
+
+    const isbns = [...new Set(discarded.map((d) => d.isbn))]
+    const bookTags =
+      isbns.length > 0
+        ? await prisma.bookTag.findMany({
+            where: { bookIsbn: { in: isbns } },
+            include: { tag: true }
+          })
+        : []
+    const tagsByIsbn = new Map<
+      string,
+      { tag: { id: number; name: string; description?: string | null; color?: string | null } }[]
+    >()
+    for (const bt of bookTags) {
+      const list = tagsByIsbn.get(bt.bookIsbn) || []
+      list.push({ tag: bt.tag })
+      tagsByIsbn.set(bt.bookIsbn, list)
+    }
+
+    const result = discarded.map((d) => ({
+      ...d,
+      tags: tagsByIsbn.get(d.isbn) || []
+    }))
+    return { discarded: result, total }
   }
 }
 

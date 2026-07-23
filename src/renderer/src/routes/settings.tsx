@@ -79,7 +79,12 @@ function Settings() {
         toast.error('No books to export.')
         return
       }
-      const csvData = fetched.map((book) => ({
+      const inStock = fetched.filter((b) => b.totalStock > 0)
+      if (inStock.length === 0) {
+        toast.error('No books in stock to export.')
+        return
+      }
+      const csvData = inStock.map((book) => ({
         Title: book.title,
         ISBN: book.isbn,
         Stock: book.totalStock,
@@ -136,10 +141,16 @@ function Settings() {
         setIsExporting(false)
         return
       }
+      const inStock = fetched.filter((b) => b.totalStock > 0)
+      if (inStock.length === 0) {
+        toast.error('No books in stock to export.')
+        setIsExporting(false)
+        return
+      }
 
       const logoDataUrl = await loadImageAsDataUrl(Logo)
 
-      const blob = await pdf(<BookCatalogPDF books={fetched} logoDataUrl={logoDataUrl} />).toBlob()
+      const blob = await pdf(<BookCatalogPDF books={inStock} logoDataUrl={logoDataUrl} />).toBlob()
 
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')

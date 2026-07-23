@@ -16,7 +16,13 @@ import {
 interface BooksColumnsProps {
   onDelete?: (isbn: string, title: string) => Promise<void>
   isDeleting?: boolean
-  onEditStock?: (isbn: string, title: string, currentStock: number, activeRentals: number) => void
+  onAddStock?: (isbn: string, title: string, currentStock: number) => void
+  onDiscardBooks?: (
+    isbn: string,
+    title: string,
+    currentStock: number,
+    activeRentals: number
+  ) => void
   onChangeTags?: (
     isbn: string,
     title: string,
@@ -30,7 +36,8 @@ interface BooksColumnsProps {
 export function getBooksColumns({
   onDelete,
   isDeleting,
-  onEditStock,
+  onAddStock,
+  onDiscardBooks,
   onChangeTags,
   onTitleClick,
   onEditDetails
@@ -207,7 +214,7 @@ export function getBooksColumns({
         )
       }
     },
-    ...(onDelete || onEditStock || onChangeTags || onEditDetails
+    ...(onDelete || onAddStock || onDiscardBooks || onChangeTags || onEditDetails
       ? [
           {
             id: 'actions',
@@ -228,10 +235,32 @@ export function getBooksColumns({
                         Edit Details
                       </DropdownMenuItem>
                     )}
-                    {onEditStock && (
+                    {onAddStock && (
                       <DropdownMenuItem
                         onClick={() =>
-                          onEditStock(
+                          onAddStock(row.original.isbn, row.original.title, row.original.totalStock)
+                        }
+                      >
+                        <svg
+                          className="mr-2 size-4"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M5 12h14" />
+                          <path d="M12 5v14" />
+                        </svg>
+                        Add Books
+                      </DropdownMenuItem>
+                    )}
+                    {onDiscardBooks && (
+                      <DropdownMenuItem
+                        onClick={() =>
+                          onDiscardBooks(
                             row.original.isbn,
                             row.original.title,
                             row.original.totalStock,
@@ -239,8 +268,21 @@ export function getBooksColumns({
                           )
                         }
                       >
-                        <Pencil className="mr-2 size-4" />
-                        Edit Stock
+                        <svg
+                          className="mr-2 size-4"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M3 6h18" />
+                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                        </svg>
+                        Discard Books
                       </DropdownMenuItem>
                     )}
                     {onChangeTags && (
@@ -258,9 +300,8 @@ export function getBooksColumns({
                         Change Tags
                       </DropdownMenuItem>
                     )}
-                    {(onEditStock || onChangeTags || onEditDetails) && onDelete && (
-                      <DropdownMenuSeparator />
-                    )}
+                    {(onAddStock || onDiscardBooks || onChangeTags || onEditDetails) &&
+                      onDelete && <DropdownMenuSeparator />}
                     {onDelete && (
                       <DropdownMenuItem
                         onClick={() => onDelete(row.original.isbn, row.original.title)}

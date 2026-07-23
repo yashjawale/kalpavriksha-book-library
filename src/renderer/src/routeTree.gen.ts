@@ -16,6 +16,7 @@ import { Route as ReviewqueueRouteImport } from './routes/reviewqueue'
 import { Route as ReturnsTodayRouteImport } from './routes/returns-today'
 import { Route as ReturnsRouteImport } from './routes/returns'
 import { Route as QuickcaptureRouteImport } from './routes/quickcapture'
+import { Route as DiscardedRouteImport } from './routes/discarded'
 import { Route as BulkaddRouteImport } from './routes/bulkadd'
 import { Route as BarcodesRouteImport } from './routes/barcodes'
 import { Route as IndexRouteImport } from './routes/index'
@@ -60,6 +61,11 @@ const ReturnsRoute = ReturnsRouteImport.update({
 const QuickcaptureRoute = QuickcaptureRouteImport.update({
   id: '/quickcapture',
   path: '/quickcapture',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiscardedRoute = DiscardedRouteImport.update({
+  id: '/discarded',
+  path: '/discarded',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BulkaddRoute = BulkaddRouteImport.update({
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/barcodes': typeof BarcodesRoute
   '/bulkadd': typeof BulkaddRoute
+  '/discarded': typeof DiscardedRoute
   '/quickcapture': typeof QuickcaptureRoute
   '/returns': typeof ReturnsRoute
   '/returns-today': typeof ReturnsTodayRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/barcodes': typeof BarcodesRoute
   '/bulkadd': typeof BulkaddRoute
+  '/discarded': typeof DiscardedRoute
   '/quickcapture': typeof QuickcaptureRoute
   '/returns': typeof ReturnsRoute
   '/returns-today': typeof ReturnsTodayRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/barcodes': typeof BarcodesRoute
   '/bulkadd': typeof BulkaddRoute
+  '/discarded': typeof DiscardedRoute
   '/quickcapture': typeof QuickcaptureRoute
   '/returns': typeof ReturnsRoute
   '/returns-today': typeof ReturnsTodayRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/'
     | '/barcodes'
     | '/bulkadd'
+    | '/discarded'
     | '/quickcapture'
     | '/returns'
     | '/returns-today'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/'
     | '/barcodes'
     | '/bulkadd'
+    | '/discarded'
     | '/quickcapture'
     | '/returns'
     | '/returns-today'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/'
     | '/barcodes'
     | '/bulkadd'
+    | '/discarded'
     | '/quickcapture'
     | '/returns'
     | '/returns-today'
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BarcodesRoute: typeof BarcodesRoute
   BulkaddRoute: typeof BulkaddRoute
+  DiscardedRoute: typeof DiscardedRoute
   QuickcaptureRoute: typeof QuickcaptureRoute
   ReturnsRoute: typeof ReturnsRoute
   ReturnsTodayRoute: typeof ReturnsTodayRoute
@@ -300,6 +313,13 @@ declare module '@tanstack/react-router' {
       path: '/quickcapture'
       fullPath: '/quickcapture'
       preLoaderRoute: typeof QuickcaptureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discarded': {
+      id: '/discarded'
+      path: '/discarded'
+      fullPath: '/discarded'
+      preLoaderRoute: typeof DiscardedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bulkadd': {
@@ -379,6 +399,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BarcodesRoute: BarcodesRoute,
   BulkaddRoute: BulkaddRoute,
+  DiscardedRoute: DiscardedRoute,
   QuickcaptureRoute: QuickcaptureRoute,
   ReturnsRoute: ReturnsRoute,
   ReturnsTodayRoute: ReturnsTodayRoute,

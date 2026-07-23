@@ -87,3 +87,14 @@ model Loan {
   @@map("loans")
 }
 
+model DiscardedBook {
+  id          Int      @id @default(autoincrement())
+  isbn        String
+  title       String
+  count       Int      @default(1)
+  note        String?
+  discardedAt DateTime @default(now())
+
+  @@map("discarded_books")
+}
+

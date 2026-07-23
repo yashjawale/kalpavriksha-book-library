@@ -18,7 +18,7 @@ export const dashboardController = {
       upcomingReturns,
       recentRentals
     ] = await Promise.all([
-      prisma.book.count(),
+      prisma.book.count({ where: { totalStock: { gt: 0 } } }),
       prisma.user.count(),
       prisma.loan.count({ where: { returnedAt: null } }),
       prisma.loan.count({
