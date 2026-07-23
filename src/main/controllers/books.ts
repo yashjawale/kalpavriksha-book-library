@@ -29,9 +29,9 @@ export const booksController = {
     }
 
     if (tagIds && tagIds.length > 0) {
-      whereClause.bookTags = {
-        some: { tagId: { in: tagIds } }
-      }
+      whereClause.AND = tagIds.map((tagId) => ({
+        bookTags: { some: { tagId } }
+      }))
     }
 
     const [books, total] = await Promise.all([

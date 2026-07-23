@@ -329,7 +329,9 @@ function StockCheckPage() {
 
   const tagFilteredBooks = useMemo(() => {
     if (filterTagIds.length === 0) return books
-    return books.filter((book) => book.bookTags?.some((bt) => filterTagIds.includes(bt.tag.id)))
+    return books.filter((book) =>
+      filterTagIds.every((tagId) => book.bookTags?.some((bt) => bt.tag.id === tagId))
+    )
   }, [books, filterTagIds])
 
   const { notedList, remainingList } = useMemo(() => {
@@ -574,7 +576,11 @@ function StockCheckPage() {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className={isTagFiltered ? 'border-primary text-primary' : ''}
+                  className={
+                    isTagFiltered
+                      ? 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200'
+                      : ''
+                  }
                 >
                   <Filter className="w-4 h-4 mr-2" />
                   {isTagFiltered ? `Filtered (${filterTagIds.length})` : 'Filter tags'}
@@ -630,7 +636,7 @@ function StockCheckPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full text-xs"
+                      className="w-full text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
                       onClick={() => {
                         setFilterTagIds([])
                         setNotedPage(1)
