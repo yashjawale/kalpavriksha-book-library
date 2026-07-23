@@ -117,11 +117,14 @@ function UpcomingReturns() {
               <Link
                 to="/users/$email"
                 params={{ email: borrower.email }}
-                className="hover:underline text-primary font-medium"
+                className="hover:underline text-primary font-medium truncate"
+                title={borrower.name || 'Unknown User'}
               >
                 {borrower.name || 'Unknown User'}
               </Link>
-              <span className="text-xs text-muted-foreground">{borrower.email}</span>
+              <span className="text-xs text-muted-foreground truncate" title={borrower.email}>
+                {borrower.email}
+              </span>
             </div>
           )
         }

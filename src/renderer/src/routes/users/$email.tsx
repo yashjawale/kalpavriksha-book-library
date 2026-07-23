@@ -350,7 +350,8 @@ function UserDetailsPage() {
                         <Link
                           to="/books/$isbn"
                           params={{ isbn: loan.bookIsbn }}
-                          className="hover:underline"
+                          className="hover:underline truncate block"
+                          title={loan.book?.title || 'Unknown Book'}
                         >
                           {loan.book?.title || 'Unknown Book'}
                         </Link>
@@ -434,7 +435,8 @@ function UserDetailsPage() {
                       <Link
                         to="/books/$isbn"
                         params={{ isbn: loan.bookIsbn }}
-                        className="hover:underline"
+                        className="hover:underline truncate block"
+                        title={loan.book?.title || 'Unknown Book'}
                       >
                         {loan.book?.title || 'Unknown Book'}
                       </Link>

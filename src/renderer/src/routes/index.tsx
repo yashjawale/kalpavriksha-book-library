@@ -149,7 +149,8 @@ function Dashboard() {
                             <Link
                               to="/users/$email"
                               params={{ email: loan.borrower.email }}
-                              className="hover:underline"
+                              className="hover:underline truncate block"
+                              title={loan.borrower.name || loan.borrower.email}
                             >
                               {loan.borrower.name || loan.borrower.email}
                             </Link>
@@ -205,7 +206,8 @@ function Dashboard() {
                           <Link
                             to="/users/$email"
                             params={{ email: loan.borrower.email }}
-                            className="hover:underline"
+                            className="hover:underline truncate block"
+                            title={loan.borrower.name || loan.borrower.email}
                           >
                             {loan.borrower.name || loan.borrower.email}
                           </Link>

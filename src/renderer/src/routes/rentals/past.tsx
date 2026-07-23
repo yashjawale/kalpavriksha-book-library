@@ -114,18 +114,25 @@ function PastRentalsPage() {
                       <Link
                         to="/users/$email"
                         params={{ email: loan.userEmail }}
-                        className="hover:underline text-primary"
+                        className="hover:underline text-primary truncate"
+                        title={loan.borrower?.name || 'Unknown'}
                       >
                         {loan.borrower?.name || 'Unknown'}
                       </Link>
-                      <span className="text-xs text-muted-foreground">{loan.userEmail}</span>
+                      <span
+                        className="text-xs text-muted-foreground truncate"
+                        title={loan.userEmail}
+                      >
+                        {loan.userEmail}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <Link
                       to="/books/$isbn"
                       params={{ isbn: loan.bookIsbn }}
-                      className="hover:underline text-primary"
+                      className="hover:underline text-primary truncate block"
+                      title={loan.book?.title || loan.bookIsbn}
                     >
                       {loan.book?.title || loan.bookIsbn}
                     </Link>

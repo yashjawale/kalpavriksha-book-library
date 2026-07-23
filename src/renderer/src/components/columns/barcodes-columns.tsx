@@ -43,7 +43,12 @@ export function getBarcodesColumns({
       accessorKey: 'title',
       header: 'Title',
       cell: ({ row }) => {
-        return <div className="font-medium">{row.getValue('title')}</div>
+        const title = row.getValue('title') as string
+        return (
+          <div className="font-medium truncate" title={title}>
+            {title}
+          </div>
+        )
       }
     },
     {

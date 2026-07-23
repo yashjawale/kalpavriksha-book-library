@@ -81,7 +81,7 @@ export function getBooksColumns({
                 e.stopPropagation()
                 onTitleClick(isbn)
               }}
-              className="font-medium truncate max-w-64 block hover:underline hover:text-primary transition-colors cursor-pointer"
+              className="font-medium truncate block hover:underline hover:text-primary transition-colors cursor-pointer"
             >
               {title || '-'}
             </span>
@@ -89,7 +89,7 @@ export function getBooksColumns({
         }
 
         return (
-          <div className="font-medium truncate max-w-64" title={title || undefined}>
+          <div className="font-medium truncate" title={title || undefined}>
             {title || '-'}
           </div>
         )

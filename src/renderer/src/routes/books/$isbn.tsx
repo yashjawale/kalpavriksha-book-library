@@ -251,16 +251,20 @@ function SingleBook() {
                       key={loan.id}
                       className={`border-b last:border-0 hover:bg-muted/50 ${isOverdue ? 'bg-red-50 hover:bg-red-100/50 dark:bg-red-900/20 dark:hover:bg-red-900/30' : dueToday ? 'bg-yellow-50 hover:bg-yellow-100/50 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30' : ''}`}
                     >
-                      <td className="p-4 align-middle font-medium">
+                      <td className="p-4 align-middle font-medium max-w-40">
                         <Link
                           to="/users/$email"
                           params={{ email: loan.borrower.email }}
-                          className="hover:underline"
+                          className="hover:underline truncate block"
+                          title={loan.borrower.name || '-'}
                         >
                           {loan.borrower.name || '-'}
                         </Link>
                       </td>
-                      <td className="p-4 align-middle text-muted-foreground">
+                      <td
+                        className="p-4 align-middle text-muted-foreground truncate max-w-48"
+                        title={loan.borrower.email}
+                      >
                         {loan.borrower.email}
                       </td>
                       <td className="p-4 align-middle">
@@ -316,16 +320,20 @@ function SingleBook() {
               ) : (
                 paginatedPastLoans.map((loan) => (
                   <tr key={loan.id} className="border-b last:border-0 hover:bg-muted/50">
-                    <td className="p-4 align-middle font-medium">
+                    <td className="p-4 align-middle font-medium max-w-40">
                       <Link
                         to="/users/$email"
                         params={{ email: loan.borrower.email }}
-                        className="hover:underline"
+                        className="hover:underline truncate block"
+                        title={loan.borrower.name || '-'}
                       >
                         {loan.borrower.name || '-'}
                       </Link>
                     </td>
-                    <td className="p-4 align-middle text-muted-foreground">
+                    <td
+                      className="p-4 align-middle text-muted-foreground truncate max-w-48"
+                      title={loan.borrower.email}
+                    >
                       {loan.borrower.email}
                     </td>
                     <td className="p-4 align-middle">
