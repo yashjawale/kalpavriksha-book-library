@@ -218,7 +218,9 @@ function NewRentalPage() {
     const outOfStock = openStock <= 0
 
     return (
-      <div className={`flex flex-col gap-1 w-full ${outOfStock ? 'opacity-50' : ''}`}>
+      <div
+        className={`flex flex-col gap-1 w-full cursor-pointer ${outOfStock ? 'opacity-50' : ''}`}
+      >
         <div className="flex justify-between items-start">
           <span className="font-semibold truncate pr-2">{b.title}</span>
           <span className="text-xs whitespace-nowrap pt-1">
@@ -249,7 +251,7 @@ function NewRentalPage() {
           <PageTitle title="New Issue" />
           <p className="text-muted-foreground">Issue books to a library member.</p>
         </div>
-        <Button variant="ghost" asChild>
+        <Button variant="destructive" asChild>
           <Link to="/rentals">Cancel</Link>
         </Button>
       </div>

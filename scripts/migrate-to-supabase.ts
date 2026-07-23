@@ -16,7 +16,17 @@ async function migrate() {
   }
 
   console.log('Connecting to Supabase (Postgres)...')
-  const adapter = new PrismaPg({ connectionString: supabaseUrl })
+  const adapter = new PrismaPg(
+    {
+      connectionString: supabaseUrl,
+      max: 5,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000
+    },
+    {
+      onPoolError: (err) => console.error('Unexpected pool error:', err)
+    }
+  )
   const prisma = new PrismaClient({ adapter })
 
   // Open local SQLite DB

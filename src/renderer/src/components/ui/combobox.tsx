@@ -94,7 +94,7 @@ export function Combobox({
         align="start"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <Command>
+        <Command shouldFilter={false}>
           <CommandList>
             {loading ? (
               <div className="p-4 text-sm text-center text-muted-foreground">Loading...</div>
@@ -107,17 +107,12 @@ export function Combobox({
                     {options.map((option) => (
                       <CommandItem
                         key={option.value}
-                        value={option.label}
+                        value={option.value}
                         disabled={option.disabled}
-                        onSelect={(currentValue) => {
-                          const selected = options.find(
-                            (opt) =>
-                              opt.label.toLowerCase() === currentValue.toLowerCase() ||
-                              opt.value === currentValue
-                          )
-                          if (selected && !selected.disabled) {
-                            onChange(selected.value)
-                            setInputValue(selected.label)
+                        onSelect={() => {
+                          if (!option.disabled) {
+                            onChange(option.value)
+                            setInputValue(option.label)
                             setOpen(false)
                           }
                         }}

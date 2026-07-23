@@ -1,18 +1,9 @@
-import path from 'path'
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
+import 'dotenv/config'
+import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../generated/prisma/client'
 
 function resolveDatabaseUrl(): string {
-  let connectionString = process.env.DATABASE_URL || 'file:./dev.db'
-  if (connectionString.startsWith('file:./') || connectionString.startsWith('file:../')) {
-    const dbPath = connectionString.replace('file:', '')
-    const resolvedPath = path.resolve(process.cwd(), dbPath)
-    connectionString = `file:${resolvedPath}`
-  } else if (!connectionString.startsWith('file:')) {
-    const fallback = path.resolve(process.cwd(), 'dev.db')
-    connectionString = `file:${fallback}`
-  }
-  return connectionString
+  return process.env.DATABASE_URL || ''
 }
 
 function toTitleCase(str: string | null | undefined): string | null {
@@ -26,7 +17,17 @@ function toTitleCase(str: string | null | undefined): string | null {
 
 async function run() {
   const connectionString = resolveDatabaseUrl()
-  const adapter = new PrismaBetterSqlite3({ url: connectionString })
+  const adapter = new PrismaPg(
+    {
+      connectionString,
+      max: 5,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000
+    },
+    {
+      onPoolError: (err) => console.error('Unexpected pool error:', err)
+    }
+  )
   const prisma = new PrismaClient({ adapter })
 
   console.log('Title-casing books...')

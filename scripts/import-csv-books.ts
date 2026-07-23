@@ -41,7 +41,17 @@ async function importCSV() {
     process.exit(1)
   }
 
-  const adapter = new PrismaPg({ connectionString: supabaseUrl })
+  const adapter = new PrismaPg(
+    {
+      connectionString: supabaseUrl,
+      max: 5,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000
+    },
+    {
+      onPoolError: (err) => console.error('Unexpected pool error:', err)
+    }
+  )
   const prisma = new PrismaClient({ adapter })
 
   console.log(`Reading CSV from ${absolutePath}...`)
