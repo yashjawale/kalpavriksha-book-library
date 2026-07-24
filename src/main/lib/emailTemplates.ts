@@ -36,6 +36,25 @@ Thank you,
 Kalpavriksha Library`
 }
 
+export function generateDueReminderBody(
+  userName: string,
+  books: { title: string; isbn: string }[],
+  dueDate: Date
+): string {
+  const booksList = books.map((b) => `- ${b.title}`).join('\n')
+
+  return `Hello ${userName || ''},
+
+This is a reminder that the following book(s) are due for return tomorrow (${format(new Date(dueDate), 'dd/MM/yy')}):
+
+${booksList}
+
+Please return them to the library on time.
+
+Thank you,
+Kalpavriksha Library`
+}
+
 export function generateExtensionEmailBody(
   userName: string,
   books: { title: string; isbn: string }[],
