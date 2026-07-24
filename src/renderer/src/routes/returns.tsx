@@ -5,7 +5,8 @@ import { Spinner } from '@renderer/components/ui/spinner'
 import PageTitle from '@renderer/components/ui/page-title'
 import { DataTable } from '@renderer/components/ui/data-table'
 import { Button } from '@renderer/components/ui/button'
-import { format, isToday } from 'date-fns'
+import { Input } from '@renderer/components/ui/input'
+import { format, isToday, addWeeks } from 'date-fns'
 import { ColumnDef, Row } from '@tanstack/react-table'
 import { LoginOverlay } from '@renderer/components/LoginOverlay'
 import {
@@ -43,6 +44,11 @@ function UpcomingReturns() {
   }, [])
 
   const [returnLoanId, setReturnLoanId] = useState<number | null>(null)
+  const [extensionDialogOpen, setExtensionDialogOpen] = useState(false)
+  const [loanToExtend, setLoanToExtend] = useState<{ id: number; dueDate: Date | null } | null>(
+    null
+  )
+  const [newDueDate, setNewDueDate] = useState('')
 
   const { data, isLoading } = useQuery({
     queryKey: ['upcoming-returns'],
@@ -88,22 +94,27 @@ function UpcomingReturns() {
     }
   }
 
-  const handleExtend = useCallback(
-    async (loanId: number, currentDueDate: Date | null) => {
-      // Extend by 14 days from current due date or today
-      const baseDate = currentDueDate ? new Date(currentDueDate) : new Date()
-      const newDueDate = new Date(baseDate)
-      newDueDate.setDate(newDueDate.getDate() + 14)
+  const handleOpenExtendDialog = useCallback((loan: { id: number; dueDate: Date | null }) => {
+    setLoanToExtend(loan)
+    const baseDate = loan.dueDate ? new Date(loan.dueDate) : new Date()
+    setNewDueDate(format(addWeeks(baseDate, 1), 'yyyy-MM-dd'))
+    setExtensionDialogOpen(true)
+  }, [])
 
-      try {
-        await extendLoanMutation.mutateAsync({ loanId, dueDate: newDueDate })
-      } catch (error) {
-        console.error('Failed to extend loan:', error)
-        toast.error('Failed to extend loan. Please try again.')
-      }
-    },
-    [extendLoanMutation]
-  )
+  const handleExtendLoan = useCallback(async () => {
+    if (!loanToExtend) return
+    try {
+      await extendLoanMutation.mutateAsync({
+        loanId: loanToExtend.id,
+        dueDate: new Date(newDueDate)
+      })
+      setExtensionDialogOpen(false)
+      setLoanToExtend(null)
+    } catch (error) {
+      console.error('Failed to extend loan:', error)
+      toast.error('Failed to extend loan. Please try again.')
+    }
+  }, [loanToExtend, newDueDate, extendLoanMutation])
 
   const columns = useMemo<ColumnDef<LoanWithDetails>[]>(
     () => [
@@ -184,7 +195,7 @@ function UpcomingReturns() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleExtend(loan.id, loan.dueDate)}
+                onClick={() => handleOpenExtendDialog(loan)}
                 disabled={extendLoanMutation.isPending}
               >
                 Extend
@@ -194,7 +205,12 @@ function UpcomingReturns() {
         }
       }
     ],
-    [setReturnLoanId, returnBookMutation.isPending, extendLoanMutation.isPending, handleExtend]
+    [
+      setReturnLoanId,
+      returnBookMutation.isPending,
+      extendLoanMutation.isPending,
+      handleOpenExtendDialog
+    ]
   )
 
   const globalFilterFn = (loan: LoanWithDetails, filterValue: string): boolean => {
@@ -245,6 +261,44 @@ function UpcomingReturns() {
         globalFilterFn={globalFilterFn}
         rowClassName={rowClassName}
       />
+
+      <Dialog
+        open={extensionDialogOpen}
+        onOpenChange={(open) => {
+          setExtensionDialogOpen(open)
+          if (!open) setLoanToExtend(null)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Extend Loan Due Date</DialogTitle>
+            <DialogDescription>Set a new due date for this loan.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setExtensionDialogOpen(false)
+                setLoanToExtend(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleExtendLoan} disabled={extendLoanMutation.isPending}>
+              {extendLoanMutation.isPending ? (
+                <>
+                  <Spinner className="size-4 mr-2" /> Saving...
+                </>
+              ) : (
+                'Save'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!returnLoanId} onOpenChange={(open) => !open && setReturnLoanId(null)}>
         <DialogContent>

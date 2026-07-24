@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Spinner } from '@renderer/components/ui/spinner'
 import { Button } from '@renderer/components/ui/button'
 import { Pencil, ArrowLeft, AlertTriangle } from 'lucide-react'
-import { format, isToday } from 'date-fns'
+import { format, isToday, addWeeks } from 'date-fns'
 import PageTitle from '@renderer/components/ui/page-title'
 import { TagBadge } from '@renderer/components/TagBadge'
 import { EditBookDialog } from '@renderer/components/EditBookDialog'
@@ -34,6 +34,11 @@ function SingleBook() {
   const [addStockCount, setAddStockCount] = useState(1)
   const [discardCount, setDiscardCount] = useState(1)
   const [discardNote, setDiscardNote] = useState('')
+  const [extensionDialogOpen, setExtensionDialogOpen] = useState(false)
+  const [loanToExtend, setLoanToExtend] = useState<{ id: number; dueDate: Date | null } | null>(
+    null
+  )
+  const [newDueDate, setNewDueDate] = useState('')
 
   const { data: book, isLoading } = useQuery({
     queryKey: ['book', isbn],
@@ -102,13 +107,22 @@ function SingleBook() {
     }
   }
 
-  const handleExtend = async (loanId: number, currentDueDate: Date | null) => {
-    const baseDate = currentDueDate ? new Date(currentDueDate) : new Date()
-    const newDueDate = new Date(baseDate)
-    newDueDate.setDate(newDueDate.getDate() + 14)
+  const handleOpenExtendDialog = (loan: { id: number; dueDate: Date | null }) => {
+    setLoanToExtend(loan)
+    const baseDate = loan.dueDate ? new Date(loan.dueDate) : new Date()
+    setNewDueDate(format(addWeeks(baseDate, 1), 'yyyy-MM-dd'))
+    setExtensionDialogOpen(true)
+  }
 
+  const handleExtendLoan = async () => {
+    if (!loanToExtend) return
     try {
-      await extendLoanMutation.mutateAsync({ loanId, dueDate: newDueDate })
+      await extendLoanMutation.mutateAsync({
+        loanId: loanToExtend.id,
+        dueDate: new Date(newDueDate)
+      })
+      setExtensionDialogOpen(false)
+      setLoanToExtend(null)
     } catch (error) {
       console.error('Failed to extend loan:', error)
       toast.error('Failed to extend loan. Please try again.')
@@ -351,7 +365,7 @@ function SingleBook() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleExtend(loan.id, loan.dueDate)}
+                            onClick={() => handleOpenExtendDialog(loan)}
                             disabled={extendLoanMutation.isPending}
                           >
                             Extend
@@ -457,6 +471,51 @@ function SingleBook() {
                 </>
               ) : (
                 'Add'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Extend Loan Dialog */}
+      <Dialog
+        open={extensionDialogOpen}
+        onOpenChange={(open) => {
+          setExtensionDialogOpen(open)
+          if (!open) setLoanToExtend(null)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Extend Loan Due Date</DialogTitle>
+            <DialogDescription>
+              Set a new due date for{' '}
+              {loanToExtend
+                ? book?.loans.find((l) => l.id === loanToExtend.id)?.borrower.name || 'this user'
+                : 'this loan'}
+              .
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setExtensionDialogOpen(false)
+                setLoanToExtend(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleExtendLoan} disabled={extendLoanMutation.isPending}>
+              {extendLoanMutation.isPending ? (
+                <>
+                  <Spinner className="size-4 mr-2" /> Saving...
+                </>
+              ) : (
+                'Save'
               )}
             </Button>
           </DialogFooter>

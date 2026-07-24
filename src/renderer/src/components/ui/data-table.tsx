@@ -141,6 +141,7 @@ export function DataTable<TData, TValue>({
     globalFilterFn: globalFilterFn
       ? (row, _columnId, filterValue) => globalFilterFn(row.original, filterValue)
       : undefined,
+    getColumnCanGlobalFilter: globalFilterFn ? () => true : undefined,
     state: {
       sorting,
       columnFilters,

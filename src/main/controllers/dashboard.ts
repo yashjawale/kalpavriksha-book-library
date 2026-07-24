@@ -42,8 +42,7 @@ export const dashboardController = {
           borrowedAt: {
             gte: startOfDay,
             lte: endOfDay
-          },
-          returnedAt: null
+          }
         }
       }),
       prisma.loan.findMany({

@@ -7,7 +7,10 @@ export const usersController = {
     const whereClause: Prisma.UserWhereInput = {}
 
     if (searchQuery) {
-      whereClause.OR = [{ name: { contains: searchQuery } }, { email: { contains: searchQuery } }]
+      whereClause.OR = [
+        { name: { contains: searchQuery, mode: 'insensitive' } },
+        { email: { contains: searchQuery, mode: 'insensitive' } }
+      ]
     }
 
     const [users, total] = await Promise.all([
