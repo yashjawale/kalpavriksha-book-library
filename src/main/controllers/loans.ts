@@ -1,5 +1,4 @@
 import { prisma } from '../lib/prisma'
-import { Prisma } from '../../../generated/prisma/client'
 import { getSettings } from '../lib/settings'
 import { sendTransactionEmail } from '../lib/auth'
 import {
