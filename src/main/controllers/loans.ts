@@ -30,6 +30,9 @@ export const loansController = {
   },
 
   getReturnsToday: async () => {
+    const startOfDay = new Date()
+    startOfDay.setHours(0, 0, 0, 0)
+
     const endOfDay = new Date()
     endOfDay.setHours(23, 59, 59, 999)
 
@@ -37,7 +40,8 @@ export const loansController = {
       where: {
         dueDate: {
           lte: endOfDay
-        }
+        },
+        OR: [{ returnedAt: null }, { returnedAt: { gte: startOfDay } }]
       },
       include: { book: true, borrower: true },
       orderBy: { returnedAt: 'asc' } // active first (null returnedAt), then by returned date
