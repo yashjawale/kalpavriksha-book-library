@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { createRequire } from 'module'
-import { google } from 'googleapis'
+import nodemailer from 'nodemailer'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { startOfDay, endOfDay, addDays, format } from 'date-fns'
 import { generateDueReminderBody } from '../src/main/lib/emailTemplates'
@@ -36,39 +36,33 @@ function parseArgs(): { date: Date; dryRun: boolean } {
   return { date, dryRun }
 }
 
-async function sendReminderEmail(to: string, subject: string, body: string): Promise<boolean> {
-  const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
-  const privateKey = (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '').replace(/\\n/g, '\n')
-  const senderEmail = process.env.GMAIL_SENDER_EMAIL
+function createTransporter() {
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com'
+  const port = Number(process.env.SMTP_PORT) || 587
+  const user = process.env.SMTP_USER
+  const pass = process.env.SMTP_PASS
 
-  const auth = new google.auth.JWT({
-    email: serviceAccountEmail,
-    key: privateKey,
-    scopes: ['https://www.googleapis.com/auth/gmail.send'],
-    subject: senderEmail
+  if (!user || !pass) {
+    throw new Error('Missing SMTP credentials. Set SMTP_USER and SMTP_PASS environment variables.')
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass }
   })
+}
 
-  const gmail = google.gmail({ version: 'v1', auth })
+async function sendReminderEmail(to: string, subject: string, body: string): Promise<boolean> {
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER
+  const transporter = createTransporter()
 
-  const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`
-  const messageParts = [
-    `To: ${to}`,
-    `Subject: ${utf8Subject}`,
-    'Content-Type: text/plain; charset=utf-8',
-    'MIME-Version: 1.0',
-    '',
-    body
-  ]
-  const message = messageParts.join('\n')
-  const encodedMessage = Buffer.from(message)
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '')
-
-  await gmail.users.messages.send({
-    userId: 'me',
-    requestBody: { raw: encodedMessage }
+  await transporter.sendMail({
+    from: `"Kalpavriksha Library" <${from}>`,
+    to,
+    subject,
+    text: body
   })
 
   return true
@@ -158,7 +152,7 @@ async function main() {
     }
 
     if (dryRun) {
-      console.log('🔍 Dry run complete. Pass --dry-run to actually send.')
+      console.log('🔍 Dry run complete. Remove --dry-run to actually send.')
     } else {
       console.log('✅ Done.')
     }
