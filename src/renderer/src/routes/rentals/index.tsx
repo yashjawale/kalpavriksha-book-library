@@ -91,11 +91,14 @@ function RentalsPage() {
             <Link
               to="/users/$email"
               params={{ email: row.original.userEmail }}
-              className="hover:underline text-primary font-medium"
+              className="hover:underline text-primary font-medium truncate"
+              title={row.original.borrower?.name || 'Unknown'}
             >
               {row.original.borrower?.name || 'Unknown'}
             </Link>
-            <span className="text-xs text-muted-foreground">{row.original.userEmail}</span>
+            <span className="text-xs text-muted-foreground truncate" title={row.original.userEmail}>
+              {row.original.userEmail}
+            </span>
           </div>
         )
       },
@@ -106,7 +109,8 @@ function RentalsPage() {
           <Link
             to="/books/$isbn"
             params={{ isbn: row.original.bookIsbn }}
-            className="hover:underline text-primary"
+            className="hover:underline text-primary truncate block"
+            title={row.original.book?.title || row.original.bookIsbn}
           >
             {row.original.book?.title || row.original.bookIsbn}
           </Link>

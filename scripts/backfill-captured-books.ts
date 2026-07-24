@@ -1,21 +1,28 @@
-import 'dotenv/config'
 import path from 'path'
 import fs from 'fs'
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
-import { PrismaClient } from '../generated/prisma/client'
+import Database from 'better-sqlite3'
+import dotenv from 'dotenv'
 import {
   getBookInfoGoogleBooks,
   getBookInfoOpenLibrary,
   getBookInfoIndian
 } from '../src/main/lib/bookApi'
 
-type BackfillUpdate = {
-  title: string
-  author: string
-  publisher: string
+dotenv.config()
+
+type CapturedBookRow = {
+  id: number
+  frontImage: string
+  backImage: string
+  isbn: string | null
+  title: string | null
+  author: string | null
+  publisher: string | null
+  tagIds: string | null
+  status: string
   isDuplicate: boolean
-  status: 'PROCESSED'
-  isbn?: string
+  createdAt: string
+  updatedAt: string
 }
 
 type AiResult = {
@@ -26,21 +33,6 @@ type AiResult = {
 
 const AI_PROMPT =
   'Analyze this book cover image. Extract the Title, Author, and Publisher. If any field is missing or illegible, return \'\' (empty string). Respond *only* in the following JSON format:\n{\n"title": "...",\n"author": "...",\n"publisher": "..."\n} \n Ignore the blue technical publications book in the back by Soudamini Patil & Pranjali Deshpande if its present,there should won\'t be any book from technical publications. focus only on the book in the front. \n If the book is in hindi/marathi, give the output in hinglish i.e. same wordds but using english alphabets. \n If the book has information about issue date or volume, mention that in title too. \n If there is just a spread out hand in the image, return title as HAAND'
-
-function resolveDatabaseUrl(): string {
-  let connectionString = process.env.DATABASE_URL || 'file:./dev.db'
-
-  if (connectionString.startsWith('file:./') || connectionString.startsWith('file:../')) {
-    const dbPath = connectionString.replace('file:', '')
-    const resolvedPath = path.resolve(process.cwd(), dbPath)
-    connectionString = `file:${resolvedPath}`
-  } else if (!connectionString.startsWith('file:')) {
-    const fallback = path.resolve(process.cwd(), 'dev.db')
-    connectionString = `file:${fallback}`
-  }
-
-  return connectionString
-}
 
 async function getBookInfo(isbn: string) {
   return (
@@ -131,15 +123,42 @@ async function getBookInfoFromAi(imagePath: string): Promise<AiResult | null> {
   return extractJsonObject(content)
 }
 
-async function run() {
-  const args = new Set(process.argv.slice(2))
-  const isDryRun = args.has('--dry-run') || args.has('-n')
-  const aiOnly = args.has('--ai-only')
-  const aiEnabled = aiOnly || args.has('--ai')
+function openDb(filePath: string): Database.Database {
+  const resolved = path.resolve(process.cwd(), filePath)
+  if (!fs.existsSync(resolved)) {
+    console.error(`Database not found: ${resolved}`)
+    process.exit(1)
+  }
+  return new Database(resolved)
+}
 
-  const connectionString = resolveDatabaseUrl()
-  const adapter = new PrismaBetterSqlite3({ url: connectionString })
-  const prisma = new PrismaClient({ adapter })
+async function run() {
+  const args = process.argv.slice(2)
+
+  const flags = new Set(args.filter((a) => a.startsWith('--')))
+  const isDryRun = flags.has('--dry-run') || flags.has('-n')
+  const aiOnly = flags.has('--ai-only')
+  const aiEnabled = aiOnly || flags.has('--ai')
+
+  // Positional args: <captures.db> [books.db]
+  const positional = args.filter((a) => !a.startsWith('--'))
+  if (positional.length === 0) {
+    console.error(
+      'Usage: npx tsx scripts/backfill-captured-books.ts <captures.db> [books.db] [options]'
+    )
+    console.error('Options:')
+    console.error('  --dry-run    Preview changes without writing')
+    console.error('  --ai         Use AI as fallback when APIs return no data')
+    console.error('  --ai-only    Use AI only, skip API lookups')
+    process.exit(1)
+  }
+
+  const capturesDb = openDb(positional[0])
+  let booksDb: Database.Database | null = null
+  if (positional[1]) {
+    booksDb = openDb(positional[1])
+    console.log(`Books DB: ${path.resolve(process.cwd(), positional[1])}`)
+  }
 
   let processed = 0
   let updated = 0
@@ -165,9 +184,9 @@ async function run() {
   })
 
   try {
-    const captured = await prisma.capturedBook.findMany({
-      orderBy: { createdAt: 'asc' }
-    })
+    const captured = capturesDb
+      .prepare('SELECT * FROM captured_books ORDER BY createdAt ASC')
+      .all() as CapturedBookRow[]
 
     if (captured.length === 0) {
       console.log('No captured books found.')
@@ -177,6 +196,13 @@ async function run() {
     console.log(`Found ${captured.length} captured book(s).`)
     console.log(`Mode: ${isDryRun ? 'DRY RUN' : 'WRITE'}`)
     console.log(`AI: ${aiEnabled ? (aiOnly ? 'ONLY' : 'FALLBACK') : 'DISABLED'}\n`)
+
+    const updateStmt = capturesDb.prepare(`
+      UPDATE captured_books
+      SET title = ?, author = ?, publisher = ?, isDuplicate = ?, status = 'PROCESSED', isbn = ?,
+          updatedAt = datetime('now')
+      WHERE id = ?
+    `)
 
     for (const record of captured) {
       processed += 1
@@ -205,7 +231,17 @@ async function run() {
         let isDuplicate = record.isDuplicate
 
         if (hasIsbn) {
-          const existing = await prisma.book.findUnique({ where: { isbn } })
+          let existing: { title: string; author: string | null; publisher: string | null } | null =
+            null
+
+          if (booksDb) {
+            const row = booksDb
+              .prepare('SELECT title, author, publisher FROM books WHERE isbn = ?')
+              .get(isbn) as
+              | { title: string; author: string | null; publisher: string | null }
+              | undefined
+            if (row) existing = row
+          }
 
           if (existing) {
             isDuplicate = true
@@ -233,27 +269,19 @@ async function run() {
           }
         }
 
-        const updateData: BackfillUpdate = {
-          title,
-          author,
-          publisher,
-          isDuplicate,
-          status: 'PROCESSED'
-        }
-
-        if (hasIsbn) {
-          updateData.isbn = isbn
-        }
-
         if (isDryRun) {
           console.log(
             `- ID ${record.id} -> title="${title}", author="${author}", publisher="${publisher}", isDuplicate=${isDuplicate}`
           )
         } else {
-          await prisma.capturedBook.update({
-            where: { id: record.id },
-            data: updateData
-          })
+          updateStmt.run(
+            title,
+            author,
+            publisher,
+            isDuplicate ? 1 : 0,
+            hasIsbn ? isbn : null,
+            record.id
+          )
           updated += 1
           console.log(
             `- Updated ID ${record.id} -> title="${title}", author="${author}", publisher="${publisher}", isDuplicate=${isDuplicate}`
@@ -267,7 +295,8 @@ async function run() {
       if (shouldStop) break
     }
   } finally {
-    await prisma.$disconnect()
+    capturesDb.close()
+    if (booksDb) booksDb.close()
   }
 
   console.log('\nDone.')

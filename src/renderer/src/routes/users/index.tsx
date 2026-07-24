@@ -115,8 +115,12 @@ function UsersPage() {
               ) : users.length > 0 ? (
                 users.map((user) => (
                   <TableRow key={user.email}>
-                    <TableCell className="font-medium">{user.name || 'Unknown'}</TableCell>
-                    <TableCell>{user.email}</TableCell>
+                    <TableCell className="font-medium truncate" title={user.name || 'Unknown'}>
+                      {user.name || 'Unknown'}
+                    </TableCell>
+                    <TableCell className="truncate" title={user.email}>
+                      {user.email}
+                    </TableCell>
                     <TableCell>{user._count?.loans || 0}</TableCell>
                     <TableCell className="text-right">
                       <Link to="/users/$email" params={{ email: user.email }}>

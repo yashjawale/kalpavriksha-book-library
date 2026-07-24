@@ -24,7 +24,7 @@ export function getRecentBooksColumns({
       cell: ({ row }) => {
         const title = row.getValue('title') as string
         return (
-          <div className="font-medium truncate max-w-64" title={title || undefined}>
+          <div className="font-medium truncate" title={title || undefined}>
             {title}
           </div>
         )

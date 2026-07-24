@@ -5,6 +5,7 @@ import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { X, Info } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@renderer/components/ui/tooltip'
 import { LoginOverlay } from '@renderer/components/LoginOverlay'
 import { Combobox } from '@renderer/components/ui/combobox'
 import { useDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
@@ -218,7 +219,9 @@ function NewRentalPage() {
     const outOfStock = openStock <= 0
 
     return (
-      <div className={`flex flex-col gap-1 w-full ${outOfStock ? 'opacity-50' : ''}`}>
+      <div
+        className={`flex flex-col gap-1 w-full cursor-pointer ${outOfStock ? 'opacity-50' : ''}`}
+      >
         <div className="flex justify-between items-start">
           <span className="font-semibold truncate pr-2">{b.title}</span>
           <span className="text-xs whitespace-nowrap pt-1">
@@ -249,7 +252,7 @@ function NewRentalPage() {
           <PageTitle title="New Issue" />
           <p className="text-muted-foreground">Issue books to a library member.</p>
         </div>
-        <Button variant="ghost" asChild>
+        <Button variant="destructive" asChild>
           <Link to="/rentals">Cancel</Link>
         </Button>
       </div>
@@ -333,7 +336,16 @@ function NewRentalPage() {
                     ) : (
                       selectedBooks.map((item) => (
                         <TableRow key={item.book.isbn}>
-                          <TableCell className="font-medium">{item.book.title}</TableCell>
+                          <TableCell className="font-medium max-w-[200px]">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="truncate block">{item.book.title}</span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{item.book.title}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableCell>
                           <TableCell className="text-muted-foreground">{item.book.isbn}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">

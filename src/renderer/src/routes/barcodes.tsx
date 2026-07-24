@@ -71,7 +71,7 @@ function BarcodesPage() {
     if (selectedTagFilters.length === 0) return books
     return books.filter((book) => {
       if (!book.bookTags || book.bookTags.length === 0) return false
-      return selectedTagFilters.some((tagId) => book.bookTags!.some((bt) => bt.tag.id === tagId))
+      return selectedTagFilters.every((tagId) => book.bookTags!.some((bt) => bt.tag.id === tagId))
     })
   }, [books, selectedTagFilters])
 
@@ -240,7 +240,15 @@ function BarcodesPage() {
           {allTags.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={
+                    selectedTagFilters.length > 0
+                      ? 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200'
+                      : ''
+                  }
+                >
                   <Filter className="size-4 mr-2" />
                   Filter by Tags
                   {selectedTagFilters.length > 0 && ` (${selectedTagFilters.length})`}
@@ -261,7 +269,10 @@ function BarcodesPage() {
                 {selectedTagFilters.length > 0 && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setSelectedTagFilters([])}>
+                    <DropdownMenuItem
+                      className="text-red-600"
+                      onClick={() => setSelectedTagFilters([])}
+                    >
                       Clear filters
                     </DropdownMenuItem>
                   </>

@@ -8,7 +8,7 @@ import PageTitle from '@renderer/components/ui/page-title'
 import { useState, useMemo, useCallback } from 'react'
 import { useSimpleDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 import { Button } from '@renderer/components/ui/button'
-import { Trash2, Tag as TagIcon, Plus, Minus } from 'lucide-react'
+import { Trash2, Tag as TagIcon, Plus, Minus, AlertTriangle } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -41,7 +41,8 @@ function ManageBooks() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
-  const [editStockDialogOpen, setEditStockDialogOpen] = useState(false)
+  const [addStockDialogOpen, setAddStockDialogOpen] = useState(false)
+  const [discardBooksDialogOpen, setDiscardBooksDialogOpen] = useState(false)
   const [changeTagsDialogOpen, setChangeTagsDialogOpen] = useState(false)
   const [bulkChangeTagsDialogOpen, setBulkChangeTagsDialogOpen] = useState(false)
   const [bulkAddTagDialogOpen, setBulkAddTagDialogOpen] = useState(false)
@@ -56,7 +57,9 @@ function ManageBooks() {
   } | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editDetailsBook, setEditDetailsBook] = useState<Book | null>(null)
-  const [newStockValue, setNewStockValue] = useState(1)
+  const [addStockCount, setAddStockCount] = useState(1)
+  const [discardCount, setDiscardCount] = useState(1)
+  const [discardNote, setDiscardNote] = useState('')
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
   const [selectedTagFilters, setSelectedTagFilters] = useState<number[]>([])
   const [selectedAddTagIds, setSelectedAddTagIds] = useState<number[]>([])
@@ -124,13 +127,30 @@ function ManageBooks() {
     }
   })
 
-  const updateStockMutation = useMutation({
-    mutationFn: async ({ isbn, newStock }: { isbn: string; newStock: number }) => {
-      return await window.api.books.updateStock(isbn, newStock)
+  const addStockMutation = useMutation({
+    mutationFn: async ({ isbn, count }: { isbn: string; count: number }) => {
+      return await window.api.books.addStock(isbn, count)
     },
     onSuccess: (_data, { isbn }) => {
       queryClient.invalidateQueries({ queryKey: ['books'] })
       queryClient.invalidateQueries({ queryKey: ['book', isbn] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      setAddStockDialogOpen(false)
+      setSelectedBook(null)
+    }
+  })
+
+  const discardBooksMutation = useMutation({
+    mutationFn: async ({ isbn, count, note }: { isbn: string; count: number; note?: string }) => {
+      return await window.api.books.discardBooks(isbn, count, note)
+    },
+    onSuccess: (_data, { isbn }) => {
+      queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['book', isbn] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['discarded-books'] })
+      setDiscardBooksDialogOpen(false)
+      setSelectedBook(null)
     }
   })
 
@@ -229,33 +249,52 @@ function ManageBooks() {
     }
   }
 
-  const handleEditStock = useCallback(
+  const handleAddStock = useCallback((isbn: string, title: string, currentStock: number): void => {
+    setSelectedBook({ isbn, title, currentStock, activeRentals: 0 })
+    setAddStockCount(1)
+    setAddStockDialogOpen(true)
+  }, [])
+
+  const handleAddStockConfirm = async (): Promise<void> => {
+    if (!selectedBook) return
+
+    try {
+      await addStockMutation.mutateAsync({ isbn: selectedBook.isbn, count: addStockCount })
+    } catch (error) {
+      console.error('Error adding stock:', error)
+      toast.error('Failed to add stock. Please try again.')
+    }
+  }
+
+  const handleDiscardBooks = useCallback(
     (isbn: string, title: string, currentStock: number, activeRentals: number): void => {
       setSelectedBook({ isbn, title, currentStock, activeRentals })
-      setNewStockValue(currentStock)
-      setEditStockDialogOpen(true)
+      setDiscardCount(1)
+      setDiscardNote('')
+      setDiscardBooksDialogOpen(true)
     },
     []
   )
 
-  const handleEditStockConfirm = async (): Promise<void> => {
+  const handleDiscardBooksConfirm = async (): Promise<void> => {
     if (!selectedBook) return
 
-    if (newStockValue < selectedBook.activeRentals) {
+    if (discardCount > selectedBook.currentStock - selectedBook.activeRentals) {
       toast.error(
-        `Cannot set stock lower than active rentals (${selectedBook.activeRentals} book(s) currently issued).`
+        `Cannot discard ${discardCount} book(s). Only ${selectedBook.currentStock - selectedBook.activeRentals} book(s) available after active rentals.`
       )
       return
     }
 
     try {
-      await updateStockMutation.mutateAsync({ isbn: selectedBook.isbn, newStock: newStockValue })
-      setEditStockDialogOpen(false)
-      setSelectedBook(null)
-      setNewStockValue(1)
+      await discardBooksMutation.mutateAsync({
+        isbn: selectedBook.isbn,
+        count: discardCount,
+        note: discardNote || undefined
+      })
     } catch (error) {
-      console.error('Error updating stock:', error)
-      toast.error('Failed to update stock. Please try again.')
+      console.error('Error discarding books:', error)
+      toast.error('Failed to discard books. Please try again.')
     }
   }
 
@@ -368,7 +407,8 @@ function ManageBooks() {
       getBooksColumns({
         onDelete: handleDelete,
         isDeleting: deleteBookMutation.isPending,
-        onEditStock: handleEditStock,
+        onAddStock: handleAddStock,
+        onDiscardBooks: handleDiscardBooks,
         onChangeTags: (isbn, title, author, publisher) =>
           handleChangeTags(isbn, title, author, publisher),
         onEditDetails: handleEditDetails,
@@ -379,7 +419,8 @@ function ManageBooks() {
     [
       handleDelete,
       deleteBookMutation.isPending,
-      handleEditStock,
+      handleAddStock,
+      handleDiscardBooks,
       handleChangeTags,
       handleEditDetails,
       navigate
@@ -435,7 +476,15 @@ function ManageBooks() {
         {allTags.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                className={
+                  selectedTagFilters.length > 0
+                    ? 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200'
+                    : ''
+                }
+              >
                 <Filter className="size-4 mr-2" />
                 Filter by Tags
                 {selectedTagFilters.length > 0 && ` (${selectedTagFilters.length})`}
@@ -456,7 +505,10 @@ function ManageBooks() {
               {selectedTagFilters.length > 0 && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setSelectedTagFilters([])}>
+                  <DropdownMenuItem
+                    className="text-red-600"
+                    onClick={() => setSelectedTagFilters([])}
+                  >
                     Clear filters
                   </DropdownMenuItem>
                 </>
@@ -484,13 +536,72 @@ function ManageBooks() {
         isLoading={isLoading}
       />
 
-      {/* Edit Stock Dialog */}
-      <Dialog open={editStockDialogOpen} onOpenChange={setEditStockDialogOpen}>
+      {/* Add Books Dialog */}
+      <Dialog
+        open={addStockDialogOpen}
+        onOpenChange={(open) => {
+          setAddStockDialogOpen(open)
+          if (!open) setSelectedBook(null)
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Stock</DialogTitle>
+            <DialogTitle>Add Books</DialogTitle>
             <DialogDescription>
-              Edit stock for: {selectedBook?.title}
+              Add copies for: {selectedBook?.title}
+              <br />
+              Current stock: {selectedBook?.currentStock}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="addStockCount">Number of books to add</Label>
+              <Input
+                id="addStockCount"
+                type="number"
+                min={1}
+                value={addStockCount}
+                onChange={(e) => setAddStockCount(Math.max(1, parseInt(e.target.value) || 1))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAddStockDialogOpen(false)
+                setSelectedBook(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleAddStockConfirm} disabled={addStockMutation.isPending}>
+              {addStockMutation.isPending ? (
+                <>
+                  <Spinner className="size-4 mr-2" />
+                  Adding...
+                </>
+              ) : (
+                'Add'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Discard Books Dialog */}
+      <Dialog
+        open={discardBooksDialogOpen}
+        onOpenChange={(open) => {
+          setDiscardBooksDialogOpen(open)
+          if (!open) setSelectedBook(null)
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Discard Books</DialogTitle>
+            <DialogDescription>
+              Discard copies of: {selectedBook?.title}
               <br />
               Current stock: {selectedBook?.currentStock} | Active rentals:{' '}
               {selectedBook?.activeRentals}
@@ -498,38 +609,73 @@ function ManageBooks() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="newStockValue">New Stock</Label>
+              <Label htmlFor="discardCount">Number of books to discard</Label>
               <Input
-                id="newStockValue"
+                id="discardCount"
                 type="number"
-                min={selectedBook?.activeRentals || 0}
-                value={newStockValue}
-                onChange={(e) => setNewStockValue(Math.max(0, parseInt(e.target.value) || 0))}
+                min={1}
+                max={Math.max(
+                  0,
+                  (selectedBook?.currentStock || 0) - (selectedBook?.activeRentals || 0)
+                )}
+                value={discardCount}
+                onChange={(e) => setDiscardCount(Math.max(1, parseInt(e.target.value) || 1))}
               />
             </div>
-            {newStockValue < (selectedBook?.activeRentals || 0) && (
+            {discardCount >
+              (selectedBook?.currentStock || 0) - (selectedBook?.activeRentals || 0) && (
               <div className="text-sm text-destructive">
-                New stock cannot be lower than active rentals ({selectedBook?.activeRentals}).
+                Cannot discard more than available stock after active rentals (
+                {Math.max(
+                  0,
+                  (selectedBook?.currentStock || 0) - (selectedBook?.activeRentals || 0)
+                )}
+                ).
               </div>
             )}
+            {discardCount === (selectedBook?.currentStock || 0) && (
+              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-950/50 p-3 rounded-md border border-red-200 dark:border-red-800">
+                <AlertTriangle className="size-4 shrink-0" />
+                <span>Warning: This will discard all remaining copies of this book.</span>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="discardNote">Notes</Label>
+              <textarea
+                id="discardNote"
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                placeholder="Reason for discarding..."
+                value={discardNote}
+                onChange={(e) => setDiscardNote(e.target.value)}
+              />
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditStockDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDiscardBooksDialogOpen(false)
+                setSelectedBook(null)
+              }}
+            >
               Cancel
             </Button>
             <Button
-              onClick={handleEditStockConfirm}
+              onClick={handleDiscardBooksConfirm}
               disabled={
-                updateStockMutation.isPending || newStockValue < (selectedBook?.activeRentals || 0)
+                discardBooksMutation.isPending ||
+                discardCount >
+                  (selectedBook?.currentStock || 0) - (selectedBook?.activeRentals || 0)
               }
+              variant="destructive"
             >
-              {updateStockMutation.isPending ? (
+              {discardBooksMutation.isPending ? (
                 <>
                   <Spinner className="size-4 mr-2" />
-                  Updating...
+                  Discarding...
                 </>
               ) : (
-                'Confirm'
+                'Discard'
               )}
             </Button>
           </DialogFooter>

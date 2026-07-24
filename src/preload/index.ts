@@ -52,7 +52,12 @@ const api = {
     bulkAddTag: (isbns: string[], tagIds: number[]) =>
       ipcRenderer.invoke('books:bulkAddTag', isbns, tagIds),
     bulkRemoveTag: (isbns: string[], tagIds: number[]) =>
-      ipcRenderer.invoke('books:bulkRemoveTag', isbns, tagIds)
+      ipcRenderer.invoke('books:bulkRemoveTag', isbns, tagIds),
+    addStock: (isbn: string, count: number) => ipcRenderer.invoke('books:addStock', isbn, count),
+    discardBooks: (isbn: string, count: number, note?: string) =>
+      ipcRenderer.invoke('books:discardBooks', isbn, count, note),
+    getDiscardedBooks: (page?: number, perPage?: number, tagIds?: number[]) =>
+      ipcRenderer.invoke('books:getDiscardedBooks', page, perPage, tagIds)
   },
   tags: {
     getAll: () => ipcRenderer.invoke('tags:getAll'),

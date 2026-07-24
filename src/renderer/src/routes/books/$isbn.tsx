@@ -2,7 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Spinner } from '@renderer/components/ui/spinner'
 import { Button } from '@renderer/components/ui/button'
-import { Pencil, ArrowLeft } from 'lucide-react'
+import { Pencil, ArrowLeft, AlertTriangle } from 'lucide-react'
 import { format, isToday } from 'date-fns'
 import PageTitle from '@renderer/components/ui/page-title'
 import { TagBadge } from '@renderer/components/TagBadge'
@@ -29,8 +29,11 @@ function SingleBook() {
   const { isbn } = Route.useParams()
   const queryClient = useQueryClient()
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [editStockDialogOpen, setEditStockDialogOpen] = useState(false)
-  const [newStockValue, setNewStockValue] = useState(1)
+  const [addStockDialogOpen, setAddStockDialogOpen] = useState(false)
+  const [discardBooksDialogOpen, setDiscardBooksDialogOpen] = useState(false)
+  const [addStockCount, setAddStockCount] = useState(1)
+  const [discardCount, setDiscardCount] = useState(1)
+  const [discardNote, setDiscardNote] = useState('')
 
   const { data: book, isLoading } = useQuery({
     queryKey: ['book', isbn],
@@ -65,13 +68,28 @@ function SingleBook() {
     }
   })
 
-  const updateStockMutation = useMutation({
-    mutationFn: async (newStock: number) => {
-      return await window.api.books.updateStock(isbn, newStock)
+  const addStockMutation = useMutation({
+    mutationFn: async (count: number) => {
+      return await window.api.books.addStock(isbn, count)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['book', isbn] })
       queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      setAddStockDialogOpen(false)
+    }
+  })
+
+  const discardBooksMutation = useMutation({
+    mutationFn: async ({ count, note }: { count: number; note?: string }) => {
+      return await window.api.books.discardBooks(isbn, count, note)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['book', isbn] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['discarded-books'] })
+      setDiscardBooksDialogOpen(false)
     }
   })
 
@@ -97,23 +115,36 @@ function SingleBook() {
     }
   }
 
-  const handleEditStockConfirm = async (): Promise<void> => {
+  const handleAddStockConfirm = async (): Promise<void> => {
+    if (!book) return
+
+    try {
+      await addStockMutation.mutateAsync(addStockCount)
+    } catch (error) {
+      console.error('Error adding stock:', error)
+      toast.error('Failed to add stock. Please try again.')
+    }
+  }
+
+  const handleDiscardBooksConfirm = async (): Promise<void> => {
     if (!book) return
 
     const activeLoansCount = book.loans.filter((loan) => !loan.returnedAt).length
-    if (newStockValue < activeLoansCount) {
+    if (discardCount > book.totalStock - activeLoansCount) {
       toast.error(
-        `Cannot set stock lower than active rentals (${activeLoansCount} book(s) currently issued).`
+        `Cannot discard ${discardCount} book(s). Only ${book.totalStock - activeLoansCount} book(s) available after active rentals.`
       )
       return
     }
 
     try {
-      await updateStockMutation.mutateAsync(newStockValue)
-      setEditStockDialogOpen(false)
+      await discardBooksMutation.mutateAsync({
+        count: discardCount,
+        note: discardNote || undefined
+      })
     } catch (error) {
-      console.error('Error updating stock:', error)
-      toast.error('Failed to update stock. Please try again.')
+      console.error('Error discarding books:', error)
+      toast.error('Failed to discard books. Please try again.')
     }
   }
 
@@ -200,22 +231,59 @@ function SingleBook() {
         </div>
 
         <div className="text-right flex flex-col items-end">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="text-sm font-medium text-muted-foreground">Stock</div>
+          <div className="text-sm font-medium text-muted-foreground mb-1">Stock</div>
+          <div className="text-3xl font-bold mb-2">
+            {availableStock}/{book.totalStock}
+          </div>
+          <div className="flex items-center gap-2">
             <Button
-              variant="ghost"
-              size="icon"
-              className="size-6 text-muted-foreground hover:text-foreground"
+              variant="outline"
+              size="sm"
               onClick={() => {
-                setNewStockValue(book.totalStock)
-                setEditStockDialogOpen(true)
+                setAddStockCount(1)
+                setAddStockDialogOpen(true)
               }}
             >
-              <Pencil className="size-3" />
+              <svg
+                className="mr-1 size-3"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="M12 5v14" />
+              </svg>
+              Add Books
             </Button>
-          </div>
-          <div className="text-3xl font-bold">
-            {availableStock}/{book.totalStock}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setDiscardCount(1)
+                setDiscardNote('')
+                setDiscardBooksDialogOpen(true)
+              }}
+            >
+              <svg
+                className="mr-1 size-3"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 6h18" />
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+              </svg>
+              Discard
+            </Button>
           </div>
         </div>
       </div>
@@ -251,16 +319,20 @@ function SingleBook() {
                       key={loan.id}
                       className={`border-b last:border-0 hover:bg-muted/50 ${isOverdue ? 'bg-red-50 hover:bg-red-100/50 dark:bg-red-900/20 dark:hover:bg-red-900/30' : dueToday ? 'bg-yellow-50 hover:bg-yellow-100/50 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/30' : ''}`}
                     >
-                      <td className="p-4 align-middle font-medium">
+                      <td className="p-4 align-middle font-medium max-w-40">
                         <Link
                           to="/users/$email"
                           params={{ email: loan.borrower.email }}
-                          className="hover:underline"
+                          className="hover:underline truncate block"
+                          title={loan.borrower.name || '-'}
                         >
                           {loan.borrower.name || '-'}
                         </Link>
                       </td>
-                      <td className="p-4 align-middle text-muted-foreground">
+                      <td
+                        className="p-4 align-middle text-muted-foreground truncate max-w-48"
+                        title={loan.borrower.email}
+                      >
                         {loan.borrower.email}
                       </td>
                       <td className="p-4 align-middle">
@@ -316,16 +388,20 @@ function SingleBook() {
               ) : (
                 paginatedPastLoans.map((loan) => (
                   <tr key={loan.id} className="border-b last:border-0 hover:bg-muted/50">
-                    <td className="p-4 align-middle font-medium">
+                    <td className="p-4 align-middle font-medium max-w-40">
                       <Link
                         to="/users/$email"
                         params={{ email: loan.borrower.email }}
-                        className="hover:underline"
+                        className="hover:underline truncate block"
+                        title={loan.borrower.name || '-'}
                       >
                         {loan.borrower.name || '-'}
                       </Link>
                     </td>
-                    <td className="p-4 align-middle text-muted-foreground">
+                    <td
+                      className="p-4 align-middle text-muted-foreground truncate max-w-48"
+                      title={loan.borrower.email}
+                    >
                       {loan.borrower.email}
                     </td>
                     <td className="p-4 align-middle">
@@ -346,48 +422,112 @@ function SingleBook() {
 
       <EditBookDialog book={book} open={editDialogOpen} onOpenChange={setEditDialogOpen} />
 
-      <Dialog open={editStockDialogOpen} onOpenChange={setEditStockDialogOpen}>
+      {/* Add Books Dialog */}
+      <Dialog open={addStockDialogOpen} onOpenChange={setAddStockDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Stock</DialogTitle>
+            <DialogTitle>Add Books</DialogTitle>
             <DialogDescription>
-              Edit stock for: {book.title}
+              Add copies for: {book.title}
+              <br />
+              Current stock: {book.totalStock}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="addStockCount">Number of books to add</Label>
+              <Input
+                id="addStockCount"
+                type="number"
+                min={1}
+                value={addStockCount}
+                onChange={(e) => setAddStockCount(Math.max(1, parseInt(e.target.value) || 1))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddStockDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddStockConfirm} disabled={addStockMutation.isPending}>
+              {addStockMutation.isPending ? (
+                <>
+                  <Spinner className="size-4 mr-2" />
+                  Adding...
+                </>
+              ) : (
+                'Add'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Discard Books Dialog */}
+      <Dialog open={discardBooksDialogOpen} onOpenChange={setDiscardBooksDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Discard Books</DialogTitle>
+            <DialogDescription>
+              Discard copies of: {book.title}
               <br />
               Current stock: {book.totalStock} | Active rentals: {activeLoans.length}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="newStockValue">New Stock</Label>
+              <Label htmlFor="discardCount">Number of books to discard</Label>
               <Input
-                id="newStockValue"
+                id="discardCount"
                 type="number"
-                min={activeLoans.length}
-                value={newStockValue}
-                onChange={(e) => setNewStockValue(Math.max(0, parseInt(e.target.value) || 0))}
+                min={1}
+                max={Math.max(0, book.totalStock - activeLoans.length)}
+                value={discardCount}
+                onChange={(e) => setDiscardCount(Math.max(1, parseInt(e.target.value) || 1))}
               />
             </div>
-            {newStockValue < activeLoans.length && (
+            {discardCount > book.totalStock - activeLoans.length && (
               <div className="text-sm text-destructive">
-                New stock cannot be lower than active rentals ({activeLoans.length}).
+                Cannot discard more than available stock after active rentals (
+                {Math.max(0, book.totalStock - activeLoans.length)}).
               </div>
             )}
+            {discardCount === book.totalStock && (
+              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-950/50 p-3 rounded-md border border-red-200 dark:border-red-800">
+                <AlertTriangle className="size-4 shrink-0" />
+                <span>Warning: This will discard all remaining copies of this book.</span>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="discardNote">Notes</Label>
+              <textarea
+                id="discardNote"
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                placeholder="Reason for discarding..."
+                value={discardNote}
+                onChange={(e) => setDiscardNote(e.target.value)}
+              />
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditStockDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDiscardBooksDialogOpen(false)}>
               Cancel
             </Button>
             <Button
-              onClick={handleEditStockConfirm}
-              disabled={updateStockMutation.isPending || newStockValue < activeLoans.length}
+              onClick={handleDiscardBooksConfirm}
+              disabled={
+                discardBooksMutation.isPending ||
+                discardCount > book.totalStock - activeLoans.length
+              }
+              variant="destructive"
             >
-              {updateStockMutation.isPending ? (
+              {discardBooksMutation.isPending ? (
                 <>
                   <Spinner className="size-4 mr-2" />
-                  Updating...
+                  Discarding...
                 </>
               ) : (
-                'Confirm'
+                'Discard'
               )}
             </Button>
           </DialogFooter>

@@ -33,3 +33,13 @@ export interface UpdateStockData {
   isbn: string
   stockCount: number
 }
+
+export interface DiscardedBook {
+  id: number
+  isbn: string
+  title: string
+  count: number
+  note: string | null
+  discardedAt: string
+  tags: { tag: Tag }[]
+}

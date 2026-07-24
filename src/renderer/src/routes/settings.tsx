@@ -63,18 +63,28 @@ function Settings() {
     }
   }
 
-  const { data: books = [], isLoading: isLoadingBooks } = useQuery<Book[]>({
+  const booksQuery = useQuery<Book[]>({
     queryKey: ['books'],
     queryFn: async () => {
       const result = await window.api.books.getAll(1, Number.MAX_SAFE_INTEGER)
       return result.books
     },
+    enabled: false,
     staleTime: 30_000
   })
-
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     try {
-      const csvData = books.map((book) => ({
+      const { data: fetched } = await booksQuery.refetch()
+      if (!fetched || fetched.length === 0) {
+        toast.error('No books to export.')
+        return
+      }
+      const inStock = fetched.filter((b) => b.totalStock > 0)
+      if (inStock.length === 0) {
+        toast.error('No books in stock to export.')
+        return
+      }
+      const csvData = inStock.map((book) => ({
         Title: book.title,
         ISBN: book.isbn,
         Stock: book.totalStock,
@@ -125,9 +135,22 @@ function Settings() {
     try {
       setIsExporting(true)
 
+      const { data: fetched } = await booksQuery.refetch()
+      if (!fetched || fetched.length === 0) {
+        toast.error('No books to export.')
+        setIsExporting(false)
+        return
+      }
+      const inStock = fetched.filter((b) => b.totalStock > 0)
+      if (inStock.length === 0) {
+        toast.error('No books in stock to export.')
+        setIsExporting(false)
+        return
+      }
+
       const logoDataUrl = await loadImageAsDataUrl(Logo)
 
-      const blob = await pdf(<BookCatalogPDF books={books} logoDataUrl={logoDataUrl} />).toBlob()
+      const blob = await pdf(<BookCatalogPDF books={inStock} logoDataUrl={logoDataUrl} />).toBlob()
 
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -145,7 +168,7 @@ function Settings() {
     }
   }
 
-  if (isLoadingSettings || isLoadingBooks) {
+  if (isLoadingSettings) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Spinner className="size-16" />
@@ -245,15 +268,11 @@ function Settings() {
             Export library data for reporting or backup purposes. Choose from CSV or PDF formats.
           </p>
           <div className="flex">
-            <Button className="mr-2 mt-4" onClick={handleExportCSV} disabled={books.length === 0}>
+            <Button className="mr-2 mt-4" onClick={handleExportCSV}>
               <Download className="size-4 mr-2" />
               Book Catalog as CSV
             </Button>
-            <Button
-              className="mr-2 mt-4"
-              onClick={handleExportPDF}
-              disabled={isExporting || books.length === 0}
-            >
+            <Button className="mr-2 mt-4" onClick={handleExportPDF} disabled={isExporting}>
               {isExporting ? (
                 <>
                   <Spinner className="size-4 mr-2" />

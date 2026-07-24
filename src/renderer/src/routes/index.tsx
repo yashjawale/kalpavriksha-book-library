@@ -67,21 +67,38 @@ function Dashboard() {
 
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5 mb-12">
         <Link to="/books" className="hover:opacity-80 transition-opacity">
-          <DashboardCard value={(stats?.totalBooks || 0).toString()} label="Books" />
+          <DashboardCard
+            value={(stats?.totalBooks || 0).toString()}
+            label="Books"
+            tooltip="Total number of unique titles in library."
+          />
         </Link>
         <Link to="/users" className="hover:opacity-80 transition-opacity">
-          <DashboardCard value={(stats?.totalUsers || 0).toString()} label="Users" />
+          <DashboardCard
+            value={(stats?.totalUsers || 0).toString()}
+            label="Users"
+            tooltip="Number of users in system."
+          />
         </Link>
         <Link to="/rentals" className="hover:opacity-80 transition-opacity">
-          <DashboardCard value={(stats?.activeRentals || 0).toString()} label="Active Loans" />
+          <DashboardCard
+            value={(stats?.activeRentals || 0).toString()}
+            label="Active Loans"
+            tooltip="Total number of books currently issued."
+          />
         </Link>
         <Link to="/rentals" className="hover:opacity-80 transition-opacity">
-          <DashboardCard value={(stats?.rentalsToday || 0).toString()} label="Issued Today" />
+          <DashboardCard
+            value={(stats?.rentalsToday || 0).toString()}
+            label="Issued Today"
+            tooltip="Total books issued today."
+          />
         </Link>
         <Link to="/returns-today" className="hover:opacity-80 transition-opacity">
           <DashboardCard
             value={`${stats?.dueTodayRemaining || 0}/${stats?.dueTodayTotal || 0}`}
             label="Returns Today"
+            tooltip={`Remaining returns for today: ${stats?.dueTodayRemaining ?? 0}\nTotal returns for today: ${stats?.dueTodayTotal ?? 0}`}
           />
         </Link>
       </div>
@@ -132,7 +149,8 @@ function Dashboard() {
                             <Link
                               to="/users/$email"
                               params={{ email: loan.borrower.email }}
-                              className="hover:underline"
+                              className="hover:underline truncate block"
+                              title={loan.borrower.name || loan.borrower.email}
                             >
                               {loan.borrower.name || loan.borrower.email}
                             </Link>
@@ -188,7 +206,8 @@ function Dashboard() {
                           <Link
                             to="/users/$email"
                             params={{ email: loan.borrower.email }}
-                            className="hover:underline"
+                            className="hover:underline truncate block"
+                            title={loan.borrower.name || loan.borrower.email}
                           >
                             {loan.borrower.name || loan.borrower.email}
                           </Link>

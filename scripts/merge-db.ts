@@ -1,7 +1,6 @@
 import path from 'path'
+import fs from 'fs'
 import Database from 'better-sqlite3'
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
-import { PrismaClient } from '../generated/prisma/client'
 
 function generateKVBId(): string {
   const now = new Date()
@@ -12,199 +11,176 @@ function generateKVBId(): string {
   return `KVB-${year}${month}${day}${milliseconds}`
 }
 
-function resolveDatabaseUrl(): string {
-  let connectionString = process.env.DATABASE_URL || 'file:./dev.db'
-  if (connectionString.startsWith('file:./') || connectionString.startsWith('file:../')) {
-    const dbPath = connectionString.replace('file:', '')
-    const resolvedPath = path.resolve(process.cwd(), dbPath)
-    connectionString = `file:${resolvedPath}`
-  } else if (!connectionString.startsWith('file:')) {
-    const fallback = path.resolve(process.cwd(), 'dev.db')
-    connectionString = `file:${fallback}`
+function openDb(filePath: string, readonly = false): Database.Database {
+  const resolved = path.resolve(process.cwd(), filePath)
+  if (!fs.existsSync(resolved)) {
+    console.error(`Database not found: ${resolved}`)
+    process.exit(1)
   }
-  return connectionString
+  return new Database(resolved, { readonly })
 }
 
-async function run() {
+function run() {
   const args = process.argv.slice(2)
-  if (args.length === 0) {
-    console.error(
-      'Please provide the path to the DB to merge: npx tsx scripts/merge-db.ts <path-to-db>'
-    )
+  if (args.length < 2) {
+    console.error('Usage: npx tsx scripts/merge-db.ts <target.db> <source.db>')
     process.exit(1)
   }
 
-  const otherDbPath = path.resolve(process.cwd(), args[0])
-  console.log(`Merging DB from: ${otherDbPath}`)
+  const targetPath = path.resolve(process.cwd(), args[0])
+  const sourcePath = path.resolve(process.cwd(), args[1])
 
-  const connectionString = resolveDatabaseUrl()
-  const adapter = new PrismaBetterSqlite3({ url: connectionString })
-  const prisma = new PrismaClient({ adapter })
+  console.log(`Target: ${targetPath}`)
+  console.log(`Source: ${sourcePath}`)
 
-  const otherDb = new Database(otherDbPath, { readonly: true })
+  const target = openDb(targetPath)
+  const source = openDb(sourcePath, true)
 
-  // 1. Merge tags
-  console.log('Merging tags...')
-  const otherTags = otherDb.prepare('SELECT * FROM tags').all() as {
-    id: number
-    name: string
-    description: string | null
-    color: string | null
-    createdAt: string
-  }[]
-  const tagIdMap = new Map<number, number>() // other DB tag ID -> current DB tag ID
+  try {
+    // Wrap target operations in a transaction for speed and atomicity
+    target.pragma('journal_mode = WAL')
+    target.pragma('foreign_keys = ON')
 
-  const currentTags = await prisma.tag.findMany()
+    const mergeTransaction = target.transaction(() => {
+      // 1. Merge tags
+      console.log('Merging tags...')
+      const sourceTags = source.prepare('SELECT * FROM tags').all() as {
+        id: number
+        name: string
+        description: string | null
+        color: string | null
+        createdAt: string
+      }[]
+      const tagIdMap = new Map<number, number>()
 
-  for (const otherTag of otherTags) {
-    const existingTag = currentTags.find(
-      (t) => t.name.toLowerCase() === otherTag.name.toLowerCase()
-    )
-    if (existingTag) {
-      tagIdMap.set(otherTag.id, existingTag.id)
-    } else {
-      const newTag = await prisma.tag.create({
-        data: {
-          name: otherTag.name,
-          description: otherTag.description,
-          color: otherTag.color,
-          createdAt: new Date(otherTag.createdAt)
-        }
-      })
-      tagIdMap.set(otherTag.id, newTag.id)
-    }
-  }
-  console.log('Tags merged.')
+      const targetTags = target.prepare('SELECT * FROM tags').all() as {
+        id: number
+        name: string
+      }[]
 
-  // 2. Merge books
-  console.log('Merging books...')
-  const otherBooks = otherDb.prepare('SELECT * FROM books').all() as {
-    isbn: string
-    title: string
-    author: string
-    publisher: string
-    totalStock: number
-    needsBarcodeSticker: number
-    createdAt: string
-    updatedAt: string
-  }[]
-
-  const isbnMap = new Map<string, string>() // old ISBN -> new ISBN (when conflict)
-
-  for (const otherBook of otherBooks) {
-    const existingBook = await prisma.book.findUnique({
-      where: { isbn: otherBook.isbn }
-    })
-
-    if (existingBook) {
-      const isKvb = otherBook.isbn.startsWith('KVB-')
-
-      if (!isKvb) {
-        // Real ISBN — merge stock as before
-        await prisma.book.update({
-          where: { isbn: otherBook.isbn },
-          data: {
-            totalStock: existingBook.totalStock + otherBook.totalStock
-          }
-        })
-      } else {
-        // KVB ID — check if metadata matches
-        const titleMatch = (otherBook.title ?? '') === (existingBook.title ?? '')
-        const authorMatch = (otherBook.author ?? '') === (existingBook.author ?? '')
-        const publisherMatch = (otherBook.publisher ?? '') === (existingBook.publisher ?? '')
-
-        if (titleMatch && authorMatch && publisherMatch) {
-          // Same book — merge stock
-          await prisma.book.update({
-            where: { isbn: otherBook.isbn },
-            data: {
-              totalStock: existingBook.totalStock + otherBook.totalStock
-            }
-          })
+      for (const sourceTag of sourceTags) {
+        const existing = targetTags.find(
+          (t) => t.name.toLowerCase() === sourceTag.name.toLowerCase()
+        )
+        if (existing) {
+          tagIdMap.set(sourceTag.id, existing.id)
         } else {
-          // Different book — generate a new KVB ID
-          let newIsbn: string
-          do {
-            newIsbn = generateKVBId()
-          } while (await prisma.book.findUnique({ where: { isbn: newIsbn } }))
+          const info = target
+            .prepare(
+              'INSERT INTO tags (name, description, color, createdAt) VALUES (?, ?, ?, ?) RETURNING id'
+            )
+            .get(sourceTag.name, sourceTag.description, sourceTag.color, sourceTag.createdAt) as {
+            id: number
+          }
+          tagIdMap.set(sourceTag.id, info.id)
+          targetTags.push({ id: info.id, name: sourceTag.name })
+        }
+      }
+      console.log(`  ${sourceTags.length} tags processed.`)
 
-          isbnMap.set(otherBook.isbn, newIsbn)
-          console.log(`  KVB conflict: "${otherBook.isbn}" -> reassigned as "${newIsbn}"`)
+      // 2. Merge books
+      console.log('Merging books...')
+      const sourceBooks = source.prepare('SELECT * FROM books').all() as {
+        isbn: string
+        title: string
+        author: string | null
+        publisher: string | null
+        totalStock: number
+        needsBarcodeSticker: number
+        createdAt: string
+        updatedAt: string
+      }[]
 
-          await prisma.book.create({
-            data: {
-              isbn: newIsbn,
-              title: otherBook.title,
-              author: otherBook.author,
-              publisher: otherBook.publisher,
-              totalStock: otherBook.totalStock,
-              needsBarcodeSticker: otherBook.needsBarcodeSticker === 1,
-              createdAt: new Date(otherBook.createdAt),
-              updatedAt: new Date(otherBook.updatedAt)
+      const isbnMap = new Map<string, string>()
+
+      const insertBook = target.prepare(`
+        INSERT INTO books (isbn, title, author, publisher, totalStock, needsBarcodeSticker, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `)
+      const updateBookStock = target.prepare(
+        'UPDATE books SET totalStock = totalStock + ? WHERE isbn = ?'
+      )
+      for (const sourceBook of sourceBooks) {
+        const existing = target
+          .prepare('SELECT * FROM books WHERE isbn = ?')
+          .get(sourceBook.isbn) as
+          | { isbn: string; title: string; author: string | null; publisher: string | null }
+          | undefined
+
+        if (existing) {
+          const isKvb = sourceBook.isbn.startsWith('KVB-')
+
+          if (!isKvb) {
+            updateBookStock.run(sourceBook.totalStock, sourceBook.isbn)
+          } else {
+            const titleMatch = (sourceBook.title ?? '') === (existing.title ?? '')
+            const authorMatch = (sourceBook.author ?? '') === (existing.author ?? '')
+            const publisherMatch = (sourceBook.publisher ?? '') === (existing.publisher ?? '')
+
+            if (titleMatch && authorMatch && publisherMatch) {
+              updateBookStock.run(sourceBook.totalStock, sourceBook.isbn)
+            } else {
+              let newIsbn: string
+              do {
+                newIsbn = generateKVBId()
+              } while (target.prepare('SELECT 1 FROM books WHERE isbn = ?').get(newIsbn))
+
+              isbnMap.set(sourceBook.isbn, newIsbn)
+              console.log(`  KVB conflict: "${sourceBook.isbn}" -> reassigned as "${newIsbn}"`)
+              insertBook.run(
+                newIsbn,
+                sourceBook.title,
+                sourceBook.author,
+                sourceBook.publisher,
+                sourceBook.totalStock,
+                sourceBook.needsBarcodeSticker,
+                sourceBook.createdAt,
+                sourceBook.updatedAt
+              )
             }
-          })
+          }
+        } else {
+          insertBook.run(
+            sourceBook.isbn,
+            sourceBook.title,
+            sourceBook.author,
+            sourceBook.publisher,
+            sourceBook.totalStock,
+            sourceBook.needsBarcodeSticker,
+            sourceBook.createdAt,
+            sourceBook.updatedAt
+          )
         }
       }
-    } else {
-      await prisma.book.create({
-        data: {
-          isbn: otherBook.isbn,
-          title: otherBook.title,
-          author: otherBook.author,
-          publisher: otherBook.publisher,
-          totalStock: otherBook.totalStock,
-          needsBarcodeSticker: otherBook.needsBarcodeSticker === 1,
-          createdAt: new Date(otherBook.createdAt),
-          updatedAt: new Date(otherBook.updatedAt)
-        }
-      })
-    }
-  }
-  console.log('Books merged.')
+      console.log(`  ${sourceBooks.length} books processed.`)
 
-  // 3. Merge book_tags
-  console.log('Merging book tags...')
-  const otherBookTags = otherDb.prepare('SELECT * FROM book_tags').all() as {
-    bookIsbn: string
-    tagId: number
-    createdAt: string
-  }[]
+      // 3. Merge book_tags
+      console.log('Merging book tags...')
+      const sourceBookTags = source.prepare('SELECT * FROM book_tags').all() as {
+        bookIsbn: string
+        tagId: number
+        createdAt: string
+      }[]
 
-  for (const otherBookTag of otherBookTags) {
-    const targetTagId = tagIdMap.get(otherBookTag.tagId)
-    if (!targetTagId) continue
+      const insertBookTag = target.prepare(
+        'INSERT OR IGNORE INTO book_tags (bookIsbn, tagId, createdAt) VALUES (?, ?, ?)'
+      )
 
-    const bookIsbn = isbnMap.get(otherBookTag.bookIsbn) ?? otherBookTag.bookIsbn
-
-    const existingLink = await prisma.bookTag.findUnique({
-      where: {
-        bookIsbn_tagId: {
-          bookIsbn,
-          tagId: targetTagId
-        }
+      for (const bt of sourceBookTags) {
+        const targetTagId = tagIdMap.get(bt.tagId)
+        if (!targetTagId) continue
+        const bookIsbn = isbnMap.get(bt.bookIsbn) ?? bt.bookIsbn
+        insertBookTag.run(bookIsbn, targetTagId, bt.createdAt)
       }
+      console.log(`  ${sourceBookTags.length} book tags processed.`)
     })
 
-    if (!existingLink) {
-      try {
-        await prisma.bookTag.create({
-          data: {
-            bookIsbn,
-            tagId: targetTagId,
-            createdAt: new Date(otherBookTag.createdAt)
-          }
-        })
-      } catch (e) {
-        // Book might have been skipped or something
-        console.error(`Failed to link book ${bookIsbn} with tag ${targetTagId}`, e)
-      }
-    }
+    mergeTransaction()
+    console.log('Merge complete!')
+  } finally {
+    target.close()
+    source.close()
   }
-  console.log('Book tags merged.')
-
-  await prisma.$disconnect()
-  otherDb.close()
-  console.log('Merge complete!')
 }
 
-run().catch(console.error)
+run()
