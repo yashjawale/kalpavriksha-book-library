@@ -25,7 +25,8 @@ export const dashboardController = {
         where: {
           dueDate: {
             lte: endOfDay
-          }
+          },
+          OR: [{ returnedAt: null }, { returnedAt: { gte: startOfDay } }]
         }
       }),
       prisma.loan.count({
