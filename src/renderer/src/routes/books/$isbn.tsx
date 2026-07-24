@@ -478,7 +478,13 @@ function SingleBook() {
       </Dialog>
 
       {/* Extend Loan Dialog */}
-      <Dialog open={extensionDialogOpen} onOpenChange={setExtensionDialogOpen}>
+      <Dialog
+        open={extensionDialogOpen}
+        onOpenChange={(open) => {
+          setExtensionDialogOpen(open)
+          if (!open) setLoanToExtend(null)
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Extend Loan Due Date</DialogTitle>
