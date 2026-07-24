@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma'
+import { Prisma } from '../../../generated/prisma/client'
 import { getSettings } from '../lib/settings'
 import { sendTransactionEmail } from '../lib/auth'
 import {
@@ -57,9 +58,9 @@ export const loansController = {
       ...(query
         ? {
             OR: [
-              { book: { title: { contains: query } } },
-              { borrower: { name: { contains: query } } },
-              { userEmail: { contains: query } },
+              { book: { title: { contains: query, mode: 'insensitive' } } },
+              { borrower: { name: { contains: query, mode: 'insensitive' } } },
+              { userEmail: { contains: query, mode: 'insensitive' } },
               { bookIsbn: { contains: query } }
             ]
           }
