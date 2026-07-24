@@ -34,17 +34,42 @@ Create a script at a location of your choice (e.g., `/usr/local/bin/supabase-bac
 set -e
 
 BACKUP_DIR="/path/to/backups/supabase"
+LOG_FILE="$BACKUP_DIR/backup.log"
 TIMESTAMP=$(date +%Y-%m-%d)
+START_TIME=$(date +%s)
+
+log() {
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
 
 # Load DATABASE_URL from your project's .env
 source /path/to/your/project/.env
 
-pg_dump "$DATABASE_URL" -Fc > "$BACKUP_DIR/supabase-$TIMESTAMP.dump"
+mkdir -p "$BACKUP_DIR"
+log "Backup started: supabase-$TIMESTAMP.dump"
 
-# Keep only the last 7 days
+if ! pg_dump "$DATABASE_URL" -Fc > "$BACKUP_DIR/supabase-$TIMESTAMP.dump" 2>> "$LOG_FILE"; then
+  log "ERROR: pg_dump failed"
+  exit 1
+fi
+
+# Verify the dump is valid
+if ! pg_restore -l "$BACKUP_DIR/supabase-$TIMESTAMP.dump" &>/dev/null; then
+  log "ERROR: Backup file is corrupted, deleting"
+  rm -f "$BACKUP_DIR/supabase-$TIMESTAMP.dump"
+  exit 1
+fi
+
+log "Backup verified successfully"
+
+# Prune old backups
+OLD_COUNT=$(find "$BACKUP_DIR" -name "supabase-*.dump" -mtime +7 | wc -l)
 find "$BACKUP_DIR" -name "supabase-*.dump" -mtime +7 -delete
+[ "$OLD_COUNT" -gt 0 ] && log "Cleaned up $OLD_COUNT old backup(s)"
 
-echo "[$(date)] Backup completed: supabase-$TIMESTAMP.dump" >> "$BACKUP_DIR/backup.log"
+DURATION=$(($(date +%s) - START_TIME))
+SIZE=$(du -h "$BACKUP_DIR/supabase-$TIMESTAMP.dump" | cut -f1)
+log "Backup finished (${DURATION}s) — size: $SIZE"
 ```
 
 Make it executable:
