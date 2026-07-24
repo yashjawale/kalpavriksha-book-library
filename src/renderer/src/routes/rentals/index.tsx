@@ -85,6 +85,7 @@ function RentalsPage() {
     () => [
       {
         id: 'name',
+        accessorFn: (row) => row.borrower?.name || row.userEmail,
         header: 'Name',
         cell: ({ row }) => (
           <div className="flex flex-col">
@@ -104,6 +105,7 @@ function RentalsPage() {
       },
       {
         id: 'book',
+        accessorFn: (row) => row.book?.title || row.bookIsbn,
         header: 'Book',
         cell: ({ row }) => (
           <Link
