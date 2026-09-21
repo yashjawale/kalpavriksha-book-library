@@ -16,6 +16,11 @@ on:
         type: boolean
         default: false
 
+# Needed for the keepalive step to push an empty commit and prevent
+# GitHub from auto-disabling scheduled workflows after 60 days of inactivity.
+permissions:
+  contents: write
+
 jobs:
   send-reminders:
     runs-on: ubuntu-latest
@@ -45,3 +50,19 @@ jobs:
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           REMINDER_DATE: ${{ inputs.date || '' }}
           REMINDER_DRY_RUN: ${{ inputs.dry-run || '' }}
+
+      - name: Keep workflow alive
+        # GitHub auto-disables scheduled workflows after 60 days without
+        # repository activity. An empty commit counts as activity and resets
+        # the 60-day timer. Run only on Mondays to stay well within the
+        # window while avoiding daily noise.
+        if: github.event_name == 'schedule'
+        run: |
+          if [ "$(date -u +%u)" != "1" ]; then
+            echo "Skipping keepalive — not Monday."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: keepalive [skip ci]"
+          git push
