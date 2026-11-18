@@ -15,7 +15,7 @@ import { Card, CardContent } from '@renderer/components/ui/card'
 import { Button } from '@renderer/components/ui/button'
 import { Spinner } from '@renderer/components/ui/spinner'
 import { Input } from '@renderer/components/ui/input'
-import { ArrowLeft, Pencil } from 'lucide-react'
+import { ArrowLeft, CalendarClock, CheckCheck, Pencil } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -290,8 +290,31 @@ function UserDetailsPage() {
       </div>
 
       <div className="flex flex-col gap-4 mb-8">
-        <div className="flex justify-between items-end mb-2">
+        <div className="flex flex-wrap justify-between items-end gap-3 mb-2">
           <h2 className="text-xl font-semibold tracking-tight">Currently Issued</h2>
+          {currentLoans.length > 0 && (
+            <div className="flex justify-end gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-primary bg-transparent text-primary font-semibold transition-colors hover:bg-primary hover:text-white"
+                onClick={handleBulkExtend}
+                disabled={bulkExtendMutation.isPending}
+              >
+                <CalendarClock className="size-4" />
+                Extend all
+              </Button>
+              <Button
+                size="sm"
+                className="bg-primary text-primary-foreground font-semibold transition-colors hover:bg-primary/90"
+                onClick={handleBulkReturn}
+                disabled={bulkReturnMutation.isPending}
+              >
+                <CheckCheck className="size-4" />
+                Mark all as returned
+              </Button>
+            </div>
+          )}
         </div>
         <Card className="rounded-md border-border bg-card p-0 shadow-none">
           <CardContent className="p-0">
@@ -302,29 +325,7 @@ function UserDetailsPage() {
                   <TableHead className="w-[20%]">Code</TableHead>
                   <TableHead className="w-[20%]">Tags</TableHead>
                   <TableHead>Expected return</TableHead>
-                  <TableHead className="text-right">
-                    {currentLoans.length > 0 && (
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-primary bg-transparent text-primary font-medium transition-colors hover:bg-primary hover:text-white"
-                          onClick={handleBulkExtend}
-                          disabled={bulkExtendMutation.isPending}
-                        >
-                          Extend all
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="bg-primary text-primary-foreground font-medium transition-colors hover:bg-primary/90"
-                          onClick={handleBulkReturn}
-                          disabled={bulkReturnMutation.isPending}
-                        >
-                          Mark all as returned
-                        </Button>
-                      </div>
-                    )}
-                  </TableHead>
+                  <TableHead className="text-right"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
