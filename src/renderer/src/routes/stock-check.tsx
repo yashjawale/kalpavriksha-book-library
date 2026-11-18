@@ -636,7 +636,7 @@ function StockCheckPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="w-full text-xs text-red-800 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50"
                       onClick={() => {
                         setFilterTagIds([])
                         setNotedPage(1)

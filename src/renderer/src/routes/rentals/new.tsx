@@ -413,7 +413,7 @@ function NewRentalPage() {
                                 )
                               }
                             >
-                              <X className="w-4 h-4 text-red-500" />
+                              <X className="w-4 h-4 text-red-800 dark:text-red-400" />
                             </Button>
                           </TableCell>
                         </TableRow>

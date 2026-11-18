@@ -253,6 +253,7 @@ function SingleBook() {
             <Button
               variant="outline"
               size="sm"
+              className="border-primary bg-transparent text-primary font-medium transition-colors hover:bg-primary hover:text-white"
               onClick={() => {
                 setAddStockCount(1)
                 setAddStockDialogOpen(true)
@@ -276,6 +277,7 @@ function SingleBook() {
             <Button
               variant="outline"
               size="sm"
+              className="border-destructive bg-transparent text-destructive font-medium transition-colors hover:bg-destructive hover:text-white"
               onClick={() => {
                 setDiscardCount(1)
                 setDiscardNote('')
@@ -553,7 +555,7 @@ function SingleBook() {
               </div>
             )}
             {discardCount === book.totalStock && (
-              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-950/50 p-3 rounded-md border border-red-200 dark:border-red-800">
+              <div className="flex items-center gap-2 text-sm text-red-800 bg-red-50 dark:bg-red-950/50 dark:text-red-400 p-3 rounded-md border border-red-200 dark:border-red-800">
                 <AlertTriangle className="size-4 shrink-0" />
                 <span>Warning: This will discard all remaining copies of this book.</span>
               </div>

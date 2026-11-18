@@ -467,7 +467,7 @@ function ManageBooks() {
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      className="text-red-600"
+                      className="text-red-800 dark:text-red-400"
                       onClick={() => setSelectedTagFilters([])}
                     >
                       Clear filters
@@ -627,7 +627,7 @@ function ManageBooks() {
               </div>
             )}
             {discardCount === (selectedBook?.currentStock || 0) && (
-              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-950/50 p-3 rounded-md border border-red-200 dark:border-red-800">
+              <div className="flex items-center gap-2 text-sm text-red-800 bg-red-50 dark:bg-red-950/50 dark:text-red-400 p-3 rounded-md border border-red-200 dark:border-red-800">
                 <AlertTriangle className="size-4 shrink-0" />
                 <span>Warning: This will discard all remaining copies of this book.</span>
               </div>

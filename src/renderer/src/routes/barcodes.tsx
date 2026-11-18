@@ -270,7 +270,7 @@ function BarcodesPage() {
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      className="text-red-600"
+                      className="text-red-800 dark:text-red-400"
                       onClick={() => setSelectedTagFilters([])}
                     >
                       Clear filters
