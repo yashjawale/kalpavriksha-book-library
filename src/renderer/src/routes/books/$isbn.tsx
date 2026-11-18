@@ -308,10 +308,10 @@ function SingleBook() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50">
-                <th className="h-10 px-4 text-left font-medium">User name</th>
-                <th className="h-10 px-4 text-left font-medium">Email</th>
-                <th className="h-10 px-4 text-left font-medium">Expected return</th>
-                <th className="h-10 px-4 text-right font-medium">Actions</th>
+                <th className="h-10 px-4 text-left font-semibold">User name</th>
+                <th className="h-10 px-4 text-left font-semibold">Email</th>
+                <th className="h-10 px-4 text-left font-semibold">Expected return</th>
+                <th className="h-10 px-4 text-right font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -387,9 +387,9 @@ function SingleBook() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50">
-                <th className="h-10 px-4 text-left font-medium">User name</th>
-                <th className="h-10 px-4 text-left font-medium">Email</th>
-                <th className="h-10 px-4 text-left font-medium">Returned on</th>
+                <th className="h-10 px-4 text-left font-semibold">User name</th>
+                <th className="h-10 px-4 text-left font-semibold">Email</th>
+                <th className="h-10 px-4 text-left font-semibold">Returned on</th>
               </tr>
             </thead>
             <tbody>

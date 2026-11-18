@@ -121,8 +121,8 @@ function Dashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="h-10 px-4 text-left font-medium">Name</th>
-                  <th className="h-10 px-4 text-left font-medium">Date</th>
+                  <th className="h-10 px-4 text-left font-semibold">Name</th>
+                  <th className="h-10 px-4 text-left font-semibold">Date</th>
                 </tr>
               </thead>
               <tbody>
@@ -191,8 +191,8 @@ function Dashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="h-10 px-4 text-left font-medium">Name</th>
-                  <th className="h-10 px-4 text-left font-medium">Date</th>
+                  <th className="h-10 px-4 text-left font-semibold">Name</th>
+                  <th className="h-10 px-4 text-left font-semibold">Date</th>
                 </tr>
               </thead>
               <tbody>
