@@ -69,7 +69,7 @@ function UsersPage() {
   return (
     <div className="flex flex-col gap-6 p-4">
       <div className="flex justify-between items-center">
-        <PageTitle title="Users" />
+        <PageTitle title="Users" className="pt-4" />
         <div className="relative w-64">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
