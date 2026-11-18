@@ -17,7 +17,7 @@ export function TagBadge({ tag, onRemove, className }: TagBadgeProps) {
   const badge = (
     <Badge
       variant="secondary"
-      className={`${colors.bg} ${colors.text} ${colors.hover} border ${colors.border} ${className || ''}`}
+      className={`${colors.bg} ${colors.text} ${colors.hover} border ${colors.border} font-semibold ${className || ''}`}
     >
       {tag.name}
       {onRemove && (

@@ -4,6 +4,60 @@ export type TagColorClasses = { bg: string; text: string; hover: string; border:
 
 // Color mapping available for tag colors
 export const TAG_COLOR_MAP: Record<string, TagColorClasses> = {
+  black: {
+    bg: 'bg-gray-900',
+    text: 'text-white',
+    hover: 'hover:bg-gray-800',
+    border: 'border-gray-700'
+  },
+  white: {
+    bg: 'bg-white',
+    text: 'text-gray-800',
+    hover: 'hover:bg-gray-100',
+    border: 'border-gray-300'
+  },
+  brown: {
+    bg: 'bg-amber-800',
+    text: 'text-white',
+    hover: 'hover:bg-amber-900',
+    border: 'border-amber-900'
+  },
+  lightBrown: {
+    bg: 'bg-amber-100',
+    text: 'text-amber-950',
+    hover: 'hover:bg-amber-200',
+    border: 'border-amber-300'
+  },
+  gold: {
+    bg: 'bg-yellow-400',
+    text: 'text-yellow-950',
+    hover: 'hover:bg-yellow-500',
+    border: 'border-yellow-600'
+  },
+  silver: {
+    bg: 'bg-slate-300',
+    text: 'text-slate-900',
+    hover: 'hover:bg-slate-400',
+    border: 'border-slate-500'
+  },
+  darkPurple: {
+    bg: 'bg-purple-900',
+    text: 'text-white',
+    hover: 'hover:bg-purple-800',
+    border: 'border-purple-700'
+  },
+  lightPurple: {
+    bg: 'bg-purple-200',
+    text: 'text-purple-950',
+    hover: 'hover:bg-purple-300',
+    border: 'border-purple-400'
+  },
+  skyBlue: {
+    bg: 'bg-sky-200',
+    text: 'text-sky-950',
+    hover: 'hover:bg-sky-300',
+    border: 'border-sky-400'
+  },
   red: {
     bg: 'bg-red-100',
     text: 'text-red-800',
@@ -33,12 +87,6 @@ export const TAG_COLOR_MAP: Record<string, TagColorClasses> = {
     text: 'text-purple-800',
     hover: 'hover:bg-purple-200',
     border: 'border-purple-300'
-  },
-  darkPurple: {
-    bg: 'bg-purple-900',
-    text: 'text-purple-100',
-    hover: 'hover:bg-purple-800',
-    border: 'border-purple-700'
   },
   pink: {
     bg: 'bg-pink-100',
@@ -100,15 +148,17 @@ export const TAG_COLOR_OPTIONS = Object.keys(TAG_COLOR_MAP).filter((color) => co
 
 // Extract color from tag name/color field and return appropriate Tailwind classes
 export function getTagColor(tag: Tag): TagColorClasses {
-  if (tag.color && TAG_COLOR_MAP[tag.color]) {
-    return TAG_COLOR_MAP[tag.color]
+  const normalize = (value: string) => value.toLowerCase().replace(/[\s_-]/g, '')
+  if (tag.color) {
+    const color = Object.keys(TAG_COLOR_MAP).find((key) => normalize(key) === normalize(tag.color!))
+    if (color) return TAG_COLOR_MAP[color]
   }
 
-  const name = tag.name.toLowerCase()
+  const name = normalize(tag.name)
 
   // Check if tag name contains any color keyword
   for (const [color, classes] of Object.entries(TAG_COLOR_MAP)) {
-    if (name.includes(color)) {
+    if (name.includes(normalize(color))) {
       return classes
     }
   }
