@@ -65,16 +65,16 @@ export const TAG_COLOR_MAP: Record<string, TagColorClasses> = {
     border: 'border-red-300'
   },
   blue: {
-    bg: 'bg-blue-100',
-    text: 'text-blue-800',
-    hover: 'hover:bg-blue-200',
-    border: 'border-blue-300'
+    bg: 'bg-blue-800',
+    text: 'text-white',
+    hover: 'hover:bg-blue-900',
+    border: 'border-blue-950'
   },
   green: {
-    bg: 'bg-green-100',
-    text: 'text-green-800',
-    hover: 'hover:bg-green-200',
-    border: 'border-green-300'
+    bg: 'bg-lime-600',
+    text: 'text-white',
+    hover: 'hover:bg-lime-700',
+    border: 'border-lime-800'
   },
   yellow: {
     bg: 'bg-yellow-100',
@@ -89,10 +89,10 @@ export const TAG_COLOR_MAP: Record<string, TagColorClasses> = {
     border: 'border-purple-300'
   },
   pink: {
-    bg: 'bg-pink-100',
-    text: 'text-pink-800',
-    hover: 'hover:bg-pink-200',
-    border: 'border-pink-300'
+    bg: 'bg-pink-600',
+    text: 'text-white',
+    hover: 'hover:bg-pink-700',
+    border: 'border-pink-800'
   },
   orange: {
     bg: 'bg-orange-100',
@@ -149,12 +149,20 @@ export const TAG_COLOR_OPTIONS = Object.keys(TAG_COLOR_MAP).filter((color) => co
 // Extract color from tag name/color field and return appropriate Tailwind classes
 export function getTagColor(tag: Tag): TagColorClasses {
   const normalize = (value: string) => value.toLowerCase().replace(/[\s_-]/g, '')
+  const name = normalize(tag.name)
+
+  // Prefer shade-specific names so stale generic color metadata cannot invert them.
+  for (const color of ['darkPurple', 'lightPurple', 'lightBrown', 'skyBlue']) {
+    if (name.includes(normalize(color))) return TAG_COLOR_MAP[color]
+  }
+
+  const namedColor = Object.keys(TAG_COLOR_MAP).find((color) => normalize(color) === name)
+  if (namedColor) return TAG_COLOR_MAP[namedColor]
+
   if (tag.color) {
     const color = Object.keys(TAG_COLOR_MAP).find((key) => normalize(key) === normalize(tag.color!))
     if (color) return TAG_COLOR_MAP[color]
   }
-
-  const name = normalize(tag.name)
 
   // Check if tag name contains any color keyword
   for (const [color, classes] of Object.entries(TAG_COLOR_MAP)) {
