@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Check, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
-import { Checkbox } from './ui/checkbox'
-import { Label } from './ui/label'
 import { TagBadge } from './TagBadge'
 import {
   Dialog,
@@ -47,6 +45,12 @@ export function TagSelector({
   })
 
   const selectedTags = allTags.filter((tag) => selectedTagIds.includes(tag.id))
+  const visibleTags = allTags.filter((tag) =>
+    tag.name.toLocaleLowerCase().includes(newTagName.trim().toLocaleLowerCase())
+  )
+  const tagNameExists = allTags.some(
+    (tag) => tag.name.toLocaleLowerCase() === newTagName.trim().toLocaleLowerCase()
+  )
 
   const toggleTag = (tagId: number) => {
     if (selectedTagIds.includes(tagId)) {
@@ -113,7 +117,7 @@ export function TagSelector({
               {/* Create new tag */}
               <div className="flex gap-2">
                 <Input
-                  placeholder="Create new tag..."
+                  placeholder="Search or create a tag..."
                   value={newTagName}
                   onChange={(e) => setNewTagName(e.target.value)}
                   onKeyDown={(e) => {
@@ -125,36 +129,41 @@ export function TagSelector({
                 />
                 <Button
                   onClick={handleCreateTag}
-                  disabled={!newTagName.trim() || isCreating}
+                  disabled={!newTagName.trim() || isCreating || tagNameExists}
                   size="sm"
                 >
                   <Plus className="size-4" />
                 </Button>
               </div>
 
-              {/* Tag list */}
-              <div className="max-h-64 overflow-y-auto space-y-2">
+              {/* Tag cloud */}
+              <div className="flex max-h-64 flex-wrap content-start items-center justify-center gap-3 overflow-y-auto py-2">
                 {allTags.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     No tags yet. Create one above!
                   </p>
+                ) : visibleTags.length === 0 ? (
+                  <p className="w-full text-sm text-muted-foreground text-center py-4">
+                    No matching tags. Create “{newTagName.trim()}” above.
+                  </p>
                 ) : (
-                  allTags.map((tag) => (
-                    <div
+                  visibleTags.map((tag) => (
+                    <button
                       key={tag.id}
-                      className="flex items-center space-x-2 p-2 hover:bg-accent rounded-md cursor-pointer"
+                      type="button"
+                      aria-pressed={selectedTagIds.includes(tag.id)}
+                      className="inline-flex items-center justify-center rounded-full transition-transform hover:scale-105"
                       onClick={() => toggleTag(tag.id)}
                     >
-                      <Checkbox
-                        id={`tag-${tag.id}`}
-                        checked={selectedTagIds.includes(tag.id)}
-                        onCheckedChange={() => toggleTag(tag.id)}
+                      <TagBadge
+                        tag={tag}
+                        className={
+                          selectedTagIds.includes(tag.id)
+                            ? 'tag-selection-pulse bg-primary text-primary-foreground border-primary font-extrabold shadow-sm shadow-primary/30 ring-2 ring-primary ring-offset-2 ring-offset-background hover:bg-primary'
+                            : undefined
+                        }
                       />
-                      <Label htmlFor={`tag-${tag.id}`} className="flex-1 cursor-pointer">
-                        <TagBadge tag={tag} />
-                      </Label>
-                      {selectedTagIds.includes(tag.id) && <Check className="size-4 text-primary" />}
-                    </div>
+                    </button>
                   ))
                 )}
               </div>

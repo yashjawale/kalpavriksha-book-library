@@ -154,10 +154,14 @@ interface API {
 const users = await window.api.users.getAll()
 ```
 
-## Copying over schema & data to Supabase from `dev.db` file in _prisma_ folder
+## Migrating legacy SQLite data to Supabase
+
+The app currently uses PostgreSQL as its main database. This migration utility
+imports records from a legacy SQLite database at `prisma/dev.db`; it is not
+needed for normal app startup.
 
 1. Copy the Database URI from the Supabase dashboard.
 2. Run `export DATABASE_URL="postgresql://..."` in your terminal.
 3. Run `npx prisma db push` to create the tables.
-4. Run `npx tsx scripts/migrate-to-supabase.ts` to migrate your local data into Supabase!
+4. Run `npx tsx scripts/migrate-to-supabase.ts` to import the legacy local data into Supabase.
 5. Finally, start the app with npm run dev. Go to Settings, paste in the database URI, and the app is ready for use.

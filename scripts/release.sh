@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Release script for Kalpavriksha Book Library
+# Release script for Kalpavriksha Library
 # Usage: ./scripts/release.sh [patch|minor|major]
 
 set -e
@@ -31,7 +31,7 @@ if [[ ! "$RELEASE_TYPE" =~ ^(patch|minor|major)$ ]]; then
     exit 1
 fi
 
-echo -e "${BLUE}=== Kalpavriksha Book Library Release ===${NC}"
+echo -e "${BLUE}=== Kalpavriksha Library Release ===${NC}"
 echo ""
 
 # Get current version
@@ -140,7 +140,7 @@ echo -e "${GREEN}✓ Release v$NEW_VERSION created successfully!${NC}"
 echo ""
 echo "Next steps:"
 echo "  1. GitHub Actions will build the installers automatically"
-echo "  2. Go to https://github.com/yashjawale/kalpavriksha-book-library/releases"
+echo "  2. Go to https://github.com/yashjawale/kalpavriksha-library/releases"
 echo "  3. Edit the draft release if needed"
 echo "  4. Click 'Publish release' when ready"
 echo ""

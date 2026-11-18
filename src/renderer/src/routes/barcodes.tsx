@@ -3,7 +3,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@renderer/components/ui/button'
 import { Spinner } from '@renderer/components/ui/spinner'
-import { Download, Filter } from 'lucide-react'
+import { Download } from 'lucide-react'
 import type { Book, Tag } from '@renderer/types/book'
 import { pdf } from '@react-pdf/renderer'
 import JsBarcode from 'jsbarcode'
@@ -13,15 +13,7 @@ import { getBarcodesColumns } from '@renderer/components/columns/barcodes-column
 import PageTitle from '@renderer/components/ui/page-title'
 import { toast } from 'sonner'
 import { ToggleGroup, ToggleGroupItem } from '@renderer/components/ui/toggle-group'
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@renderer/components/ui/dropdown-menu'
+import { TagFilterDropdown } from '@renderer/components/TagFilterDropdown'
 
 export const Route = createFileRoute('/barcodes')({
   component: BarcodesPage
@@ -202,12 +194,6 @@ function BarcodesPage() {
     }
   }
 
-  const handleToggleTagFilter = (tagId: number): void => {
-    setSelectedTagFilters((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
-    )
-  }
-
   const columns = getBarcodesColumns({
     onPrintCountChange: handlePrintCountChange,
     printCounts,
@@ -238,47 +224,11 @@ function BarcodesPage() {
         </ToggleGroup>
         <div className="flex items-center gap-2">
           {allTags.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={
-                    selectedTagFilters.length > 0
-                      ? 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200'
-                      : ''
-                  }
-                >
-                  <Filter className="size-4 mr-2" />
-                  Filter by Tags
-                  {selectedTagFilters.length > 0 && ` (${selectedTagFilters.length})`}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Filter by Tags</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {allTags.map((tag) => (
-                  <DropdownMenuCheckboxItem
-                    key={tag.id}
-                    checked={selectedTagFilters.includes(tag.id)}
-                    onCheckedChange={() => handleToggleTagFilter(tag.id)}
-                  >
-                    {tag.name}
-                  </DropdownMenuCheckboxItem>
-                ))}
-                {selectedTagFilters.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-red-600"
-                      onClick={() => setSelectedTagFilters([])}
-                    >
-                      Clear filters
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <TagFilterDropdown
+              tags={allTags}
+              selectedTagIds={selectedTagFilters}
+              onSelectionChange={setSelectedTagFilters}
+            />
           )}
           <Button
             variant="secondary"

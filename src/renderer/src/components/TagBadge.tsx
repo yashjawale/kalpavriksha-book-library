@@ -13,11 +13,13 @@ import { getTagColor } from '../utils/tag-colors'
 
 export function TagBadge({ tag, onRemove, className }: TagBadgeProps) {
   const colors = getTagColor(tag)
+  const description =
+    typeof tag.description === 'string' && tag.description.trim() ? tag.description.trim() : null
 
   const badge = (
     <Badge
       variant="secondary"
-      className={`${colors.bg} ${colors.text} ${colors.hover} border ${colors.border} ${className || ''}`}
+      className={`${colors.bg} ${colors.text} ${colors.hover} border ${colors.border} font-semibold ${className || ''}`}
     >
       {tag.name}
       {onRemove && (
@@ -37,14 +39,14 @@ export function TagBadge({ tag, onRemove, className }: TagBadgeProps) {
     </Badge>
   )
 
-  if (tag.description) {
+  if (description) {
     return (
       <Tooltip delayDuration={300}>
         <TooltipTrigger asChild>
           <div className="inline-block cursor-help">{badge}</div>
         </TooltipTrigger>
         <TooltipContent>
-          <p className="max-w-50 text-sm">{tag.description}</p>
+          <p className="max-w-50 text-sm">{description}</p>
         </TooltipContent>
       </Tooltip>
     )

@@ -3,6 +3,30 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@layer base {
+  button:not(:disabled):not([aria-disabled='true']),
+  [data-slot='button']:not(:disabled):not([aria-disabled='true']),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+}
+
+@keyframes tag-selection-pulse {
+  0%,
+  100% {
+    background-color: var(--primary);
+  }
+  50% {
+    background-color: color-mix(in oklab, var(--primary) 88%, black);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tag-selection-pulse {
+    animation: tag-selection-pulse 2.8s ease-in-out infinite;
+  }
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.14 0 0);
@@ -18,7 +42,7 @@
   --muted-foreground: oklch(0.56 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.2 0 0);
-  --destructive: oklch(0.58 0.24 28.48);
+  --destructive: oklch(0.444 0.177 26.899);
   --border: oklch(0.92 0 0);
   --input: oklch(0.92 0 0);
   --ring: oklch(0.71 0 0);

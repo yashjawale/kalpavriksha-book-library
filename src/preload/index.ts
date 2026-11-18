@@ -4,7 +4,8 @@ import { electronAPI } from '@electron-toolkit/preload'
 // Custom APIs for renderer - manually define methods for context bridge compatibility
 const api = {
   app: {
-    getVersion: () => ipcRenderer.invoke('app:getVersion')
+    getVersion: () => ipcRenderer.invoke('app:getVersion'),
+    getPlatform: () => ipcRenderer.invoke('app:getPlatform')
   },
   books: {
     getAll: (

@@ -12,6 +12,7 @@ import {
   type Row
 } from '@tanstack/react-table'
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { Skeleton } from '@renderer/components/ui/skeleton'
@@ -24,6 +25,7 @@ import {
   TableRow
 } from '@renderer/components/ui/table'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-react'
+import { cn } from '@renderer/lib/utils'
 
 function getPageRange(totalPages: number, currentPage: number): (number | '...')[] {
   const siblingCount = 1
@@ -55,6 +57,9 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   searchKey?: string
   searchPlaceholder?: string
+  searchContainerClassName?: string
+  toolbarLeft?: ReactNode
+  toolbarRight?: ReactNode
   pageSize?: number
   globalFilterFn?: (row: TData, filterValue: string) => boolean
   initialSorting?: SortingState
@@ -78,6 +83,9 @@ export function DataTable<TData, TValue>({
   data,
   searchKey,
   searchPlaceholder = 'Search...',
+  searchContainerClassName,
+  toolbarLeft,
+  toolbarRight,
   pageSize = 25,
   globalFilterFn,
   initialSorting = [],
@@ -93,7 +101,7 @@ export function DataTable<TData, TValue>({
   onPageChange,
   onSearchChange,
   isLoading = false,
-  skeletonRowCount = 10
+  skeletonRowCount
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -170,9 +178,11 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      {(searchKey || globalFilterFn || onSearchChange) && (
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 max-w-sm">
+      {(searchKey || globalFilterFn || onSearchChange || toolbarLeft || toolbarRight) && (
+        <div className="flex flex-wrap items-center justify-between gap-3 py-2">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          {(searchKey || globalFilterFn || onSearchChange) && (
+            <div className={cn('relative flex-1 max-w-sm', searchContainerClassName)}>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               placeholder={searchPlaceholder}
@@ -191,6 +201,10 @@ export function DataTable<TData, TValue>({
               className="pl-9"
             />
           </div>
+          )}
+          {toolbarLeft}
+          </div>
+          {toolbarRight}
         </div>
       )}
 
@@ -213,13 +227,13 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              Array.from({ length: skeletonRowCount }).map((_, rowIdx) => (
+              Array.from({ length: skeletonRowCount ?? pageSize }).map((_, rowIdx) => (
                 <TableRow key={`skeleton-${rowIdx}`}>
                   {table.getVisibleFlatColumns().map((col, colIdx) => {
                     const widths = ['w-3/4', 'w-1/2', 'w-2/3', 'w-1/3', 'w-4/5', 'w-3/5', 'w-2/5']
                     return (
                       <TableCell key={col.id}>
-                        <Skeleton className={`h-4 ${widths[colIdx % widths.length]}`} />
+                        <Skeleton className={`h-6 ${widths[colIdx % widths.length]}`} />
                       </TableCell>
                     )
                   })}
@@ -232,11 +246,18 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && 'selected'}
                   className={rowClassName ? rowClassName(row) : undefined}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} title={cell.renderValue()?.toString() ?? ''}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const value = cell.renderValue()
+                    const title =
+                      typeof value === 'string' || typeof value === 'number'
+                        ? String(value)
+                        : undefined
+                    return (
+                      <TableCell key={cell.id} title={title}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
               ))
             ) : (

@@ -6,18 +6,8 @@ import { useState, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { DiscardedBook, Tag } from '@renderer/types/book'
 import { format } from 'date-fns'
-import { Button } from '@renderer/components/ui/button'
-import { Filter } from 'lucide-react'
 import { TagBadge } from '@renderer/components/TagBadge'
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@renderer/components/ui/dropdown-menu'
+import { TagFilterDropdown } from '@renderer/components/TagFilterDropdown'
 
 export const Route = createFileRoute('/discarded')({
   component: DiscardedBooks
@@ -50,13 +40,6 @@ function DiscardedBooks() {
 
   const discarded = useMemo(() => data?.discarded ?? [], [data?.discarded])
   const total = data?.total ?? 0
-
-  const handleToggleTagFilter = (tagId: number): void => {
-    setSelectedTagFilters((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
-    )
-    setPageIndex(0)
-  }
 
   const columns: ColumnDef<DiscardedBook>[] = useMemo(
     () => [
@@ -133,47 +116,14 @@ function DiscardedBooks() {
       <div className="flex items-center justify-between">
         <PageTitle title="Discarded Books" />
         {allTags.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className={
-                  selectedTagFilters.length > 0
-                    ? 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200'
-                    : ''
-                }
-              >
-                <Filter className="size-4 mr-2" />
-                Filter by Tags
-                {selectedTagFilters.length > 0 && ` (${selectedTagFilters.length})`}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Filter by Tags</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {allTags.map((tag) => (
-                <DropdownMenuCheckboxItem
-                  key={tag.id}
-                  checked={selectedTagFilters.includes(tag.id)}
-                  onCheckedChange={() => handleToggleTagFilter(tag.id)}
-                >
-                  {tag.name}
-                </DropdownMenuCheckboxItem>
-              ))}
-              {selectedTagFilters.length > 0 && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-red-600"
-                    onClick={() => setSelectedTagFilters([])}
-                  >
-                    Clear filters
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <TagFilterDropdown
+            tags={allTags}
+            selectedTagIds={selectedTagFilters}
+            onSelectionChange={(ids) => {
+              setSelectedTagFilters(ids)
+              setPageIndex(0)
+            }}
+          />
         )}
       </div>
       <DataTable

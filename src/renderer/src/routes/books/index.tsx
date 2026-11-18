@@ -8,7 +8,7 @@ import PageTitle from '@renderer/components/ui/page-title'
 import { useState, useMemo, useCallback } from 'react'
 import { useSimpleDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 import { Button } from '@renderer/components/ui/button'
-import { Trash2, Tag as TagIcon, Plus, Minus, AlertTriangle } from 'lucide-react'
+import { Trash2, Tag as TagIcon, AlertTriangle } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -20,16 +20,13 @@ import {
 import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { TagSelector } from '@renderer/components/TagSelector'
+import { TagFilterDropdown } from '@renderer/components/TagFilterDropdown'
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
+  DropdownMenu,
   DropdownMenuTrigger
 } from '@renderer/components/ui/dropdown-menu'
-import { Filter } from 'lucide-react'
 import { EditBookDialog } from '@renderer/components/EditBookDialog'
 import { toast } from 'sonner'
 
@@ -390,13 +387,6 @@ function ManageBooks() {
     }
   }
 
-  const handleToggleTagFilter = (tagId: number): void => {
-    setSelectedTagFilters((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
-    )
-    setPageIndex(0)
-  }
-
   const handleEditDetails = useCallback((book: Book): void => {
     setEditDetailsBook(book)
     setEditDialogOpen(true)
@@ -430,10 +420,26 @@ function ManageBooks() {
   return (
     <div className="w-full">
       <PageTitle title="Manage Books" />
-      <div className="flex items-center justify-between pb-4 gap-4">
-        <div className="flex items-center gap-2">
-          {selectedISBNs.length > 0 && (
-            <>
+      <DataTable
+        columns={columns}
+        data={books}
+        searchPlaceholder="Search books..."
+        toolbarLeft={
+          allTags.length > 0 && (
+            <TagFilterDropdown
+              tags={allTags}
+              selectedTagIds={selectedTagFilters}
+              onSelectionChange={(ids) => {
+                setSelectedTagFilters(ids)
+                setPageIndex(0)
+              }}
+              align="start"
+            />
+          )
+        }
+        toolbarRight={
+          selectedISBNs.length > 0 && (
+            <div className="flex items-center gap-2">
               <Button
                 variant="destructive"
                 size="sm"
@@ -443,84 +449,30 @@ function ManageBooks() {
                 <Trash2 className="size-4 mr-2" />
                 Delete ({selectedISBNs.length})
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBulkChangeTags}
-                disabled={bulkUpdateTagsMutation.isPending}
-              >
-                <TagIcon className="size-4 mr-2" />
-                Change Tags ({selectedISBNs.length})
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBulkAddTag}
-                disabled={bulkAddTagMutation.isPending}
-              >
-                <Plus className="size-4 mr-2" />
-                Add Tags ({selectedISBNs.length})
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBulkRemoveTag}
-                disabled={bulkRemoveTagMutation.isPending}
-              >
-                <Minus className="size-4 mr-2" />
-                Remove Tags ({selectedISBNs.length})
-              </Button>
-            </>
-          )}
-        </div>
-        {allTags.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className={
-                  selectedTagFilters.length > 0
-                    ? 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200'
-                    : ''
-                }
-              >
-                <Filter className="size-4 mr-2" />
-                Filter by Tags
-                {selectedTagFilters.length > 0 && ` (${selectedTagFilters.length})`}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Filter by Tags</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {allTags.map((tag) => (
-                <DropdownMenuCheckboxItem
-                  key={tag.id}
-                  checked={selectedTagFilters.includes(tag.id)}
-                  onCheckedChange={() => handleToggleTagFilter(tag.id)}
-                >
-                  {tag.name}
-                </DropdownMenuCheckboxItem>
-              ))}
-              {selectedTagFilters.length > 0 && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-red-600"
-                    onClick={() => setSelectedTagFilters([])}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={
+                      bulkUpdateTagsMutation.isPending ||
+                      bulkAddTagMutation.isPending ||
+                      bulkRemoveTagMutation.isPending
+                    }
                   >
-                    Clear filters
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
-      <DataTable
-        columns={columns}
-        data={books}
-        searchPlaceholder="Search books..."
+                    <TagIcon className="size-4 mr-2" />
+                    Tag Actions ({selectedISBNs.length})
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleBulkChangeTags}>Replace Tags</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleBulkAddTag}>Add Tags</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleBulkRemoveTag}>Delete Tags</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )
+        }
         pageSize={pageSize}
         initialSorting={[{ id: 'createdAt', desc: true }]}
         enableRowSelection
@@ -634,7 +586,7 @@ function ManageBooks() {
               </div>
             )}
             {discardCount === (selectedBook?.currentStock || 0) && (
-              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-950/50 p-3 rounded-md border border-red-200 dark:border-red-800">
+              <div className="flex items-center gap-2 text-sm text-red-800 bg-red-50 dark:bg-red-950/50 dark:text-red-400 p-3 rounded-md border border-red-200 dark:border-red-800">
                 <AlertTriangle className="size-4 shrink-0" />
                 <span>Warning: This will discard all remaining copies of this book.</span>
               </div>
@@ -682,12 +634,12 @@ function ManageBooks() {
         </DialogContent>
       </Dialog>
 
-      {/* Change Tags Dialog */}
+      {/* Replace Tags Dialog */}
       <Dialog open={changeTagsDialogOpen} onOpenChange={setChangeTagsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Change Tags</DialogTitle>
-            <DialogDescription>Change tags for: {selectedBook?.title}</DialogDescription>
+            <DialogTitle>Replace Tags</DialogTitle>
+            <DialogDescription>Replace tags for: {selectedBook?.title}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <TagSelector selectedTagIds={selectedTagIds} onTagsChange={setSelectedTagIds} />
@@ -710,13 +662,13 @@ function ManageBooks() {
         </DialogContent>
       </Dialog>
 
-      {/* Bulk Change Tags Dialog */}
+      {/* Bulk Replace Tags Dialog */}
       <Dialog open={bulkChangeTagsDialogOpen} onOpenChange={setBulkChangeTagsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Change Tags for Multiple Books</DialogTitle>
+            <DialogTitle>Replace Tags for Multiple Books</DialogTitle>
             <DialogDescription>
-              Change tags for {selectedISBNs.length} selected book(s). This will replace all
+              Replace tags for {selectedISBNs.length} selected book(s). This will replace all
               existing tags.
             </DialogDescription>
           </DialogHeader>
@@ -777,11 +729,11 @@ function ManageBooks() {
         </DialogContent>
       </Dialog>
 
-      {/* Bulk Remove Tag Dialog */}
+      {/* Bulk Delete Tag Dialog */}
       <Dialog open={bulkRemoveTagDialogOpen} onOpenChange={setBulkRemoveTagDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Remove Tags from Multiple Books</DialogTitle>
+            <DialogTitle>Delete Tags from Multiple Books</DialogTitle>
             <DialogDescription>
               Remove tags from {selectedISBNs.length} selected book(s). Other tags will be kept.
             </DialogDescription>

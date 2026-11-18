@@ -196,7 +196,7 @@ function SingleBook() {
   return (
     <div className="w-full space-y-8 pb-12">
       <div className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer w-fit">
-        <Link to="/books" className="flex items-center gap-2">
+        <Link to="/books" className="flex items-center gap-2 font-semibold">
           <ArrowLeft className="size-4" />
           All Books
         </Link>
@@ -253,6 +253,7 @@ function SingleBook() {
             <Button
               variant="outline"
               size="sm"
+              className="border-primary bg-transparent text-primary font-medium transition-colors hover:bg-primary hover:text-white"
               onClick={() => {
                 setAddStockCount(1)
                 setAddStockDialogOpen(true)
@@ -276,6 +277,7 @@ function SingleBook() {
             <Button
               variant="outline"
               size="sm"
+              className="border-destructive bg-transparent text-destructive font-medium transition-colors hover:bg-destructive hover:text-white"
               onClick={() => {
                 setDiscardCount(1)
                 setDiscardNote('')
@@ -307,11 +309,11 @@ function SingleBook() {
         <div className="rounded-md border">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="h-10 px-4 text-left font-medium">User name</th>
-                <th className="h-10 px-4 text-left font-medium">Email</th>
-                <th className="h-10 px-4 text-left font-medium">Expected return</th>
-                <th className="h-10 px-4 text-right font-medium">Actions</th>
+              <tr className="border-b">
+                <th className="h-10 px-4 text-left font-semibold">User name</th>
+                <th className="h-10 px-4 text-left font-semibold">Email</th>
+                <th className="h-10 px-4 text-left font-semibold">Expected return</th>
+                <th className="h-10 px-4 text-right font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -357,18 +359,19 @@ function SingleBook() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleReturn(loan.id)}
-                            disabled={returnBookMutation.isPending}
-                          >
-                            Mark as returned
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
+                            className="border-primary bg-transparent text-primary font-medium transition-colors hover:bg-primary hover:text-white"
                             onClick={() => handleOpenExtendDialog(loan)}
                             disabled={extendLoanMutation.isPending}
                           >
                             Extend
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="bg-primary text-primary-foreground font-medium transition-colors hover:bg-primary/90"
+                            onClick={() => handleReturn(loan.id)}
+                            disabled={returnBookMutation.isPending}
+                          >
+                            Mark as returned
                           </Button>
                         </div>
                       </td>
@@ -386,10 +389,10 @@ function SingleBook() {
         <div className="rounded-md border">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="h-10 px-4 text-left font-medium">User name</th>
-                <th className="h-10 px-4 text-left font-medium">Email</th>
-                <th className="h-10 px-4 text-left font-medium">Returned on</th>
+              <tr className="border-b">
+                <th className="h-10 px-4 text-left font-semibold">User name</th>
+                <th className="h-10 px-4 text-left font-semibold">Email</th>
+                <th className="h-10 px-4 text-left font-semibold">Returned on</th>
               </tr>
             </thead>
             <tbody>
@@ -552,7 +555,7 @@ function SingleBook() {
               </div>
             )}
             {discardCount === book.totalStock && (
-              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-950/50 p-3 rounded-md border border-red-200 dark:border-red-800">
+              <div className="flex items-center gap-2 text-sm text-red-800 bg-red-50 dark:bg-red-950/50 dark:text-red-400 p-3 rounded-md border border-red-200 dark:border-red-800">
                 <AlertTriangle className="size-4 shrink-0" />
                 <span>Warning: This will discard all remaining copies of this book.</span>
               </div>

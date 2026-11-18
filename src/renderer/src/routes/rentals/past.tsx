@@ -80,7 +80,7 @@ function PastRentalsPage() {
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/50">
+            <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Book</TableHead>
               <TableHead>Borrowed on</TableHead>
@@ -96,13 +96,13 @@ function PastRentalsPage() {
                     <Skeleton className="h-3 w-1/2 mt-1" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-5 w-2/3" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-5 w-16" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-5 w-16" />
                   </TableCell>
                 </TableRow>
               ))

@@ -128,13 +128,13 @@ function RentalsPage() {
           const isOverdue = dueDateObj && dueDateObj < startOfToday
           if (isOverdue) {
             return (
-              <span className="text-red-600 font-medium text-xs bg-red-50 px-2 py-1 rounded">
+              <span className="text-red-800 font-medium text-xs bg-red-100/70 px-2 py-1 rounded dark:bg-red-900/20 dark:text-red-400">
                 Overdue
               </span>
             )
           }
           return (
-            <span className="text-green-600 font-medium text-xs bg-green-50 px-2 py-1 rounded">
+            <span className="text-[color-mix(in_oklab,var(--primary)_65%,black)] font-medium text-xs bg-primary/15 px-2 py-1 rounded">
               Active
             </span>
           )
@@ -151,12 +151,21 @@ function RentalsPage() {
         header: '',
         cell: ({ row }) => (
           <div className="flex justify-end gap-2">
-            <Link to="/users/$email" params={{ email: row.original.userEmail }}>
-              <Button size="sm" variant="outline">
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-primary text-primary font-medium transition-colors hover:bg-primary hover:text-white"
+              asChild
+            >
+              <Link to="/users/$email" params={{ email: row.original.userEmail }}>
                 View details
-              </Button>
-            </Link>
-            <Button size="sm" variant="secondary" onClick={() => setReturnLoanId(row.original.id)}>
+              </Link>
+            </Button>
+            <Button
+              size="sm"
+              className="bg-primary text-primary-foreground font-medium transition-colors hover:bg-primary/90"
+              onClick={() => setReturnLoanId(row.original.id)}
+            >
               Mark Returned
             </Button>
           </div>
@@ -187,20 +196,19 @@ function RentalsPage() {
     <div className="w-full">
       <PageTitle title="Active Loans" />
 
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-8">
-        <div />
-        <Button asChild>
-          <Link to="/rentals/new">
-            <PlusIcon /> Issue Book
-          </Link>
-        </Button>
-      </div>
-
       <DataTable
         columns={columns}
         data={activeLoans}
         searchPlaceholder="Search by book, name or email..."
-        pageSize={10}
+        searchContainerClassName="max-w-xl"
+        toolbarRight={
+          <Button className="font-semibold" asChild>
+            <Link to="/rentals/new">
+              <PlusIcon /> Issue Book
+            </Link>
+          </Button>
+        }
+        pageSize={25}
         globalFilterFn={globalFilterFn}
         rowClassName={rowClassName}
         isLoading={isLoading}

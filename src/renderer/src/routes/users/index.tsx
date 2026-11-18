@@ -14,9 +14,10 @@ import { Card, CardContent } from '@renderer/components/ui/card'
 import { Input } from '@renderer/components/ui/input'
 import { Skeleton } from '@renderer/components/ui/skeleton'
 import { useSimpleDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
-import { Search } from 'lucide-react'
+import { ArrowRight, Search } from 'lucide-react'
 import PageTitle from '@renderer/components/ui/page-title'
 import { PaginationBar } from '@renderer/components/ui/pagination-bar'
+import { Button } from '@renderer/components/ui/button'
 
 export const Route = createFileRoute('/users/')({
   component: UsersPage
@@ -41,7 +42,7 @@ function UsersPage() {
   const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
-  const perPage = 10
+  const perPage = 25
 
   const { data, isLoading } = useQuery({
     queryKey: ['users', page, searchQuery],
@@ -68,7 +69,7 @@ function UsersPage() {
   return (
     <div className="flex flex-col gap-6 p-4">
       <div className="flex justify-between items-center">
-        <PageTitle title="Users" />
+        <PageTitle title="Users" className="pt-4" />
         <div className="relative w-64">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -87,7 +88,7 @@ function UsersPage() {
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow>
                 <TableHead className="w-[30%]">Name</TableHead>
                 <TableHead className="w-[40%]">Email</TableHead>
                 <TableHead>Active rentals</TableHead>
@@ -98,36 +99,37 @@ function UsersPage() {
               {isLoading ? (
                 Array.from({ length: perPage }).map((_, i) => (
                   <TableRow key={`skeleton-${i}`}>
-                    <TableCell>
-                      <Skeleton className="h-4 w-3/4" />
+                    <TableCell className="py-2">
+                      <Skeleton className="h-5 w-3/4" />
                     </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-2/3" />
+                    <TableCell className="py-2">
+                      <Skeleton className="h-5 w-2/3" />
                     </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-8" />
+                    <TableCell className="py-2">
+                      <Skeleton className="h-5 w-8" />
                     </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-20 ml-auto" />
+                    <TableCell className="py-2">
+                      <Skeleton className="h-5 w-20 ml-auto" />
                     </TableCell>
                   </TableRow>
                 ))
               ) : users.length > 0 ? (
                 users.map((user) => (
                   <TableRow key={user.email}>
-                    <TableCell className="font-medium truncate" title={user.name || 'Unknown'}>
+                    <TableCell className="py-2 font-medium truncate" title={user.name || 'Unknown'}>
                       {user.name || 'Unknown'}
                     </TableCell>
-                    <TableCell className="truncate" title={user.email}>
+                    <TableCell className="py-2 truncate" title={user.email}>
                       {user.email}
                     </TableCell>
-                    <TableCell>{user._count?.loans || 0}</TableCell>
-                    <TableCell className="text-right">
-                      <Link to="/users/$email" params={{ email: user.email }}>
-                        <span className="text-sm text-primary hover:underline cursor-pointer">
+                    <TableCell className="py-2">{user._count?.loans || 0}</TableCell>
+                    <TableCell className="py-2 text-right">
+                      <Button variant="link" size="sm" className="gap-1" asChild>
+                        <Link to="/users/$email" params={{ email: user.email }}>
                           View details
-                        </span>
-                      </Link>
+                          <ArrowRight className="size-4" />
+                        </Link>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))

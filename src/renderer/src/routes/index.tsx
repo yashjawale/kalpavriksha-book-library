@@ -58,7 +58,7 @@ function Dashboard() {
     <div className="w-full space-y-6">
       <div className="flex items-center justify-between">
         <PageTitle title="Dashboard" />
-        <Button asChild>
+        <Button className="font-semibold" asChild>
           <Link to="/rentals/new">
             <Plus className="size-4" /> Issue Book
           </Link>
@@ -107,7 +107,11 @@ function Dashboard() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold tracking-tight">Upcoming Returns</h2>
-            <Button asChild>
+            <Button
+              variant="outline"
+              className="border-primary text-primary font-semibold hover:bg-primary hover:text-primary-foreground"
+              asChild
+            >
               <Link to="/returns">
                 View all <ArrowRight />
               </Link>
@@ -117,8 +121,8 @@ function Dashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="h-10 px-4 text-left font-medium">Name</th>
-                  <th className="h-10 px-4 text-left font-medium">Date</th>
+                  <th className="h-10 px-4 text-left font-semibold">Name</th>
+                  <th className="h-10 px-4 text-left font-semibold">Date</th>
                 </tr>
               </thead>
               <tbody>
@@ -173,7 +177,11 @@ function Dashboard() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold tracking-tight">Recently Issued</h2>
-            <Button asChild>
+            <Button
+              variant="outline"
+              className="border-primary text-primary font-semibold hover:bg-primary hover:text-primary-foreground"
+              asChild
+            >
               <Link to="/rentals">
                 View all <ArrowRight />
               </Link>
@@ -183,8 +191,8 @@ function Dashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="h-10 px-4 text-left font-medium">Name</th>
-                  <th className="h-10 px-4 text-left font-medium">Date</th>
+                  <th className="h-10 px-4 text-left font-semibold">Name</th>
+                  <th className="h-10 px-4 text-left font-semibold">Date</th>
                 </tr>
               </thead>
               <tbody>

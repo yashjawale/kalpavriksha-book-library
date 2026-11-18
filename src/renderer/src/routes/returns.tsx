@@ -171,7 +171,7 @@ function UpcomingReturns() {
           const isPastDue = date < new Date() && date.toDateString() !== new Date().toDateString()
 
           return (
-            <span className={isPastDue ? 'text-destructive font-medium' : ''}>
+            <span className={isPastDue ? 'text-red-800 font-medium dark:text-red-400' : ''}>
               {format(date, 'MMM d, yyyy')}
               {isPastDue && ' (Overdue)'}
             </span>
@@ -187,18 +187,19 @@ function UpcomingReturns() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setReturnLoanId(loan.id)}
-                disabled={returnBookMutation.isPending}
-              >
-                Mark as returned
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
+                className="border-primary bg-transparent text-primary font-medium transition-colors hover:bg-primary hover:text-white"
                 onClick={() => handleOpenExtendDialog(loan)}
                 disabled={extendLoanMutation.isPending}
               >
                 Extend
+              </Button>
+              <Button
+                size="sm"
+                className="bg-primary text-primary-foreground font-medium transition-colors hover:bg-primary/90"
+                onClick={() => setReturnLoanId(loan.id)}
+                disabled={returnBookMutation.isPending}
+              >
+                Mark as returned
               </Button>
             </div>
           )
