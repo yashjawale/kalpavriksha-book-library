@@ -25,6 +25,7 @@ import {
   TableRow
 } from '@renderer/components/ui/table'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-react'
+import { cn } from '@renderer/lib/utils'
 
 function getPageRange(totalPages: number, currentPage: number): (number | '...')[] {
   const siblingCount = 1
@@ -56,6 +57,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   searchKey?: string
   searchPlaceholder?: string
+  searchContainerClassName?: string
   toolbarLeft?: ReactNode
   toolbarRight?: ReactNode
   pageSize?: number
@@ -81,6 +83,7 @@ export function DataTable<TData, TValue>({
   data,
   searchKey,
   searchPlaceholder = 'Search...',
+  searchContainerClassName,
   toolbarLeft,
   toolbarRight,
   pageSize = 25,
@@ -177,9 +180,9 @@ export function DataTable<TData, TValue>({
     <div className="space-y-4">
       {(searchKey || globalFilterFn || onSearchChange || toolbarLeft || toolbarRight) && (
         <div className="flex flex-wrap items-center justify-between gap-3 py-2">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           {(searchKey || globalFilterFn || onSearchChange) && (
-          <div className="relative flex-1 max-w-sm">
+            <div className={cn('relative flex-1 max-w-sm', searchContainerClassName)}>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               placeholder={searchPlaceholder}

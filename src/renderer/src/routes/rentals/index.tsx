@@ -187,19 +187,18 @@ function RentalsPage() {
     <div className="w-full">
       <PageTitle title="Active Loans" />
 
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-8">
-        <div />
-        <Button asChild>
-          <Link to="/rentals/new">
-            <PlusIcon /> Issue Book
-          </Link>
-        </Button>
-      </div>
-
       <DataTable
         columns={columns}
         data={activeLoans}
         searchPlaceholder="Search by book, name or email..."
+        searchContainerClassName="max-w-xl"
+        toolbarRight={
+          <Button asChild>
+            <Link to="/rentals/new">
+              <PlusIcon /> Issue Book
+            </Link>
+          </Button>
+        }
         pageSize={10}
         globalFilterFn={globalFilterFn}
         rowClassName={rowClassName}
