@@ -104,7 +104,7 @@ export function AppSidebar() {
                 <SidebarMenuButton asChild>
                   <Link
                     to={link.to}
-                    activeProps={{ className: 'bg-sidebar-accent text-sidebar-accent-foreground' }}
+                    activeProps={{ className: 'bg-primary text-white hover:bg-primary/90' }}
                   >
                     <link.icon />
                     <span>{link.label}</span>
