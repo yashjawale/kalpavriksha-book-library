@@ -85,7 +85,6 @@ const RootLayout = () => {
           <AppSidebar />
           <main className="p-4 w-full max-w-full overflow-x-hidden">
             <SidebarTrigger className="mb-2" />
-
             {dbConfigured === false && currentPath !== '/settings' ? (
               <div className="flex flex-col items-center justify-center h-[80vh] text-center">
                 <h1 className="text-2xl font-bold mb-2">Database Not Configured</h1>

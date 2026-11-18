@@ -30,6 +30,7 @@ import {
   Trash2
 } from 'lucide-react'
 import { AboutDialog } from './AboutDialog'
+import { UpdateNotice } from './UpdateNotice'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 
@@ -152,6 +153,7 @@ export function AppSidebar() {
           </SidebarContent>
           <SidebarFooter>
             <SidebarMenu>
+              <UpdateNotice />
               {authStatus.loggedIn ? (
                 <SidebarMenuItem>
                   <SidebarMenuButton onClick={handleLogout}>

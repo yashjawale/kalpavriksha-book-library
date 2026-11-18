@@ -96,6 +96,7 @@ if (!gotTheLock) {
     ipcMain.handle('app:getVersion', () => {
       return app.getVersion()
     })
+    ipcMain.handle('app:getPlatform', () => process.platform)
 
     // Auto-register controllers
     registerController('books', booksController)
