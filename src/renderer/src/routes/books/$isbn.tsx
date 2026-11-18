@@ -196,7 +196,7 @@ function SingleBook() {
   return (
     <div className="w-full space-y-8 pb-12">
       <div className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer w-fit">
-        <Link to="/books" className="flex items-center gap-2">
+        <Link to="/books" className="flex items-center gap-2 font-semibold">
           <ArrowLeft className="size-4" />
           All Books
         </Link>
@@ -307,7 +307,7 @@ function SingleBook() {
         <div className="rounded-md border">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-muted/50">
+              <tr className="border-b">
                 <th className="h-10 px-4 text-left font-semibold">User name</th>
                 <th className="h-10 px-4 text-left font-semibold">Email</th>
                 <th className="h-10 px-4 text-left font-semibold">Expected return</th>
@@ -357,18 +357,19 @@ function SingleBook() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleReturn(loan.id)}
-                            disabled={returnBookMutation.isPending}
-                          >
-                            Mark as returned
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
+                            className="border-primary bg-transparent text-primary font-medium transition-colors hover:bg-primary hover:text-white"
                             onClick={() => handleOpenExtendDialog(loan)}
                             disabled={extendLoanMutation.isPending}
                           >
                             Extend
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="bg-primary text-primary-foreground font-medium transition-colors hover:bg-primary/90"
+                            onClick={() => handleReturn(loan.id)}
+                            disabled={returnBookMutation.isPending}
+                          >
+                            Mark as returned
                           </Button>
                         </div>
                       </td>
@@ -386,7 +387,7 @@ function SingleBook() {
         <div className="rounded-md border">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-muted/50">
+              <tr className="border-b">
                 <th className="h-10 px-4 text-left font-semibold">User name</th>
                 <th className="h-10 px-4 text-left font-semibold">Email</th>
                 <th className="h-10 px-4 text-left font-semibold">Returned on</th>

@@ -80,7 +80,7 @@ function PastRentalsPage() {
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/50">
+            <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Book</TableHead>
               <TableHead>Borrowed on</TableHead>

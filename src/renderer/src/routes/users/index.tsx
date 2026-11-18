@@ -88,7 +88,7 @@ function UsersPage() {
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow>
                 <TableHead className="w-[30%]">Name</TableHead>
                 <TableHead className="w-[40%]">Email</TableHead>
                 <TableHead>Active rentals</TableHead>
