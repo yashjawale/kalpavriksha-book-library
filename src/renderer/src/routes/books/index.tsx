@@ -8,7 +8,7 @@ import PageTitle from '@renderer/components/ui/page-title'
 import { useState, useMemo, useCallback } from 'react'
 import { useSimpleDebouncedCallback } from '@renderer/hooks/use-debounced-callback'
 import { Button } from '@renderer/components/ui/button'
-import { Trash2, Tag as TagIcon, AlertTriangle, Filter } from 'lucide-react'
+import { Trash2, Tag as TagIcon, AlertTriangle } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -20,13 +20,11 @@ import {
 import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { TagSelector } from '@renderer/components/TagSelector'
+import { TagFilterDropdown } from '@renderer/components/TagFilterDropdown'
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
+  DropdownMenu,
   DropdownMenuTrigger
 } from '@renderer/components/ui/dropdown-menu'
 import { EditBookDialog } from '@renderer/components/EditBookDialog'
@@ -389,13 +387,6 @@ function ManageBooks() {
     }
   }
 
-  const handleToggleTagFilter = (tagId: number): void => {
-    setSelectedTagFilters((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
-    )
-    setPageIndex(0)
-  }
-
   const handleEditDetails = useCallback((book: Book): void => {
     setEditDetailsBook(book)
     setEditDialogOpen(true)
@@ -435,47 +426,15 @@ function ManageBooks() {
         searchPlaceholder="Search books..."
         toolbarLeft={
           allTags.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={
-                    selectedTagFilters.length > 0
-                      ? 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200'
-                      : ''
-                  }
-                >
-                  <Filter className="size-4 mr-2" />
-                  Filter by Tags
-                  {selectedTagFilters.length > 0 && ` (${selectedTagFilters.length})`}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuLabel>Filter by Tags</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {allTags.map((tag) => (
-                  <DropdownMenuCheckboxItem
-                    key={tag.id}
-                    checked={selectedTagFilters.includes(tag.id)}
-                    onCheckedChange={() => handleToggleTagFilter(tag.id)}
-                  >
-                    {tag.name}
-                  </DropdownMenuCheckboxItem>
-                ))}
-                {selectedTagFilters.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-red-800 dark:text-red-400"
-                      onClick={() => setSelectedTagFilters([])}
-                    >
-                      Clear filters
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <TagFilterDropdown
+              tags={allTags}
+              selectedTagIds={selectedTagFilters}
+              onSelectionChange={(ids) => {
+                setSelectedTagFilters(ids)
+                setPageIndex(0)
+              }}
+              align="start"
+            />
           )
         }
         toolbarRight={
