@@ -101,7 +101,7 @@ export function DataTable<TData, TValue>({
   onPageChange,
   onSearchChange,
   isLoading = false,
-  skeletonRowCount = 10
+  skeletonRowCount
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -227,13 +227,13 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              Array.from({ length: skeletonRowCount }).map((_, rowIdx) => (
+              Array.from({ length: skeletonRowCount ?? pageSize }).map((_, rowIdx) => (
                 <TableRow key={`skeleton-${rowIdx}`}>
                   {table.getVisibleFlatColumns().map((col, colIdx) => {
                     const widths = ['w-3/4', 'w-1/2', 'w-2/3', 'w-1/3', 'w-4/5', 'w-3/5', 'w-2/5']
                     return (
                       <TableCell key={col.id}>
-                        <Skeleton className={`h-4 ${widths[colIdx % widths.length]}`} />
+                        <Skeleton className={`h-6 ${widths[colIdx % widths.length]}`} />
                       </TableCell>
                     )
                   })}

@@ -100,16 +100,16 @@ function UsersPage() {
                 Array.from({ length: perPage }).map((_, i) => (
                   <TableRow key={`skeleton-${i}`}>
                     <TableCell className="py-2">
-                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-5 w-3/4" />
                     </TableCell>
                     <TableCell className="py-2">
-                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="h-5 w-2/3" />
                     </TableCell>
                     <TableCell className="py-2">
-                      <Skeleton className="h-4 w-8" />
+                      <Skeleton className="h-5 w-8" />
                     </TableCell>
                     <TableCell className="py-2">
-                      <Skeleton className="h-4 w-20 ml-auto" />
+                      <Skeleton className="h-5 w-20 ml-auto" />
                     </TableCell>
                   </TableRow>
                 ))
