@@ -128,13 +128,13 @@ function RentalsPage() {
           const isOverdue = dueDateObj && dueDateObj < startOfToday
           if (isOverdue) {
             return (
-              <span className="text-red-600 font-medium text-xs bg-red-50 px-2 py-1 rounded">
+              <span className="text-red-800 font-medium text-xs bg-red-100/70 px-2 py-1 rounded dark:bg-red-900/20 dark:text-red-400">
                 Overdue
               </span>
             )
           }
           return (
-            <span className="text-green-600 font-medium text-xs bg-green-50 px-2 py-1 rounded">
+            <span className="text-[color-mix(in_oklab,var(--primary)_65%,black)] font-medium text-xs bg-primary/15 px-2 py-1 rounded">
               Active
             </span>
           )
@@ -208,7 +208,7 @@ function RentalsPage() {
             </Link>
           </Button>
         }
-        pageSize={10}
+        pageSize={25}
         globalFilterFn={globalFilterFn}
         rowClassName={rowClassName}
         isLoading={isLoading}
