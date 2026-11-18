@@ -1,8 +1,11 @@
-## What's New in v0.1.8
+## What's New in v2.5.0
 
-- Add ability to edit book details
-- Shows tooltips on bulk add screen similar to Manage books screen
+- New & improved app-wide interface
+- Improved handling for tags
+- Improve UI concistency
+- New components for tag selection & filtering tables via tags
 
 ### Changes
 
-- Fixed duplicate book check to perform actual db query
+- A new update checker that notifies of new releases
+- Better contrast across UI elements
