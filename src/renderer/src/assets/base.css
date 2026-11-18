@@ -3,6 +3,22 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@keyframes tag-selection-pulse {
+  0%,
+  100% {
+    background-color: var(--primary);
+  }
+  50% {
+    background-color: color-mix(in oklab, var(--primary) 88%, black);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tag-selection-pulse {
+    animation: tag-selection-pulse 2.8s ease-in-out infinite;
+  }
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.14 0 0);
