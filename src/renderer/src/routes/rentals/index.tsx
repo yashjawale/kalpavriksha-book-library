@@ -151,12 +151,21 @@ function RentalsPage() {
         header: '',
         cell: ({ row }) => (
           <div className="flex justify-end gap-2">
-            <Link to="/users/$email" params={{ email: row.original.userEmail }}>
-              <Button size="sm" variant="outline">
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-primary text-primary font-medium transition-colors hover:bg-primary hover:text-white"
+              asChild
+            >
+              <Link to="/users/$email" params={{ email: row.original.userEmail }}>
                 View details
-              </Button>
-            </Link>
-            <Button size="sm" variant="secondary" onClick={() => setReturnLoanId(row.original.id)}>
+              </Link>
+            </Button>
+            <Button
+              size="sm"
+              className="bg-primary text-primary-foreground font-medium transition-colors hover:bg-primary/90"
+              onClick={() => setReturnLoanId(row.original.id)}
+            >
               Mark Returned
             </Button>
           </div>
@@ -193,7 +202,7 @@ function RentalsPage() {
         searchPlaceholder="Search by book, name or email..."
         searchContainerClassName="max-w-xl"
         toolbarRight={
-          <Button asChild>
+          <Button className="font-semibold" asChild>
             <Link to="/rentals/new">
               <PlusIcon /> Issue Book
             </Link>
