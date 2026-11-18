@@ -12,6 +12,7 @@ import {
   type Row
 } from '@tanstack/react-table'
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { Skeleton } from '@renderer/components/ui/skeleton'
@@ -55,6 +56,8 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   searchKey?: string
   searchPlaceholder?: string
+  toolbarLeft?: ReactNode
+  toolbarRight?: ReactNode
   pageSize?: number
   globalFilterFn?: (row: TData, filterValue: string) => boolean
   initialSorting?: SortingState
@@ -78,6 +81,8 @@ export function DataTable<TData, TValue>({
   data,
   searchKey,
   searchPlaceholder = 'Search...',
+  toolbarLeft,
+  toolbarRight,
   pageSize = 25,
   globalFilterFn,
   initialSorting = [],
@@ -170,8 +175,10 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      {(searchKey || globalFilterFn || onSearchChange) && (
-        <div className="flex items-center gap-2">
+      {(searchKey || globalFilterFn || onSearchChange || toolbarLeft || toolbarRight) && (
+        <div className="flex flex-wrap items-center justify-between gap-3 py-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+          {(searchKey || globalFilterFn || onSearchChange) && (
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
@@ -191,6 +198,10 @@ export function DataTable<TData, TValue>({
               className="pl-9"
             />
           </div>
+          )}
+          {toolbarLeft}
+          </div>
+          {toolbarRight}
         </div>
       )}
 
