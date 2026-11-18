@@ -1,6 +1,6 @@
 # Release Process
 
-This document describes how to create new releases for Kalpavriksha Book Library.
+This document describes how to create new releases for Kalpavriksha Library.
 
 ## Quick Release (Recommended)
 
@@ -78,7 +78,7 @@ git push --tags
    - Uploads all installer files
 
 2. **You must manually** (on GitHub):
-   - Go to [Releases page](https://github.com/yashjawale/kalpavriksha-book-library/releases)
+   - Go to [Releases page](https://github.com/yashjawale/kalpavriksha-library/releases)
    - Find the draft release
    - Review the release notes
    - Click **"Publish release"**
@@ -108,7 +108,7 @@ The GitHub Actions workflow builds:
 - `.msi` - MSI installer
 - `.zip` - Portable archive
 
-All files are named with the version: `kalpavriksha-book-library-0.2.0.exe`
+All files are named with the version, for example: `kalpavriksha-library-0.2.0-setup.exe`
 
 ## Troubleshooting
 
@@ -123,7 +123,7 @@ git commit -m "Prepare for release"
 
 ### Build fails on GitHub Actions
 
-- Check the [Actions tab](https://github.com/yashjawale/kalpavriksha-book-library/actions)
+- Check the [Actions tab](https://github.com/yashjawale/kalpavriksha-library/actions)
 - Look for error messages in the workflow logs
 - Common issues: syntax errors, missing dependencies
 

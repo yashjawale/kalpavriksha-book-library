@@ -172,7 +172,7 @@ export function BookCatalogPDF({ books, logoDataUrl }: BookCatalogPDFProps) {
         </View>
 
         {/* Footer */}
-        <Text style={styles.footer}>Kalpavriksha Book Library Management System • Page 1 of 1</Text>
+        <Text style={styles.footer}>Kalpavriksha Library Management System • Page 1 of 1</Text>
       </Page>
     </Document>
   )

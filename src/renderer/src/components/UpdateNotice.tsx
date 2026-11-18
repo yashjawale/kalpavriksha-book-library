@@ -12,8 +12,8 @@ import { SidebarMenuButton, SidebarMenuItem } from '@renderer/components/ui/side
 import { Download, ExternalLink } from 'lucide-react'
 
 const LATEST_RELEASE_API =
-  'https://api.github.com/repos/yashjawale/kalpavriksha-book-library/releases/latest'
-const RELEASES_PAGE = 'https://github.com/yashjawale/kalpavriksha-book-library/releases/latest'
+  'https://api.github.com/repos/yashjawale/kalpavriksha-library/releases/latest'
+const RELEASES_PAGE = 'https://github.com/yashjawale/kalpavriksha-library/releases/latest'
 const PREVIEW_UPDATE_KEY = 'preview-update-notice'
 interface GitHubRelease {
   tag_name: string
