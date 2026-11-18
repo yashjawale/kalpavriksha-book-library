@@ -243,11 +243,18 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && 'selected'}
                   className={rowClassName ? rowClassName(row) : undefined}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} title={cell.renderValue()?.toString() ?? ''}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const value = cell.renderValue()
+                    const title =
+                      typeof value === 'string' || typeof value === 'number'
+                        ? String(value)
+                        : undefined
+                    return (
+                      <TableCell key={cell.id} title={title}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
               ))
             ) : (
